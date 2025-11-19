@@ -11,7 +11,7 @@ Lily is an Electron application that provides a custom control surface for Ablet
 The application follows a three-tier architecture:
 
 1. **Electron App** (this codebase) - Control surface UI with transport controls, mixer (8 tracks), and scene launching
-2. **OSC Communication Layer** - Bidirectional UDP messaging on ports 7000 (outgoing) and 7001 (incoming)
+2. **OSC Communication Layer** - Bidirectional UDP messaging on ports 5459 (outgoing) and 5460 (incoming)
 3. **Max for Live Device** (`resources/max-devices/lily-controller.amxd`) - Bridges OSC messages to Ableton's Live API
 
 ### Electron Process Architecture
@@ -94,18 +94,18 @@ The application follows a three-tier architecture:
 
 **Ports**:
 
-- **7000** - Electron sends OSC messages to Max device (outgoing)
-- **7001** - Electron receives OSC messages from Max device (incoming)
+- **5459** - Electron sends OSC messages to Max device (outgoing)
+- **5460** - Electron receives OSC messages from Max device (incoming)
 
 **OSC Server** (`src/main/osc/server.ts`):
 
-- Listens on port 7001 for messages from Max/Ableton
+- Listens on port 5460 for messages from Max/Ableton
 - Emits events: `message`, `transport:state`, `track:update`, `init:complete`
 - Events are forwarded to renderer via IPC
 
 **OSC Client** (`src/main/osc/client.ts`):
 
-- Sends messages to port 7000 (Max device)
+- Sends messages to port 5459 (Max device)
 - Methods: `transportPlay()`, `transportStop()`, `transportSetTempo()`, `trackSetVolume()`, etc.
 
 **Message Protocol** (defined in `src/types/osc-messages.ts`):
@@ -150,8 +150,8 @@ The application follows a three-tier architecture:
 
 **Max Device Requirements**:
 
-- Must use `udpreceive 7000` for incoming commands from Electron
-- Must use `udpsend` to `localhost:7001` for outgoing state updates
+- Must use `udpreceive 5459` for incoming commands from Electron
+- Must use `udpsend` to `localhost:5460` for outgoing state updates
 - Should use `live.thisdevice` (not `loadbang`) for initialization
 - Should use `defer` attribute on `live.observer` objects to prevent audio glitches
 - Should send full state snapshot on init request

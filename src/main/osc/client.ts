@@ -152,7 +152,7 @@ let clientInstance: OSCClient | null = null
 
 export function getOSCClient(options?: OSCClientOptions): OSCClient {
   if (!clientInstance) {
-    clientInstance = new OSCClient(options || { port: 7000 })
+    clientInstance = new OSCClient(options || { port: 5459 })
   }
   return clientInstance
 }

@@ -133,7 +133,7 @@ let serverInstance: OSCServer | null = null
 
 export function getOSCServer(options?: OSCServerOptions): OSCServer {
   if (!serverInstance) {
-    serverInstance = new OSCServer(options || { port: 7001 })
+    serverInstance = new OSCServer(options || { port: 5460 })
   }
   return serverInstance
 }

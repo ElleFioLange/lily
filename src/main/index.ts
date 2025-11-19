@@ -7,8 +7,8 @@ import { getOSCClient } from './osc/client'
 import { exportMaxDevice, quickInstallMaxDevice, checkMaxDeviceExists } from './maxdevice/export'
 
 // Initialize OSC server and client
-const oscServer = getOSCServer({ port: 7001 })
-const oscClient = getOSCClient({ port: 7000 })
+const oscServer = getOSCServer({ port: 5460 })
+const oscClient = getOSCClient({ port: 5459 })
 
 let mainWindowRef: BrowserWindow | null = null
 
