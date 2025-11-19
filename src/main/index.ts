@@ -2,6 +2,15 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { getOSCServer } from './osc/server'
+import { getOSCClient } from './osc/client'
+import { exportMaxDevice, quickInstallMaxDevice, checkMaxDeviceExists } from './maxdevice/export'
+
+// Initialize OSC server and client
+const oscServer = getOSCServer({ port: 7001 })
+const oscClient = getOSCClient({ port: 7000 })
+
+let mainWindowRef: BrowserWindow | null = null
 
 function createWindow(): void {
   // Create the browser window.
@@ -20,6 +29,9 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
+
+  // Store reference for OSC event forwarding
+  mainWindowRef = mainWindow
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
@@ -52,6 +64,12 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
+  // Initialize OSC communication
+  initializeOSC()
+
+  // Setup IPC handlers
+  setupIPCHandlers()
+
   createWindow()
 
   app.on('activate', function () {
@@ -70,5 +88,114 @@ app.on('window-all-closed', () => {
   }
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+// Cleanup on quit
+app.on('before-quit', () => {
+  oscServer.stop()
+  oscClient.close()
+})
+
+// Initialize OSC communication
+async function initializeOSC(): Promise<void> {
+  try {
+    // Start OSC server
+    await oscServer.start()
+
+    // Initialize OSC client
+    await oscClient.init()
+
+    console.log('OSC communication initialized')
+
+    // Forward OSC events to renderer
+    oscServer.on('message', (packet) => {
+      mainWindowRef?.webContents.send('osc:message', packet)
+    })
+
+    oscServer.on('transport:state', (packet) => {
+      mainWindowRef?.webContents.send('osc:transport:state', packet)
+    })
+
+    oscServer.on('track:update', (data) => {
+      mainWindowRef?.webContents.send('osc:track:update', data)
+    })
+
+    oscServer.on('init:complete', (version) => {
+      mainWindowRef?.webContents.send('osc:init:complete', version)
+      mainWindowRef?.webContents.send('osc:connection', true)
+    })
+
+    oscServer.on('ready', () => {
+      mainWindowRef?.webContents.send('osc:connection', true)
+    })
+
+    oscServer.on('error', () => {
+      mainWindowRef?.webContents.send('osc:connection', false)
+    })
+
+    oscServer.on('stopped', () => {
+      mainWindowRef?.webContents.send('osc:connection', false)
+    })
+  } catch (err) {
+    console.error('Failed to initialize OSC:', err)
+  }
+}
+
+// Setup IPC handlers
+function setupIPCHandlers(): void {
+  // OSC send handlers
+  ipcMain.handle('osc:send', async (_, address: string, args: unknown[]) => {
+    oscClient.send(address, args as Array<number | string | boolean>)
+  })
+
+  // Transport controls
+  ipcMain.handle('osc:transport:play', async () => {
+    oscClient.transportPlay()
+  })
+
+  ipcMain.handle('osc:transport:stop', async () => {
+    oscClient.transportStop()
+  })
+
+  ipcMain.handle('osc:transport:tempo', async (_, bpm: number) => {
+    oscClient.transportSetTempo(bpm)
+  })
+
+  // Track controls
+  ipcMain.handle('osc:track:volume', async (_, trackIndex: number, volume: number) => {
+    oscClient.trackSetVolume(trackIndex, volume)
+  })
+
+  ipcMain.handle('osc:track:pan', async (_, trackIndex: number, pan: number) => {
+    oscClient.trackSetPan(trackIndex, pan)
+  })
+
+  ipcMain.handle('osc:track:mute', async (_, trackIndex: number, mute: boolean) => {
+    oscClient.trackSetMute(trackIndex, mute)
+  })
+
+  ipcMain.handle('osc:track:solo', async (_, trackIndex: number, solo: boolean) => {
+    oscClient.trackSetSolo(trackIndex, solo)
+  })
+
+  // Scene controls
+  ipcMain.handle('osc:scene:fire', async (_, sceneIndex: number) => {
+    oscClient.sceneFire(sceneIndex)
+  })
+
+  // Initialization
+  ipcMain.handle('osc:init:request', async () => {
+    oscClient.requestInit()
+  })
+
+  // Max device export handlers
+  ipcMain.handle('max-device:export', async () => {
+    return await exportMaxDevice()
+  })
+
+  ipcMain.handle('max-device:quick-install', async () => {
+    return await quickInstallMaxDevice()
+  })
+
+  ipcMain.handle('max-device:check-exists', async () => {
+    return await checkMaxDeviceExists()
+  })
+}

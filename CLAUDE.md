@@ -4,11 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Lily is an Electron application built with React, TypeScript, and Vite using the electron-vite build system. It follows a three-process architecture:
+Lily is an Electron application that provides a custom control surface for Ableton Live. It communicates with Ableton via OSC (Open Sound Control) messages through a Max for Live device. Built with React, TypeScript, and Vite using the electron-vite build system.
 
-1. **Main Process** (`src/main/index.ts`) - The Node.js backend that manages the Electron app lifecycle, creates browser windows, and handles IPC communication
-2. **Preload Script** (`src/preload/index.ts`) - A secure bridge that exposes selected Electron APIs to the renderer process via `contextBridge`
-3. **Renderer Process** (`src/renderer/`) - The React frontend that runs in the browser window
+### Core Architecture
+
+The application follows a three-tier architecture:
+
+1. **Electron App** (this codebase) - Control surface UI with transport controls, mixer (8 tracks), and scene launching
+2. **OSC Communication Layer** - Bidirectional UDP messaging on ports 7000 (outgoing) and 7001 (incoming)
+3. **Max for Live Device** (`resources/max-devices/lily-controller.amxd`) - Bridges OSC messages to Ableton's Live API
+
+### Electron Process Architecture
+
+1. **Main Process** (`src/main/index.ts`) - Manages app lifecycle, OSC server/client, and IPC handlers
+2. **Preload Script** (`src/preload/index.ts`) - Exposes OSC and Max device APIs to renderer via `contextBridge`
+3. **Renderer Process** (`src/renderer/`) - React UI with Zustand state management
 
 ## Development Commands
 
@@ -77,3 +87,120 @@ Lily is an Electron application built with React, TypeScript, and Vite using the
 - Prettier is the default formatter for TypeScript, JavaScript, and JSON files
 - VSCode will auto-format on save using Prettier
 - Run `pnpm format` after making changes to ensure consistency
+
+## Lily-Specific Architecture
+
+### OSC Communication
+
+**Ports**:
+
+- **7000** - Electron sends OSC messages to Max device (outgoing)
+- **7001** - Electron receives OSC messages from Max device (incoming)
+
+**OSC Server** (`src/main/osc/server.ts`):
+
+- Listens on port 7001 for messages from Max/Ableton
+- Emits events: `message`, `transport:state`, `track:update`, `init:complete`
+- Events are forwarded to renderer via IPC
+
+**OSC Client** (`src/main/osc/client.ts`):
+
+- Sends messages to port 7000 (Max device)
+- Methods: `transportPlay()`, `transportStop()`, `transportSetTempo()`, `trackSetVolume()`, etc.
+
+**Message Protocol** (defined in `src/types/osc-messages.ts`):
+
+- Transport: `/live/transport/{play|stop|tempo}`
+- Tracks: `/live/track/{0-7}/{volume|pan|mute|solo}`
+- Scenes: `/live/scene/{0-7}/fire`
+- Init: `/live/init/{request|complete}`
+
+### State Management
+
+**Zustand Store** (`src/renderer/src/stores/useLiveStore.ts`):
+
+- Single source of truth for Ableton Live state
+- State slices: `transport`, `tracks` (array of 8), `connection`
+- Actions automatically send OSC messages and update local state optimistically
+- `setupOSCListeners()` function wires incoming OSC messages to state updates
+
+**State Flow**:
+
+1. User interacts with UI component
+2. Component calls store action (e.g., `setTrackVolume(0, 0.8)`)
+3. Action sends OSC message via `window.api.osc.trackSetVolume(0, 0.8)`
+4. Action updates local state immediately (optimistic update)
+5. Max device processes message and sends confirmation back
+6. OSC listener updates state with confirmed value from Ableton
+
+### Max for Live Device
+
+**Location**: `resources/max-devices/lily-controller.amxd`
+
+**Bundling**:
+
+- `resources/` folder is unpacked (not in asar) via `electron-builder.yml`
+- Access bundled device path: `path.join(process.resourcesPath, 'resources/max-devices/lily-controller.amxd')`
+
+**Export Functionality** (`src/main/maxdevice/export.ts`):
+
+- `exportMaxDevice()` - Shows save dialog, user chooses location
+- `quickInstallMaxDevice()` - Auto-installs to `~/Documents/Ableton/User Library/Presets/MIDI Effects/Max MIDI Effect`
+- Both methods accessible via UI buttons in ConnectionStatus component
+
+**Max Device Requirements**:
+
+- Must use `udpreceive 7000` for incoming commands from Electron
+- Must use `udpsend` to `localhost:7001` for outgoing state updates
+- Should use `live.thisdevice` (not `loadbang`) for initialization
+- Should use `defer` attribute on `live.observer` objects to prevent audio glitches
+- Should send full state snapshot on init request
+
+### Component Structure
+
+**App.tsx** - Root component that:
+
+- Calls `setupOSCListeners()` on mount to wire OSC events to store
+- Calls `window.api.osc.requestInit()` to request initial state from Max device
+- Renders: ConnectionStatus → TransportControls → MixerSection
+
+**ConnectionStatus** (`src/renderer/src/components/ConnectionStatus.tsx`):
+
+- Shows connection status (green/red indicator)
+- Displays last message time and device version
+- "Export Max Device" and "Quick Install" buttons
+
+**TransportControls** (`src/renderer/src/components/transport/TransportControls.tsx`):
+
+- Play/Stop buttons
+- Tempo slider (60-200 BPM) with numeric display
+
+**MixerSection** (`src/renderer/src/components/mixer/MixerSection.tsx`):
+
+- Grid layout of 8 MixerChannel components
+
+**MixerChannel** (`src/renderer/src/components/mixer/MixerChannel.tsx`):
+
+- Vertical volume fader with dB display
+- Pan knob with L/C/R indicator
+- Mute (M) and Solo (S) buttons
+- Track name display
+
+### Development Workflow
+
+1. **Start Electron app**: `pnpm dev`
+2. **Create/edit Max device**: Open `resources/max-devices/lily-controller.amxd` in Max
+3. **Install Max device to Ableton**: Click "Quick Install" in app UI
+4. **Load device in Ableton**: Drag from User Library → MIDI Effects → Max MIDI Effect
+5. **Test bidirectional communication**:
+   - Change tempo in app → should update in Ableton
+   - Change tempo in Ableton → should update in app UI
+
+### Important Notes
+
+- OSC server/client initialize automatically when main process starts (`initializeOSC()` in `src/main/index.ts`)
+- IPC handlers are registered in `setupIPCHandlers()` function
+- All OSC methods exposed via `window.api.osc.*` are async and return Promises
+- Track indices are 0-based (0-7 for 8 tracks)
+- Volume values are 0.0-1.0, pan values are -1.0 to 1.0
+- Mute/solo values are sent as integers (0 or 1) but stored as booleans in state
