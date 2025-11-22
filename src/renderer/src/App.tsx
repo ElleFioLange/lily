@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
-import { ConnectionStatus } from './components/ConnectionStatus'
-import { TransportControls } from './components/transport/TransportControls'
-import { MixerSection } from './components/mixer/MixerSection'
+// import { ConnectionStatus } from './components/ConnectionStatus'
+// import { TransportControls } from './components/transport/TransportControls'
+// import { MixerSection } from './components/mixer/MixerSection'
 import { setupOSCListeners } from './stores/useLiveStore'
 
 function App(): React.JSX.Element {
@@ -19,14 +19,11 @@ function App(): React.JSX.Element {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: '#0a0a0a',
         color: '#fff',
         overflow: 'auto'
       }}
     >
-      <ConnectionStatus />
-      <TransportControls />
-      <MixerSection />
+      <h1>hello</h1>
     </div>
   )
 }
