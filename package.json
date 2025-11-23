@@ -25,6 +25,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "electron-updater": "^6.3.9",
     "osc": "^2.4.5",
+    "react-resizable-panels": "^3.0.6",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

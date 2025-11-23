@@ -1,7 +1,5 @@
 import { useEffect } from 'react'
-// import { ConnectionStatus } from './components/ConnectionStatus'
-// import { TransportControls } from './components/transport/TransportControls'
-// import { MixerSection } from './components/mixer/MixerSection'
+import Layout from './components/Layout'
 import { setupOSCListeners } from './stores/useLiveStore'
 
 function App(): React.JSX.Element {
@@ -13,19 +11,7 @@ function App(): React.JSX.Element {
     window.api.osc.requestInit()
   }, [])
 
-  return (
-    <div
-      style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        color: '#fff',
-        overflow: 'auto'
-      }}
-    >
-      <h1>hello</h1>
-    </div>
-  )
+  return <Layout />
 }
 
 export default App

@@ -88,6 +88,14 @@ The application follows a three-tier architecture:
 - VSCode will auto-format on save using Prettier
 - Run `pnpm format` after making changes to ensure consistency
 
+**Styling**:
+
+- Tailwind CSS is configured for utility-first styling
+- Custom color variables mapped from existing CSS variables (`--ev-c-*` and `--color-*`)
+- Tailwind config: `tailwind.config.js`
+- PostCSS config: `postcss.config.js`
+- Main CSS file includes Tailwind directives: `src/renderer/src/assets/main.css`
+
 ## Lily-Specific Architecture
 
 ### OSC Communication
@@ -162,29 +170,34 @@ The application follows a three-tier architecture:
 
 - Calls `setupOSCListeners()` on mount to wire OSC events to store
 - Calls `window.api.osc.requestInit()` to request initial state from Max device
-- Renders: ConnectionStatus → TransportControls → MixerSection
+- Renders the Layout component
 
-**ConnectionStatus** (`src/renderer/src/components/ConnectionStatus.tsx`):
+**Layout** (`src/renderer/src/components/Layout.tsx`):
 
-- Shows connection status (green/red indicator)
-- Displays last message time and device version
-- "Export Max Device" and "Quick Install" buttons
+- Main container using `react-resizable-panels` for resizable/collapsible panel layout
+- 4-panel split layout with Project Config sidebar
+- Top-left: Live preview panel
+- Top-right: Hydra preview panel
+- Bottom-left: Ableton monitor panel
+- Bottom-right: Hydra patches panel
+- Right sidebar: Project Config panel (collapsible)
+- Panels can be resized by dragging dividers
+- Resize handles show visual indicators (|||, ☰)
 
-**TransportControls** (`src/renderer/src/components/transport/TransportControls.tsx`):
+**Panel Components** (`src/renderer/src/components/panels/`):
 
-- Play/Stop buttons
-- Tempo slider (60-200 BPM) with numeric display
+- **LivePreview.tsx** - Placeholder for live video preview (future: camera/video input)
+- **HydraPreview.tsx** - Placeholder for Hydra visual synthesizer preview with collapse button and video controls section
+- **AbletonMonitor.tsx** - Placeholder for Ableton Live state monitoring
+- **HydraPatches.tsx** - Placeholder for Hydra patch browser/editor
+- **ProjectConfig.tsx** - Placeholder for project configuration options
 
-**MixerSection** (`src/renderer/src/components/mixer/MixerSection.tsx`):
+**Legacy Components** (currently unused, kept for reference):
 
-- Grid layout of 8 MixerChannel components
-
-**MixerChannel** (`src/renderer/src/components/mixer/MixerChannel.tsx`):
-
-- Vertical volume fader with dB display
-- Pan knob with L/C/R indicator
-- Mute (M) and Solo (S) buttons
-- Track name display
+- **ConnectionStatus** (`src/renderer/src/components/ConnectionStatus.tsx`) - Connection status indicator
+- **TransportControls** (`src/renderer/src/components/transport/TransportControls.tsx`) - Play/Stop buttons and tempo control
+- **MixerSection** (`src/renderer/src/components/mixer/MixerSection.tsx`) - 8-channel mixer grid
+- **MixerChannel** (`src/renderer/src/components/mixer/MixerChannel.tsx`) - Individual mixer channel strip
 
 ### Development Workflow
 
