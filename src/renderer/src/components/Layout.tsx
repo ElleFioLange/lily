@@ -19,9 +19,7 @@ export default function Layout() {
                 <LivePreview />
               </Panel>
 
-              <PanelResizeHandle className="w-1 bg-slate-800 hover:bg-slate-700 transition-colors cursor-col-resize flex items-center justify-center">
-                <div className="text-slate-100 opacity-50 text-xs">|||</div>
-              </PanelResizeHandle>
+              <PanelResizeHandle className="w-1 bg-stone-800 hover:bg-stone-200 cursor-col-resize flex items-center justify-center" />
 
               {/* Hydra Preview */}
               <Panel defaultSize={50} minSize={20}>
@@ -30,9 +28,7 @@ export default function Layout() {
             </PanelGroup>
           </Panel>
 
-          <PanelResizeHandle className="h-1 bg-slate-800 hover:bg-slate-700 transition-colors cursor-row-resize flex items-center justify-center">
-            <div className="text-slate-100 opacity-50 text-xs">\u2630</div>
-          </PanelResizeHandle>
+          <PanelResizeHandle className="h-1 bg-stone-800 hover:bg-stone-200 cursor-row-resize flex items-center justify-center" />
 
           {/* Bottom Row - Ableton Monitor & Hydra Patches */}
           <Panel defaultSize={50} minSize={20}>
@@ -42,9 +38,7 @@ export default function Layout() {
                 <AbletonMonitor />
               </Panel>
 
-              <PanelResizeHandle className="w-1 bg-slate-800 hover:bg-slate-700 transition-colors cursor-col-resize flex items-center justify-center">
-                <div className="text-slate-100 opacity-50 text-xs">|||</div>
-              </PanelResizeHandle>
+              <PanelResizeHandle className="w-1 bg-stone-800 hover:bg-stone-200 cursor-col-resize flex items-center justify-center" />
 
               {/* Hydra Patches */}
               <Panel defaultSize={50} minSize={20}>
@@ -55,9 +49,7 @@ export default function Layout() {
         </PanelGroup>
       </Panel>
 
-      <PanelResizeHandle className="w-1 bg-slate-800 hover:bg-slate-700 transition-colors cursor-col-resize flex items-center justify-center">
-        <div className="text-slate-100 opacity-50 text-xs">|||</div>
-      </PanelResizeHandle>
+      <PanelResizeHandle className="w-1 bg-stone-800 hover:bg-stone-200 cursor-col-resize flex items-center justify-center" />
 
       {/* Project Config - Right Sidebar */}
       <Panel defaultSize={15} minSize={10} maxSize={30} collapsible>

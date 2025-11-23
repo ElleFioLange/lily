@@ -3,7 +3,7 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 overflow-hidden select-none;
+    @apply bg-stone-950 text-stone-100 overflow-hidden select-none;
   }
 
   #root {
