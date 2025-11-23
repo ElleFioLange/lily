@@ -19,8 +19,8 @@ export default function Layout() {
                 <LivePreview />
               </Panel>
 
-              <PanelResizeHandle className="w-1 bg-gray-3 hover:bg-gray-2 transition-colors cursor-col-resize flex items-center justify-center">
-                <div className="text-text-1 opacity-50 text-xs">|||</div>
+              <PanelResizeHandle className="w-1 bg-slate-800 hover:bg-slate-700 transition-colors cursor-col-resize flex items-center justify-center">
+                <div className="text-slate-100 opacity-50 text-xs">|||</div>
               </PanelResizeHandle>
 
               {/* Hydra Preview */}
@@ -30,8 +30,8 @@ export default function Layout() {
             </PanelGroup>
           </Panel>
 
-          <PanelResizeHandle className="h-1 bg-gray-3 hover:bg-gray-2 transition-colors cursor-row-resize flex items-center justify-center">
-            <div className="text-text-1 opacity-50 text-xs">\u2630</div>
+          <PanelResizeHandle className="h-1 bg-slate-800 hover:bg-slate-700 transition-colors cursor-row-resize flex items-center justify-center">
+            <div className="text-slate-100 opacity-50 text-xs">\u2630</div>
           </PanelResizeHandle>
 
           {/* Bottom Row - Ableton Monitor & Hydra Patches */}
@@ -42,8 +42,8 @@ export default function Layout() {
                 <AbletonMonitor />
               </Panel>
 
-              <PanelResizeHandle className="w-1 bg-gray-3 hover:bg-gray-2 transition-colors cursor-col-resize flex items-center justify-center">
-                <div className="text-text-1 opacity-50 text-xs">|||</div>
+              <PanelResizeHandle className="w-1 bg-slate-800 hover:bg-slate-700 transition-colors cursor-col-resize flex items-center justify-center">
+                <div className="text-slate-100 opacity-50 text-xs">|||</div>
               </PanelResizeHandle>
 
               {/* Hydra Patches */}
@@ -55,8 +55,8 @@ export default function Layout() {
         </PanelGroup>
       </Panel>
 
-      <PanelResizeHandle className="w-1 bg-gray-3 hover:bg-gray-2 transition-colors cursor-col-resize flex items-center justify-center">
-        <div className="text-text-1 opacity-50 text-xs">|||</div>
+      <PanelResizeHandle className="w-1 bg-slate-800 hover:bg-slate-700 transition-colors cursor-col-resize flex items-center justify-center">
+        <div className="text-slate-100 opacity-50 text-xs">|||</div>
       </PanelResizeHandle>
 
       {/* Project Config - Right Sidebar */}

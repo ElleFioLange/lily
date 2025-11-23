@@ -3,13 +3,12 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  overflow: hidden;
-  user-select: none;
-}
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 overflow-hidden select-none;
+  }
 
-#root {
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  #root {
+    @apply w-screen h-screen overflow-hidden;
+  }
 }

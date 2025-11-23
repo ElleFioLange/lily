@@ -4,7 +4,7 @@ export default function LivePreview() {
   return (
     <Panel
       title="Live preview"
-      bg="bg-black-soft"
+      bg="bg-slate-900"
       contentClassName="flex items-center justify-center"
     >
       {/* Future: Video feed or camera input */}
