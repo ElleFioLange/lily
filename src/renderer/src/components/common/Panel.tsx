@@ -24,7 +24,7 @@ export default function Panel({
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
 
   return (
-    <div className={`w-full h-full ${bg} flex flex-col ${className}`}>
+    <div className={`w-full h-full ${bg} border flex flex-col ${className}`}>
       {/* Header - only show if title or collapsible or headerActions exist */}
       {(title || collapsible || headerActions) && (
         <div className="flex items-center justify-between p-4 shrink-0">
