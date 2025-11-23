@@ -1,7 +1,9 @@
+import Panel from '../common/Panel'
+
 export default function HydraPatches() {
   return (
-    <div className="w-full h-full bg-gray-2 flex items-center justify-center">
-      <div className="text-text-1 text-xl font-light">Hydra patches</div>
-    </div>
+    <Panel title="Hydra patches" contentClassName="flex items-center justify-center">
+      {/* Future: Patch browser and editor */}
+    </Panel>
   )
 }
