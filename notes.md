@@ -1,0 +1,2 @@
+- incorporate hydra-text and also manage library of images and videos for hydra
+- beautiful gradient images as source material for hydra transformations will get by the "digital colorspace" feel that hydra is usually stuck in
