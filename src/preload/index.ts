@@ -56,6 +56,15 @@ const api = {
     export: (): Promise<ExportResult> => ipcRenderer.invoke('max-device:export'),
     quickInstall: (): Promise<ExportResult> => ipcRenderer.invoke('max-device:quick-install'),
     checkExists: (): Promise<boolean> => ipcRenderer.invoke('max-device:check-exists')
+  },
+
+  // Layout switching
+  layout: {
+    setLayout: (layout: 'performance' | 'ableton-configuration') =>
+      ipcRenderer.invoke('layout:set', layout),
+    onLayoutChange: (callback: (layout: 'performance' | 'ableton-configuration') => void) => {
+      ipcRenderer.on('layout:change', (_, layout) => callback(layout))
+    }
   }
 }
 

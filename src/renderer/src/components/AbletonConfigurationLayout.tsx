@@ -6,7 +6,7 @@ import HydraPatches from './panels/HydraPatches'
 import ProjectConfig from './panels/ProjectConfig'
 import VideoControls from './panels/VideoControls'
 
-export default function Layout() {
+export default function AbletonConfigurationLayout() {
   return (
     <PanelGroup direction="horizontal" className="w-full h-full">
       {/* Main Content Area - Left Side */}

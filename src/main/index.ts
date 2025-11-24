@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -11,6 +11,34 @@ const oscServer = getOSCServer({ port: 5460 })
 const oscClient = getOSCClient({ port: 5459 })
 
 let mainWindowRef: BrowserWindow | null = null
+
+function createMenu(): void {
+  const template: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: 'View',
+      submenu: [
+        {
+          label: 'Performance',
+          type: 'radio',
+          checked: true,
+          click: () => {
+            mainWindowRef?.webContents.send('layout:change', 'performance')
+          }
+        },
+        {
+          label: 'Ableton Configuration',
+          type: 'radio',
+          click: () => {
+            mainWindowRef?.webContents.send('layout:change', 'ableton-configuration')
+          }
+        }
+      ]
+    }
+  ]
+
+  const menu = Menu.buildFromTemplate(template)
+  Menu.setApplicationMenu(menu)
+}
 
 function createWindow(): void {
   // Create the browser window.
@@ -32,6 +60,9 @@ function createWindow(): void {
 
   // Store reference for OSC event forwarding
   mainWindowRef = mainWindow
+
+  // Create application menu
+  createMenu()
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
@@ -197,5 +228,10 @@ function setupIPCHandlers(): void {
 
   ipcMain.handle('max-device:check-exists', async () => {
     return await checkMaxDeviceExists()
+  })
+
+  // Layout switching
+  ipcMain.handle('layout:set', async (_, layout: 'performance' | 'ableton-configuration') => {
+    mainWindowRef?.webContents.send('layout:change', layout)
   })
 }

@@ -27,6 +27,10 @@ interface LilyAPI {
     quickInstall: () => Promise<ExportResult>
     checkExists: () => Promise<boolean>
   }
+  layout: {
+    setLayout: (layout: 'performance' | 'ableton-configuration') => Promise<void>
+    onLayoutChange: (callback: (layout: 'performance' | 'ableton-configuration') => void) => void
+  }
 }
 
 declare global {
