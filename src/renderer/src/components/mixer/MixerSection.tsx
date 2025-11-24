@@ -10,7 +10,7 @@
  * 3. Update MixerChannel component
  */
 
-import { useOSCStore } from '../../stores/useLiveStore'
+import { useOSCStore } from '../../stores/useOSCStore'
 
 export function MixerSection(): React.JSX.Element {
   // Example: You would define your mixer state here

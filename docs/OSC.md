@@ -25,16 +25,16 @@ The OSC system follows Electron's multi-process architecture:
 ┌─────────────────────────────────────────────────────────────────┐
 │                       Renderer Process                          │
 │  (React UI - src/renderer/)                                     │
-│                                                                  │
-│  ┌──────────────┐     ┌─────────────────┐                      │
-│  │ UI Components│────▶│ Zustand Store   │                      │
-│  └──────────────┘     │ (State Mgmt)    │                      │
-│         ▲             └────────┬─────── │                      │
+│                                                                 │
+│  ┌──────────────┐     ┌─────────────────┐                       │
+│  │ UI Components│────▶│ Zustand Store   │                       │
+│  └──────────────┘     │ (State Mgmt)    │                       │
+│         ▲             └────────┬─────── │                       │
 │         │                      │         │                      │
 │         │                      ▼         │                      │
-│         │             window.api.osc.send()                    │
+│         │             window.api.osc.send()                     │
 │         │                      │         │                      │
-│         │             window.api.osc.onMessage()               │
+│         │             window.api.osc.onMessage()                │
 │         │                      │         ▲                      │
 └─────────┼──────────────────────┼─────────┼──────────────────────┘
           │                      │         │

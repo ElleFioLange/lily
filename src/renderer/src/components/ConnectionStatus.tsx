@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useOSCStore } from '../stores/useLiveStore'
+import { useOSCStore } from '../stores/useOSCStore'
 
 /**
  * ConnectionStatus Component

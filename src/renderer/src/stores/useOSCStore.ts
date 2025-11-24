@@ -28,7 +28,7 @@ import type { OSCMessage } from '../../../types/osc-messages'
  */
 
 // ============================================================================
-// Store Interface
+// OSC Store Interface
 // ============================================================================
 
 interface OSCStore {
@@ -43,7 +43,7 @@ interface OSCStore {
 }
 
 // ============================================================================
-// Store Implementation
+// OSC Store Implementation
 // ============================================================================
 
 export const useOSCStore = create<OSCStore>((set) => ({
@@ -86,17 +86,10 @@ export const useOSCStore = create<OSCStore>((set) => ({
 export function setupOSCListeners(): void {
   // Listen for all OSC messages
   window.api.osc.onMessage((message) => {
-    const store = useOSCStore.getState()
+    const oscStore = useOSCStore.getState()
 
     // Update last message
-    store.setLastMessage(message)
-
-    // Add custom routing logic here
-    // Example:
-    // if (message.address === '/synth/freq') {
-    //   const freq = message.args[0] as number
-    //   store.setSynthFrequency(freq)
-    // }
+    oscStore.setLastMessage(message)
 
     console.log('OSC Message Received:', message.address, message.args)
   })

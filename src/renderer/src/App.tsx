@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import PerformanceLayout from './components/PerformanceLayout'
 import AbletonConfigurationLayout from './components/AbletonConfigurationLayout'
-import { setupOSCListeners } from './stores/useLiveStore'
+import { setupOSCListeners } from './stores/useOSCStore'
 import { useLayoutStore, setupLayoutListeners } from './stores/useLayoutStore'
 import HydraConfigurationLayout from './components/HydraConfigurationLayout'
 

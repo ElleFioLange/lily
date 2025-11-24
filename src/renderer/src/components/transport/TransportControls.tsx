@@ -10,7 +10,7 @@
  * 3. Update this component to use your new store
  */
 
-import { useOSCStore } from '../../stores/useLiveStore'
+import { useOSCStore } from '../../stores/useOSCStore'
 
 export function TransportControls(): React.JSX.Element {
   const lastMessage = useOSCStore((state) => state.lastMessage)
