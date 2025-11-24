@@ -90,11 +90,15 @@ The application follows a three-tier architecture:
 
 **Styling**:
 
-- Tailwind CSS is configured for utility-first styling
-- Custom color variables mapped from existing CSS variables (`--ev-c-*` and `--color-*`)
-- Tailwind config: `tailwind.config.js`
+- Tailwind CSS v4 is configured for utility-first styling
+- Uses standard Tailwind **stone** color palette (NOT slate or gray)
+  - Background: `bg-stone-950` (body), `bg-stone-800` (dividers), `bg-stone-700` (panels)
+  - Text: `text-stone-100` (primary text)
+  - Hover states: `hover:bg-stone-600`, `hover:bg-stone-800`
+- No custom CSS variables - uses Tailwind's built-in color scales
+- Tailwind config: `tailwind.config.js` (minimal config, no custom colors)
 - PostCSS config: `postcss.config.js`
-- Main CSS file includes Tailwind directives: `src/renderer/src/assets/main.css`
+- Main CSS file: `src/renderer/src/assets/main.css` (uses Tailwind v4 `@import 'tailwindcss'` syntax)
 
 ## Lily-Specific Architecture
 
@@ -169,27 +173,43 @@ The application follows a three-tier architecture:
 **App.tsx** - Root component that:
 
 - Calls `setupOSCListeners()` on mount to wire OSC events to store
+- Calls `setupLayoutListeners()` to wire layout switching from menu
 - Calls `window.api.osc.requestInit()` to request initial state from Max device
-- Renders the Layout component
+- Conditionally renders one of three layouts based on `useLayoutStore` state
 
-**Layout** (`src/renderer/src/components/Layout.tsx`):
+**Layout Switching**:
 
-- Main container using `react-resizable-panels` for resizable/collapsible panel layout
-- 4-panel split layout with Project Config sidebar
-- Top-left: Live preview panel
-- Top-right: Hydra preview panel
-- Bottom-left: Ableton monitor panel
-- Bottom-right: Hydra patches panel
-- Right sidebar: Project Config panel (collapsible)
-- Panels can be resized by dragging dividers
-- Resize handles show visual indicators (|||, ☰)
+- Three layouts available via View > Layout menu:
+  - **PerformanceLayout** - Main performance view (default)
+  - **AbletonConfigurationLayout** - Ableton configuration view
+  - **HydraConfigurationLayout** - Hydra configuration view
+- Layout state managed by `useLayoutStore` (Zustand)
+- Menu selection synced via IPC from main process
+
+**Common Layouts** (`src/renderer/src/components/`):
+
+All three layouts currently share the same structure:
+
+- Left section (70%): Live preview (top 60%) + Ableton monitor (bottom 40%)
+- Right section (30%): Hydra preview (top 30%) + Video controls (20%) + Hydra patches (bottom 50%)
+- Right sidebar (15%): Project Config (collapsible)
+- Built with `react-resizable-panels` for resizable/collapsible panels
+- Resize handles: `bg-stone-800` with `h-px` or `w-px` thickness
+
+**Base Components**:
+
+- **Panel** (`src/renderer/src/components/common/Panel.tsx`) - Reusable panel wrapper
+  - Props: `title`, `collapsible`, `headerActions`, `children`, `className`, `contentClassName`
+  - Default styling: `text-stone-100` text, `hover:bg-stone-800` buttons
+  - Handles collapse/expand state internally
 
 **Panel Components** (`src/renderer/src/components/panels/`):
 
 - **LivePreview.tsx** - Placeholder for live video preview (future: camera/video input)
-- **HydraPreview.tsx** - Placeholder for Hydra visual synthesizer preview with collapse button and video controls section
-- **AbletonMonitor.tsx** - Placeholder for Ableton Live state monitoring
+- **HydraPreview.tsx** - Hydra visual synthesizer preview with collapse button and video controls
+- **AbletonMonitor.tsx** - Ableton state monitoring with "Request Init" button that calls `window.api.osc.requestInit()`
 - **HydraPatches.tsx** - Placeholder for Hydra patch browser/editor
+- **VideoControls.tsx** - Video control panel
 - **ProjectConfig.tsx** - Placeholder for project configuration options
 
 **Legacy Components** (currently unused, kept for reference):

@@ -9,7 +9,7 @@ export default function AbletonMonitor() {
     <Panel title="Ableton monitor" contentClassName="flex flex-col items-center justify-center p-4">
       <button
         onClick={handleInitRequest}
-        className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded transition-colors"
+        className="px-4 py-2 bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
       >
         Request Init from Max Device
       </button>
