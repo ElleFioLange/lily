@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type { OSCPacket } from '../types/osc-messages'
+import type { LayoutType } from '../types/layouts'
 import type { ExportResult } from '../main/maxdevice/export'
 
 // Custom APIs for renderer
@@ -60,11 +61,8 @@ const api = {
 
   // Layout switching
   layout: {
-    setLayout: (layout: 'performance' | 'ableton-configuration' | 'hydra-configuration') =>
-      ipcRenderer.invoke('layout:set', layout),
-    onLayoutChange: (
-      callback: (layout: 'performance' | 'ableton-configuration' | 'hydra-configuration') => void
-    ) => {
+    setLayout: (layout: LayoutType) => ipcRenderer.invoke('layout:set', layout),
+    onLayoutChange: (callback: (layout: LayoutType) => void) => {
       ipcRenderer.on('layout:change', (_, layout) => callback(layout))
     }
   }

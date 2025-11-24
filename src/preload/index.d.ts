@@ -1,7 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type { OSCPacket } from '../types/osc-messages'
+import type { LayoutType } from '../types/layouts'
 import type { ExportResult } from '../main/maxdevice/export'
-import { LayoutType } from '@renderer/stores/useLayoutStore'
 
 interface LilyAPI {
   osc: {
