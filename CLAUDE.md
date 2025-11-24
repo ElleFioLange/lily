@@ -4,15 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Lily is an Electron application that provides a custom control surface for Ableton Live. It communicates with Ableton via OSC (Open Sound Control) messages through a Max for Live device. Built with React, TypeScript, and Vite using the electron-vite build system.
+Lily is an Electron application with a minimal OSC (Open Sound Control) communication template. It provides a flexible foundation for building custom OSC-based control surfaces. Built with React, TypeScript, and Vite using the electron-vite build system.
 
 ### Core Architecture
 
-The application follows a three-tier architecture:
+The application provides a clean OSC communication layer:
 
-1. **Electron App** (this codebase) - Control surface UI with transport controls, mixer (8 tracks), and scene launching
+1. **Electron App** (this codebase) - React UI with minimal OSC template system
 2. **OSC Communication Layer** - Bidirectional UDP messaging on ports 5459 (outgoing) and 5460 (incoming)
-3. **Max for Live Device** (`resources/max-devices/lily-controller.amxd`) - Bridges OSC messages to Ableton's Live API
+3. **External OSC Application** - Any OSC-compatible application (Max/MSP, TouchOSC, Processing, etc.)
 
 ### Electron Process Architecture
 
@@ -100,73 +100,88 @@ The application follows a three-tier architecture:
 - PostCSS config: `postcss.config.js`
 - Main CSS file: `src/renderer/src/assets/main.css` (uses Tailwind v4 `@import 'tailwindcss'` syntax)
 
-## Lily-Specific Architecture
+## OSC Communication Template
 
-### OSC Communication
+### Architecture Overview
+
+The OSC system is a minimal, well-documented template designed for customization. It provides the foundation for building any OSC protocol.
+
+**Documentation**: See `docs/OSC.md` for comprehensive guide including:
+
+- Architecture diagrams and message flow
+- Pattern matching and routing
+- TypeScript typing patterns
+- State management integration
+- Best practices and examples
 
 **Ports**:
 
-- **5459** - Electron sends OSC messages to Max device (outgoing)
-- **5460** - Electron receives OSC messages from Max device (incoming)
+- **5459** - Electron sends OSC messages (outgoing to external app)
+- **5460** - Electron receives OSC messages (incoming from external app)
 
 **OSC Server** (`src/main/osc/server.ts`):
 
-- Listens on port 5460 for messages from Max/Ableton
-- Emits events: `message`, `transport:state`, `track:update`, `init:complete`
-- Events are forwarded to renderer via IPC
+- Minimal template with pattern-based message routing
+- Supports wildcards: `/path/*` (single segment) and `/path/**` (multiple segments)
+- EventEmitter architecture for flexible handling
+- Generic `message` event emits all incoming messages
+- Extensible: register pattern handlers like `server.on('/synth/*', handler)`
 
 **OSC Client** (`src/main/osc/client.ts`):
 
-- Sends messages to port 5459 (Max device)
-- Methods: `transportPlay()`, `transportStop()`, `transportSetTempo()`, `trackSetVolume()`, etc.
+- Minimal template with generic `send(address, args)` method
+- No predefined message methods - build your own in application code
+- Handles automatic type conversion (numbers, strings, booleans)
+- Extensible: create helper functions or extend the class
 
-**Message Protocol** (defined in `src/types/osc-messages.ts`):
+**Message Types** (`src/types/osc-messages.ts`):
 
-- Transport: `/live/transport/{play|stop|tempo}`
-- Tracks: `/live/track/{0-7}/{volume|pan|mute|solo}`
-- Scenes: `/live/scene/{0-7}/fire`
-- Init: `/live/init/{request|complete}`
+- Generic `OSCMessage` interface: `{ address: string, args: OSCValue[] }`
+- Helper functions: `isAddress()`, `hasPrefix()`, `parseAddress()`
+- `OSCMessageBuilder` for fluent message construction
+- Commented examples showing how to define custom message types
 
 ### State Management
 
-**Zustand Store** (`src/renderer/src/stores/useLiveStore.ts`):
+**Zustand Store Template** (`src/renderer/src/stores/useLiveStore.ts`):
 
-- Single source of truth for Ableton Live state
-- State slices: `transport`, `tracks` (array of 8), `connection`
-- Actions automatically send OSC messages and update local state optimistically
-- `setupOSCListeners()` function wires incoming OSC messages to state updates
+- Minimal template store called `useOSCStore`
+- Contains only `lastMessage` state and generic `sendMessage()` action
+- Includes `setupOSCListeners()` function pattern for wiring incoming messages
+- Extensive commented examples showing common patterns
 
-**State Flow**:
+**Recommended Pattern**:
 
 1. User interacts with UI component
-2. Component calls store action (e.g., `setTrackVolume(0, 0.8)`)
-3. Action sends OSC message via `window.api.osc.trackSetVolume(0, 0.8)`
+2. Component calls store action (e.g., `sendMessage('/synth/freq', [440])`)
+3. Action sends OSC via `window.api.osc.send(address, args)`
 4. Action updates local state immediately (optimistic update)
-5. Max device processes message and sends confirmation back
-6. OSC listener updates state with confirmed value from Ableton
+5. External app processes message and sends confirmation back
+6. OSC listener updates state with confirmed value
 
-### Max for Live Device
+**Building Custom Stores**:
 
-**Location**: `resources/max-devices/lily-controller.amxd`
+- Define your own state shape based on your OSC protocol
+- Create actions that call `window.api.osc.send()`
+- Use `setupOSCListeners()` to route incoming messages to state updates
+- See examples in `useLiveStore.ts` for common patterns (separate stores, pattern routing, etc.)
 
-**Bundling**:
+### External OSC Applications
 
-- `resources/` folder is unpacked (not in asar) via `electron-builder.yml`
-- Access bundled device path: `path.join(process.resourcesPath, 'resources/max-devices/lily-controller.amxd')`
+The app can communicate with any OSC-compatible application. Examples include Max/MSP, TouchOSC, Processing, Pure Data, etc.
 
-**Export Functionality** (`src/main/maxdevice/export.ts`):
+**Max for Live Device Support** (`src/main/maxdevice/export.ts`):
 
-- `exportMaxDevice()` - Shows save dialog, user chooses location
-- `quickInstallMaxDevice()` - Auto-installs to `~/Documents/Ableton/User Library/Presets/MIDI Effects/Max MIDI Effect`
-- Both methods accessible via UI buttons in ConnectionStatus component
+- `exportMaxDevice()` - Shows save dialog for exporting Max devices
+- `quickInstallMaxDevice()` - Auto-installs to Ableton User Library
+- Both methods accessible via `window.api.maxDevice.*`
 
-**Max Device Requirements**:
+**OSC Application Requirements**:
 
-- Must use `udpreceive 5459` for incoming commands from Electron
-- Must use `udpsend` to `localhost:5460` for outgoing state updates
-- Should use `live.thisdevice` (not `loadbang`) for initialization
-- Should use `defer` attribute on `live.observer` objects to prevent audio glitches
-- Should send full state snapshot on init request
+- Receive OSC on port **5459** (messages from Electron)
+- Send OSC to port **5460** on `localhost` (messages to Electron)
+- Use any OSC address patterns that suit your application
+- Define your protocol and implement corresponding handlers in Electron
 
 ### Component Structure
 
@@ -174,7 +189,7 @@ The application follows a three-tier architecture:
 
 - Calls `setupOSCListeners()` on mount to wire OSC events to store
 - Calls `setupLayoutListeners()` to wire layout switching from menu
-- Calls `window.api.osc.requestInit()` to request initial state from Max device
+- Customize initialization for your application (e.g., send handshake message)
 - Conditionally renders one of three layouts based on `useLayoutStore` state
 
 **Layout Switching**:
@@ -207,33 +222,62 @@ All three layouts currently share the same structure:
 
 - **LivePreview.tsx** - Placeholder for live video preview (future: camera/video input)
 - **HydraPreview.tsx** - Hydra visual synthesizer preview with collapse button and video controls
-- **AbletonMonitor.tsx** - Ableton state monitoring with "Request Init" button that calls `window.api.osc.requestInit()`
+- **AbletonMonitor.tsx** - Example panel with button that sends custom OSC message via `window.api.osc.send()`
 - **HydraPatches.tsx** - Placeholder for Hydra patch browser/editor
 - **VideoControls.tsx** - Video control panel
 - **ProjectConfig.tsx** - Placeholder for project configuration options
 
-**Legacy Components** (currently unused, kept for reference):
+**Legacy/Example Components** (simplified to placeholders with guidance):
 
-- **ConnectionStatus** (`src/renderer/src/components/ConnectionStatus.tsx`) - Connection status indicator
-- **TransportControls** (`src/renderer/src/components/transport/TransportControls.tsx`) - Play/Stop buttons and tempo control
-- **MixerSection** (`src/renderer/src/components/mixer/MixerSection.tsx`) - 8-channel mixer grid
-- **MixerChannel** (`src/renderer/src/components/mixer/MixerChannel.tsx`) - Individual mixer channel strip
+- **ConnectionStatus** (`src/renderer/src/components/ConnectionStatus.tsx`) - Shows last OSC message, Max device export buttons
+- **TransportControls** (`src/renderer/src/components/transport/TransportControls.tsx`) - Placeholder with guidance on rebuilding
+- **MixerSection** (`src/renderer/src/components/mixer/MixerSection.tsx`) - Placeholder with guidance on rebuilding
+- **MixerChannel** (`src/renderer/src/components/mixer/MixerChannel.tsx`) - Example type definitions for rebuilding
 
 ### Development Workflow
 
 1. **Start Electron app**: `pnpm dev`
-2. **Create/edit Max device**: Open `resources/max-devices/lily-controller.amxd` in Max
-3. **Install Max device to Ableton**: Click "Quick Install" in app UI
-4. **Load device in Ableton**: Drag from User Library → MIDI Effects → Max MIDI Effect
-5. **Test bidirectional communication**:
-   - Change tempo in app → should update in Ableton
-   - Change tempo in Ableton → should update in app UI
+2. **Read the OSC guide**: See `docs/OSC.md` for comprehensive documentation
+3. **Define your OSC protocol**: Decide on message addresses and argument types
+4. **Implement message types**: Create TypeScript interfaces in `src/types/osc-messages.ts`
+5. **Build store actions**: Create Zustand actions that send OSC via `window.api.osc.send()`
+6. **Set up listeners**: Use `setupOSCListeners()` to route incoming messages to state
+7. **Create UI components**: Build React components that use your store
+8. **Test with external OSC app**: Set up your OSC application to communicate on ports 5459/5460
+
+**Example: Adding a new message type**
+
+```typescript
+// 1. Define the type (src/types/osc-messages.ts)
+interface MySynthMessage extends OSCMessage {
+  address: '/synth/freq'
+  args: [number]
+}
+
+// 2. Add store action (src/renderer/src/stores/useLiveStore.ts)
+setSynthFreq: async (freq: number) => {
+  await window.api.osc.send('/synth/freq', [freq])
+  set({ synthFreq: freq })
+}
+
+// 3. Add listener routing
+window.api.osc.onMessage((msg) => {
+  if (msg.address === '/synth/freq') {
+    store.setSynthFreq(msg.args[0] as number)
+  }
+})
+
+// 4. Use in component
+const freq = useMyStore((state) => state.synthFreq)
+const setFreq = useMyStore((state) => state.setSynthFreq)
+```
 
 ### Important Notes
 
 - OSC server/client initialize automatically when main process starts (`initializeOSC()` in `src/main/index.ts`)
-- IPC handlers are registered in `setupIPCHandlers()` function
+- IPC handlers are registered in `setupIPCHandlers()` - only one handler needed: `osc:send`
 - All OSC methods exposed via `window.api.osc.*` are async and return Promises
-- Track indices are 0-based (0-7 for 8 tracks)
-- Volume values are 0.0-1.0, pan values are -1.0 to 1.0
-- Mute/solo values are sent as integers (0 or 1) but stored as booleans in state
+- The generic `send(address, args)` method is the only send method - build your own helpers on top
+- OSC server forwards all messages to renderer via `osc:message` event
+- Pattern-based routing is available - register handlers in main process with `oscServer.on(pattern, handler)`
+- See `docs/OSC.md` for complete API reference and examples
