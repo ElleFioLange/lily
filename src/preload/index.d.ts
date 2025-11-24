@@ -1,6 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type { OSCPacket } from '../types/osc-messages'
 import type { ExportResult } from '../main/maxdevice/export'
+import { LayoutType } from '@renderer/stores/useLayoutStore'
 
 interface LilyAPI {
   osc: {
@@ -28,8 +29,8 @@ interface LilyAPI {
     checkExists: () => Promise<boolean>
   }
   layout: {
-    setLayout: (layout: 'performance' | 'ableton-configuration') => Promise<void>
-    onLayoutChange: (callback: (layout: 'performance' | 'ableton-configuration') => void) => void
+    setLayout: (layout: LayoutType) => Promise<void>
+    onLayoutChange: (callback: (layout: LayoutType) => void) => void
   }
 }
 

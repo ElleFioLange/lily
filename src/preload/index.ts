@@ -60,9 +60,11 @@ const api = {
 
   // Layout switching
   layout: {
-    setLayout: (layout: 'performance' | 'ableton-configuration') =>
+    setLayout: (layout: 'performance' | 'ableton-configuration' | 'hydra-configuration') =>
       ipcRenderer.invoke('layout:set', layout),
-    onLayoutChange: (callback: (layout: 'performance' | 'ableton-configuration') => void) => {
+    onLayoutChange: (
+      callback: (layout: 'performance' | 'ableton-configuration' | 'hydra-configuration') => void
+    ) => {
       ipcRenderer.on('layout:change', (_, layout) => callback(layout))
     }
   }

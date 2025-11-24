@@ -31,6 +31,13 @@ function createMenu(): void {
           click: () => {
             mainWindowRef?.webContents.send('layout:change', 'ableton-configuration')
           }
+        },
+        {
+          label: 'Hydra Configuration',
+          type: 'radio',
+          click: () => {
+            mainWindowRef?.webContents.send('layout:change', 'hydra-configuration')
+          }
         }
       ]
     }

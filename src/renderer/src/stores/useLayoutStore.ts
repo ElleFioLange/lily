@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type LayoutType = 'performance' | 'ableton-configuration'
+export type LayoutType = 'performance' | 'ableton-configuration' | 'hydra-configuration'
 
 interface LayoutState {
   currentLayout: LayoutType
