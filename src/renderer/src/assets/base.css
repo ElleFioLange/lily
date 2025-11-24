@@ -1,7 +1,29 @@
 /* Minimal base styles - Tailwind handles most resets */
 
+@font-face {
+  font-family: 'Monaspace Argon';
+  src: url('./Monaspace Argon Var.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Monaspace Krypton';
+  src: url('./Monaspace Krypton Var.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Monaspace Neon';
+  src: url('./Monaspace Neon Var.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Monaspace Radon';
+  src: url('./Monaspace Radon Var.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Monaspace Xenon';
+  src: url('./Monaspace Xenon Var.woff2') format('woff2');
+}
+
 body {
   font-family:
+    Monaspace Xenon,
     Inter,
     -apple-system,
     BlinkMacSystemFont,
