@@ -1,2 +1,25 @@
 - incorporate hydra-text and also manage library of images and videos for hydra
 - beautiful gradient images as source material for hydra transformations will get by the "digital colorspace" feel that hydra is usually stuck in
+
+- primary flow of ableton control
+  REPL
+- Read:
+  - read the content of the text input on ctrl+shift+enter
+- Evaluate:
+  - evalute the user input
+  - pull in the configuration file
+    - configuration file is JSON
+    - top level keys are keywords
+    - keywords have:
+      - the live object they are associated with
+        - track
+        - scene
+        - clip
+        - device
+        - mixer
+        - device parameter
+      - the live object is stored as a UUID
+      - when the hook is instantiated, a lily-id max for live device is added to the track with the closest relationship to the object
+      - lily-id devices deduplicate, only one per track
+      - they listen for udp signals of the object UUID and return the canonical path
+      -
