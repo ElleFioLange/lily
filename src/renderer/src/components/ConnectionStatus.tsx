@@ -1,8 +1,19 @@
 import { useState } from 'react'
-import { useLiveStore } from '../stores/useLiveStore'
+import { useOSCStore } from '../stores/useLiveStore'
 
+/**
+ * ConnectionStatus Component
+ *
+ * This is a legacy component that showed OSC connection status.
+ * It has been simplified to just show Max device export functionality.
+ *
+ * To add OSC connection status back, create custom state in your store:
+ * - Track last message timestamp
+ * - Track connection status
+ * - Display connection indicator
+ */
 export function ConnectionStatus(): React.JSX.Element {
-  const connection = useLiveStore((state) => state.connection)
+  const lastMessage = useOSCStore((state) => state.lastMessage)
   const [exportMessage, setExportMessage] = useState<string | null>(null)
 
   const handleExport = async (): Promise<void> => {
@@ -27,14 +38,6 @@ export function ConnectionStatus(): React.JSX.Element {
     }
   }
 
-  const formatLastSeen = (): string => {
-    if (!connection.lastMessageTime) return 'Never'
-    const seconds = Math.floor((Date.now() - connection.lastMessageTime) / 1000)
-    if (seconds < 60) return `${seconds}s ago`
-    const minutes = Math.floor(seconds / 60)
-    return `${minutes}m ago`
-  }
-
   return (
     <div
       style={{
@@ -46,29 +49,9 @@ export function ConnectionStatus(): React.JSX.Element {
       }}
     >
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div
-            style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              backgroundColor: connection.connected ? '#4ade80' : '#ef4444'
-            }}
-          />
-          <span style={{ fontWeight: 500 }}>
-            {connection.connected ? 'Connected' : 'Disconnected'}
-          </span>
-        </div>
-        {connection.lastMessageTime && (
-          <span style={{ fontSize: '0.875rem', color: '#888' }}>
-            Last message: {formatLastSeen()}
-          </span>
-        )}
-        {connection.deviceVersion && (
-          <span style={{ fontSize: '0.875rem', color: '#888' }}>
-            Device v{connection.deviceVersion}
-          </span>
-        )}
+        <span style={{ fontSize: '0.875rem', color: '#888' }}>
+          Last OSC: {lastMessage?.address || 'None'}
+        </span>
       </div>
 
       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>

@@ -1,12 +1,22 @@
-import { useLiveStore } from '../../stores/useLiveStore'
-import { MixerChannel } from './MixerChannel'
+/**
+ * MixerSection Component - Legacy
+ *
+ * This component was part of the Ableton Live mixer interface.
+ * It has been simplified to show a placeholder.
+ *
+ * To recreate this functionality:
+ * 1. Define track state in your store
+ * 2. Implement track control actions
+ * 3. Update MixerChannel component
+ */
+
+import { useOSCStore } from '../../stores/useLiveStore'
 
 export function MixerSection(): React.JSX.Element {
-  const tracks = useLiveStore((state) => state.tracks)
-  const setTrackVolume = useLiveStore((state) => state.setTrackVolume)
-  const setTrackPan = useLiveStore((state) => state.setTrackPan)
-  const setTrackMute = useLiveStore((state) => state.setTrackMute)
-  const setTrackSolo = useLiveStore((state) => state.setTrackSolo)
+  // Example: You would define your mixer state here
+  // const tracks = useMixerStore((state) => state.tracks)
+  // const setTrackVolume = useMixerStore((state) => state.setTrackVolume)
+  const lastMessage = useOSCStore((state) => state.lastMessage)
 
   return (
     <div style={{ padding: '1.5rem' }}>
@@ -14,23 +24,20 @@ export function MixerSection(): React.JSX.Element {
 
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-          gap: '1rem',
-          maxWidth: '1200px'
+          padding: '2rem',
+          textAlign: 'center',
+          color: '#888',
+          border: '1px dashed #333',
+          borderRadius: '8px'
         }}
       >
-        {tracks.map((track, index) => (
-          <MixerChannel
-            key={index}
-            trackIndex={index}
-            track={track}
-            onVolumeChange={(volume) => setTrackVolume(index, volume)}
-            onPanChange={(pan) => setTrackPan(index, pan)}
-            onMuteToggle={() => setTrackMute(index, !track.mute)}
-            onSoloToggle={() => setTrackSolo(index, !track.solo)}
-          />
-        ))}
+        <p>Mixer functionality has been removed.</p>
+        <p style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>
+          Last OSC message: {lastMessage?.address || 'None'}
+        </p>
+        <p style={{ marginTop: '1rem', fontSize: '0.875rem' }}>
+          See <code>docs/OSC.md</code> for guidance on rebuilding this feature.
+        </p>
       </div>
     </div>
   )

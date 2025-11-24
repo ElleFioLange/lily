@@ -2,7 +2,9 @@ import Panel from '../common/Panel'
 
 export default function AbletonMonitor() {
   const handleInitRequest = async () => {
-    await window.api.osc.requestInit()
+    // Example: Send a custom init request message
+    // Customize this for your application
+    await window.api.osc.send('/init/request')
   }
 
   return (

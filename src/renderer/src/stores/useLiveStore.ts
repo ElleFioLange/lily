@@ -1,266 +1,322 @@
 import { create } from 'zustand'
-import type { TransportState, TrackState, ConnectionState } from '../../../types/osc-messages'
+import type { OSCMessage } from '../../../types/osc-messages'
 
-interface LiveStore {
-  // Transport state
-  transport: TransportState
+/**
+ * Minimal OSC Store Template
+ *
+ * This is a basic Zustand store template showing how to integrate OSC
+ * message handling with state management.
+ *
+ * This template is intentionally minimal. Build your own state structure
+ * and actions based on your application's needs.
+ *
+ * Usage:
+ * 1. Define your state interface
+ * 2. Add actions for updating state
+ * 3. Create OSC helper functions that send messages
+ * 4. Set up listeners in setupOSCListeners() to handle incoming messages
+ *
+ * Example:
+ * ```typescript
+ * // In your component:
+ * const lastMessage = useOSCStore((state) => state.lastMessage)
+ * const sendMessage = useOSCStore((state) => state.sendMessage)
+ *
+ * // Send a message
+ * await sendMessage('/synth/freq', [440.0])
+ * ```
+ */
 
-  // Mixer state (8 tracks)
-  tracks: TrackState[]
+// ============================================================================
+// Store Interface
+// ============================================================================
 
-  // Connection state
-  connection: ConnectionState
+interface OSCStore {
+  // State: Last received OSC message
+  lastMessage: OSCMessage | null
 
-  // Actions - Transport
-  setPlaying: (isPlaying: boolean) => void
-  setTempo: (tempo: number) => void
-  setCurrentBeat: (beat: number) => void
-  play: () => Promise<void>
-  stop: () => Promise<void>
-  changeTempo: (tempo: number) => Promise<void>
+  // Action: Update last message
+  setLastMessage: (message: OSCMessage) => void
 
-  // Actions - Tracks
-  setTrackVolume: (trackIndex: number, volume: number) => Promise<void>
-  setTrackPan: (trackIndex: number, pan: number) => Promise<void>
-  setTrackMute: (trackIndex: number, mute: boolean) => Promise<void>
-  setTrackSolo: (trackIndex: number, solo: boolean) => Promise<void>
-  setTrackName: (trackIndex: number, name: string) => void
-  updateTrackState: (trackIndex: number, state: Partial<TrackState>) => void
-
-  // Actions - Scenes
-  fireScene: (sceneIndex: number) => Promise<void>
-
-  // Actions - Connection
-  setConnected: (connected: boolean) => void
-  setDeviceVersion: (version: number) => void
-  updateLastMessageTime: () => void
-
-  // Actions - Initialization
-  requestInit: () => Promise<void>
+  // Action: Send an OSC message
+  sendMessage: (address: string, args?: Array<number | string | boolean>) => Promise<void>
 }
 
-// Create initial track states
-const createInitialTracks = (): TrackState[] => {
-  return Array.from({ length: 8 }, (_, i) => ({
-    volume: 0.85,
-    pan: 0,
-    mute: false,
-    solo: false,
-    name: `Track ${i + 1}`
-  }))
-}
+// ============================================================================
+// Store Implementation
+// ============================================================================
 
-export const useLiveStore = create<LiveStore>((set) => ({
+export const useOSCStore = create<OSCStore>((set) => ({
   // Initial state
-  transport: {
-    isPlaying: false,
-    tempo: 120,
-    currentBeat: 0
-  },
+  lastMessage: null,
 
-  tracks: createInitialTracks(),
-
-  connection: {
-    connected: false,
-    lastMessageTime: null,
-    deviceVersion: null
-  },
-
-  // Transport actions
-  setPlaying: (isPlaying) =>
-    set((state) => ({
-      transport: { ...state.transport, isPlaying }
-    })),
-
-  setTempo: (tempo) =>
-    set((state) => ({
-      transport: { ...state.transport, tempo }
-    })),
-
-  setCurrentBeat: (beat) =>
-    set((state) => ({
-      transport: { ...state.transport, currentBeat: beat }
-    })),
-
-  play: async () => {
-    await window.api.osc.transportPlay()
-    set((state) => ({
-      transport: { ...state.transport, isPlaying: true }
-    }))
-  },
-
-  stop: async () => {
-    await window.api.osc.transportStop()
-    set((state) => ({
-      transport: { ...state.transport, isPlaying: false }
-    }))
-  },
-
-  changeTempo: async (tempo) => {
-    await window.api.osc.transportSetTempo(tempo)
-    set((state) => ({
-      transport: { ...state.transport, tempo }
-    }))
-  },
-
-  // Track actions
-  setTrackVolume: async (trackIndex, volume) => {
-    await window.api.osc.trackSetVolume(trackIndex, volume)
-    set((state) => {
-      const newTracks = [...state.tracks]
-      newTracks[trackIndex] = { ...newTracks[trackIndex], volume }
-      return { tracks: newTracks }
-    })
-  },
-
-  setTrackPan: async (trackIndex, pan) => {
-    await window.api.osc.trackSetPan(trackIndex, pan)
-    set((state) => {
-      const newTracks = [...state.tracks]
-      newTracks[trackIndex] = { ...newTracks[trackIndex], pan }
-      return { tracks: newTracks }
-    })
-  },
-
-  setTrackMute: async (trackIndex, mute) => {
-    await window.api.osc.trackSetMute(trackIndex, mute)
-    set((state) => {
-      const newTracks = [...state.tracks]
-      newTracks[trackIndex] = { ...newTracks[trackIndex], mute }
-      return { tracks: newTracks }
-    })
-  },
-
-  setTrackSolo: async (trackIndex, solo) => {
-    await window.api.osc.trackSetSolo(trackIndex, solo)
-    set((state) => {
-      const newTracks = [...state.tracks]
-      newTracks[trackIndex] = { ...newTracks[trackIndex], solo }
-      return { tracks: newTracks }
-    })
-  },
-
-  setTrackName: (trackIndex, name) =>
-    set((state) => {
-      const newTracks = [...state.tracks]
-      newTracks[trackIndex] = { ...newTracks[trackIndex], name }
-      return { tracks: newTracks }
+  // Update last message
+  setLastMessage: (message) =>
+    set({
+      lastMessage: message
     }),
 
-  updateTrackState: (trackIndex, trackState) =>
-    set((state) => {
-      const newTracks = [...state.tracks]
-      newTracks[trackIndex] = { ...newTracks[trackIndex], ...trackState }
-      return { tracks: newTracks }
-    }),
-
-  // Scene actions
-  fireScene: async (sceneIndex) => {
-    await window.api.osc.sceneFire(sceneIndex)
-  },
-
-  // Connection actions
-  setConnected: (connected) =>
-    set((state) => ({
-      connection: { ...state.connection, connected }
-    })),
-
-  setDeviceVersion: (version) =>
-    set((state) => ({
-      connection: { ...state.connection, deviceVersion: version }
-    })),
-
-  updateLastMessageTime: () =>
-    set((state) => ({
-      connection: { ...state.connection, lastMessageTime: Date.now() }
-    })),
-
-  // Initialization
-  requestInit: async () => {
-    await window.api.osc.requestInit()
+  // Send OSC message
+  sendMessage: async (address, args = []) => {
+    await window.api.osc.send(address, args)
   }
 }))
 
-// Helper function to setup OSC event listeners
+// ============================================================================
+// OSC Listener Setup
+// ============================================================================
+
+/**
+ * Setup OSC event listeners
+ *
+ * Call this function once when your app initializes (typically in App.tsx).
+ * It registers listeners for incoming OSC messages and updates the store.
+ *
+ * Customize this function to handle your specific message patterns and
+ * update your state accordingly.
+ *
+ * @example
+ * ```typescript
+ * // In App.tsx:
+ * useEffect(() => {
+ *   setupOSCListeners()
+ * }, [])
+ * ```
+ */
 export function setupOSCListeners(): void {
-  // Listen for transport state updates
-  window.api.osc.onTransportState((packet) => {
-    const store = useLiveStore.getState()
-    if (packet.args.length >= 2) {
-      const isPlaying = packet.args[0] === 1
-      const tempo = packet.args[1] as number
-      store.setPlaying(isPlaying)
-      store.setTempo(tempo)
-      store.updateLastMessageTime()
-    }
+  // Listen for all OSC messages
+  window.api.osc.onMessage((message) => {
+    const store = useOSCStore.getState()
+
+    // Update last message
+    store.setLastMessage(message)
+
+    // Add custom routing logic here
+    // Example:
+    // if (message.address === '/synth/freq') {
+    //   const freq = message.args[0] as number
+    //   store.setSynthFrequency(freq)
+    // }
+
+    console.log('OSC Message Received:', message.address, message.args)
   })
+}
 
-  // Listen for track updates
-  window.api.osc.onTrackUpdate((data) => {
-    const store = useLiveStore.getState()
-    const { trackIndex, property, args } = data
+// ============================================================================
+// USAGE EXAMPLES
+// ============================================================================
 
-    if (trackIndex < 0 || trackIndex >= 8) return
+/*
+Example 1: Basic store with custom state
+-----------------------------------------
+interface MyOSCStore {
+  // State
+  synthFrequency: number
+  synthAmplitude: number
+  lastMessage: OSCMessage | null
 
-    switch (property) {
-      case 'volume':
-        if (args.length > 0) {
-          store.updateTrackState(trackIndex, { volume: args[0] as number })
-        }
-        break
-      case 'pan':
-        if (args.length > 0) {
-          store.updateTrackState(trackIndex, { pan: args[0] as number })
-        }
-        break
-      case 'mute':
-        if (args.length > 0) {
-          store.updateTrackState(trackIndex, { mute: args[0] === 1 })
-        }
-        break
-      case 'solo':
-        if (args.length > 0) {
-          store.updateTrackState(trackIndex, { solo: args[0] === 1 })
-        }
-        break
-      case 'name':
-        if (args.length > 0) {
-          store.setTrackName(trackIndex, args[0] as string)
-        }
-        break
-      case 'state':
-        // Full state update [volume, pan, mute, solo, name]
-        if (args.length >= 5) {
-          store.updateTrackState(trackIndex, {
-            volume: args[0] as number,
-            pan: args[1] as number,
-            mute: args[2] === 1,
-            solo: args[3] === 1,
-            name: args[4] as string
-          })
-        }
-        break
-    }
+  // Actions
+  setSynthFrequency: (freq: number) => void
+  setSynthAmplitude: (amp: number) => void
+  setLastMessage: (msg: OSCMessage) => void
 
-    store.updateLastMessageTime()
-  })
+  // OSC senders
+  sendFrequency: (freq: number) => Promise<void>
+  sendAmplitude: (amp: number) => Promise<void>
+}
 
-  // Listen for initialization complete
-  window.api.osc.onInitComplete((version) => {
-    const store = useLiveStore.getState()
-    store.setDeviceVersion(version)
-    store.setConnected(true)
-    store.updateLastMessageTime()
-  })
+export const useMyOSCStore = create<MyOSCStore>((set) => ({
+  // Initial state
+  synthFrequency: 440.0,
+  synthAmplitude: 0.5,
+  lastMessage: null,
 
-  // Listen for connection changes
-  window.api.osc.onConnectionChange((connected) => {
-    const store = useLiveStore.getState()
-    store.setConnected(connected)
-    if (connected) {
-      store.updateLastMessageTime()
-      // Request initialization when connected
-      store.requestInit()
+  // State setters
+  setSynthFrequency: (freq) => set({ synthFrequency: freq }),
+  setSynthAmplitude: (amp) => set({ synthAmplitude: amp }),
+  setLastMessage: (msg) => set({ lastMessage: msg }),
+
+  // OSC senders
+  sendFrequency: async (freq) => {
+    await window.api.osc.send('/synth/freq', [freq])
+    set({ synthFrequency: freq }) // Optimistic update
+  },
+  sendAmplitude: async (amp) => {
+    await window.api.osc.send('/synth/amp', [amp])
+    set({ synthAmplitude: amp }) // Optimistic update
+  }
+}))
+
+// Setup listeners
+export function setupMyOSCListeners() {
+  window.api.osc.onMessage((msg) => {
+    const store = useMyOSCStore.getState()
+    store.setLastMessage(msg)
+
+    // Route incoming messages
+    switch (msg.address) {
+      case '/synth/freq':
+        store.setSynthFrequency(msg.args[0] as number)
+        break
+      case '/synth/amp':
+        store.setSynthAmplitude(msg.args[0] as number)
+        break
     }
   })
 }
+
+
+Example 2: Separate stores for different concerns
+-------------------------------------------------
+// Transport store
+interface TransportStore {
+  isPlaying: boolean
+  tempo: number
+  play: () => Promise<void>
+  stop: () => Promise<void>
+  setTempo: (tempo: number) => Promise<void>
+}
+
+export const useTransportStore = create<TransportStore>((set) => ({
+  isPlaying: false,
+  tempo: 120,
+
+  play: async () => {
+    await window.api.osc.send('/transport/play')
+    set({ isPlaying: true })
+  },
+
+  stop: async () => {
+    await window.api.osc.send('/transport/stop')
+    set({ isPlaying: false })
+  },
+
+  setTempo: async (tempo) => {
+    await window.api.osc.send('/transport/tempo', [tempo])
+    set({ tempo })
+  }
+}))
+
+// Mixer store
+interface MixerStore {
+  tracks: Array<{ volume: number; mute: boolean }>
+  setTrackVolume: (index: number, volume: number) => Promise<void>
+  setTrackMute: (index: number, mute: boolean) => Promise<void>
+}
+
+export const useMixerStore = create<MixerStore>((set) => ({
+  tracks: Array(8).fill({ volume: 0.8, mute: false }),
+
+  setTrackVolume: async (index, volume) => {
+    await window.api.osc.send(`/track/${index}/volume`, [volume])
+    set((state) => {
+      const newTracks = [...state.tracks]
+      newTracks[index] = { ...newTracks[index], volume }
+      return { tracks: newTracks }
+    })
+  },
+
+  setTrackMute: async (index, mute) => {
+    await window.api.osc.send(`/track/${index}/mute`, [mute ? 1 : 0])
+    set((state) => {
+      const newTracks = [...state.tracks]
+      newTracks[index] = { ...newTracks[index], mute }
+      return { tracks: newTracks }
+    })
+  }
+}))
+
+// Setup listeners for both stores
+export function setupAllListeners() {
+  window.api.osc.onMessage((msg) => {
+    // Route to transport store
+    if (msg.address.startsWith('/transport/')) {
+      const transport = useTransportStore.getState()
+      if (msg.address === '/transport/state') {
+        const playing = msg.args[0] === 1
+        const tempo = msg.args[1] as number
+        transport.isPlaying = playing
+        transport.tempo = tempo
+      }
+    }
+
+    // Route to mixer store
+    if (msg.address.startsWith('/track/')) {
+      const match = msg.address.match(/\/track\/(\d+)\/(\w+)/)
+      if (match) {
+        const index = parseInt(match[1])
+        const property = match[2]
+        const mixer = useMixerStore.getState()
+
+        // Update mixer state based on property
+        // mixer.setTrackVolume, etc.
+      }
+    }
+  })
+}
+
+
+Example 3: Using middleware for logging/debugging
+-------------------------------------------------
+import { create } from 'zustand'
+import { devtools } from 'zustand/middleware'
+
+interface MyStore {
+  value: number
+  setValue: (val: number) => void
+}
+
+export const useMyStore = create<MyStore>()(
+  devtools(
+    (set) => ({
+      value: 0,
+      setValue: (val) => set({ value: val }, false, 'setValue')
+    }),
+    { name: 'MyOSCStore' }
+  )
+)
+
+// Now you can use Redux DevTools to inspect state changes
+
+
+Example 4: Pattern-based routing with helper functions
+------------------------------------------------------
+// Create helper functions for common patterns
+function parseTrackMessage(address: string): { index: number; property: string } | null {
+  const match = address.match(/\/track\/(\d+)\/(\w+)/)
+  if (match) {
+    return {
+      index: parseInt(match[1]),
+      property: match[2]
+    }
+  }
+  return null
+}
+
+function parseSynthMessage(address: string): { param: string } | null {
+  const match = address.match(/\/synth\/(\w+)/)
+  if (match) {
+    return { param: match[1] }
+  }
+  return null
+}
+
+// Use in listener setup
+export function setupSmartListeners() {
+  window.api.osc.onMessage((msg) => {
+    // Route track messages
+    const trackInfo = parseTrackMessage(msg.address)
+    if (trackInfo) {
+      console.log(`Track ${trackInfo.index} ${trackInfo.property}:`, msg.args[0])
+      // Update store...
+    }
+
+    // Route synth messages
+    const synthInfo = parseSynthMessage(msg.address)
+    if (synthInfo) {
+      console.log(`Synth ${synthInfo.param}:`, msg.args[0])
+      // Update store...
+    }
+  })
+}
+*/

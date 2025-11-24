@@ -223,88 +223,73 @@ async function initializeOSC(): Promise<void> {
 
     console.log('OSC communication initialized')
 
-    // Forward OSC events to renderer
-    oscServer.on('message', (packet) => {
-      mainWindowRef?.webContents.send('osc:message', packet)
+    // ============================================================================
+    // Forward OSC Messages to Renderer
+    // ============================================================================
+    // The server emits 'message' events for all incoming OSC messages.
+    // We forward these to the renderer process via IPC.
+    //
+    // To add pattern-specific forwarding, register additional listeners here:
+    // Example:
+    //   oscServer.on('/your/pattern', (message) => {
+    //     mainWindowRef?.webContents.send('osc:pattern:/your/pattern', message)
+    //   })
+
+    oscServer.on('message', (message) => {
+      mainWindowRef?.webContents.send('osc:message', message)
     })
 
-    oscServer.on('transport:state', (packet) => {
-      mainWindowRef?.webContents.send('osc:transport:state', packet)
+    // Example: Forward specific patterns
+    // Uncomment and modify these examples for your use case:
+    /*
+    oscServer.on('/synth/*', (message) => {
+      mainWindowRef?.webContents.send('osc:pattern:/synth/*', message)
     })
 
-    oscServer.on('track:update', (data) => {
-      mainWindowRef?.webContents.send('osc:track:update', data)
+    oscServer.on('/transport/play', (message) => {
+      mainWindowRef?.webContents.send('osc:pattern:/transport/play', message)
     })
-
-    oscServer.on('init:complete', (version) => {
-      mainWindowRef?.webContents.send('osc:init:complete', version)
-      mainWindowRef?.webContents.send('osc:connection', true)
-    })
-
-    oscServer.on('ready', () => {
-      mainWindowRef?.webContents.send('osc:connection', true)
-    })
-
-    oscServer.on('error', () => {
-      mainWindowRef?.webContents.send('osc:connection', false)
-    })
-
-    oscServer.on('stopped', () => {
-      mainWindowRef?.webContents.send('osc:connection', false)
-    })
+    */
   } catch (err) {
     console.error('Failed to initialize OSC:', err)
   }
 }
 
-// Setup IPC handlers
+/**
+ * Setup IPC Handlers
+ *
+ * Registers IPC handlers for communication between renderer and main process.
+ * This includes the generic OSC send handler and other application-specific handlers.
+ *
+ * OSC Handler Pattern:
+ * The generic 'osc:send' handler is the only OSC-related handler you need.
+ * All application-specific OSC functionality should be built in the renderer
+ * using this generic handler.
+ *
+ * Example (adding a custom handler if really needed):
+ * ```typescript
+ * ipcMain.handle('my-custom-action', async (_, param1, param2) => {
+ *   // Do something complex that can't be done in renderer
+ *   oscClient.send('/custom/address', [param1, param2])
+ *   return { success: true }
+ * })
+ * ```
+ */
 function setupIPCHandlers(): void {
-  // OSC send handlers
+  // ============================================================================
+  // OSC Communication Handler
+  // ============================================================================
+  /**
+   * Generic OSC send handler
+   * Forwards OSC messages from renderer to the OSC client
+   */
   ipcMain.handle('osc:send', async (_, address: string, args: unknown[]) => {
     oscClient.send(address, args as Array<number | string | boolean>)
   })
 
-  // Transport controls
-  ipcMain.handle('osc:transport:play', async () => {
-    oscClient.transportPlay()
-  })
-
-  ipcMain.handle('osc:transport:stop', async () => {
-    oscClient.transportStop()
-  })
-
-  ipcMain.handle('osc:transport:tempo', async (_, bpm: number) => {
-    oscClient.transportSetTempo(bpm)
-  })
-
-  // Track controls
-  ipcMain.handle('osc:track:volume', async (_, trackIndex: number, volume: number) => {
-    oscClient.trackSetVolume(trackIndex, volume)
-  })
-
-  ipcMain.handle('osc:track:pan', async (_, trackIndex: number, pan: number) => {
-    oscClient.trackSetPan(trackIndex, pan)
-  })
-
-  ipcMain.handle('osc:track:mute', async (_, trackIndex: number, mute: boolean) => {
-    oscClient.trackSetMute(trackIndex, mute)
-  })
-
-  ipcMain.handle('osc:track:solo', async (_, trackIndex: number, solo: boolean) => {
-    oscClient.trackSetSolo(trackIndex, solo)
-  })
-
-  // Scene controls
-  ipcMain.handle('osc:scene:fire', async (_, sceneIndex: number) => {
-    oscClient.sceneFire(sceneIndex)
-  })
-
-  // Initialization
-  ipcMain.handle('osc:init:request', async () => {
-    oscClient.requestInit()
-  })
-
-  // Max device export handlers
+  // ============================================================================
+  // Max Device Export Handlers
+  // ============================================================================
   ipcMain.handle('max-device:export', async () => {
     return await exportMaxDevice()
   })
@@ -317,7 +302,9 @@ function setupIPCHandlers(): void {
     return await checkMaxDeviceExists()
   })
 
-  // Layout switching
+  // ============================================================================
+  // Layout Switching Handler
+  // ============================================================================
   ipcMain.handle('layout:set', async (_, layout: 'performance' | 'ableton-configuration') => {
     mainWindowRef?.webContents.send('layout:change', layout)
   })

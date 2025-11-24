@@ -15,8 +15,9 @@ function App(): React.JSX.Element {
     // Setup layout switching listeners
     setupLayoutListeners()
 
-    // Request initial state from Max device
-    window.api.osc.requestInit()
+    // Customize this initialization for your application
+    // Example: Request initial state, send handshake message, etc.
+    // window.api.osc.send('/app/init')
   }, [])
 
   switch (currentLayout) {

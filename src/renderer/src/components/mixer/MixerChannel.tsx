@@ -1,4 +1,23 @@
-import type { TrackState } from '../../../../types/osc-messages'
+/**
+ * MixerChannel Component - Legacy
+ *
+ * This component was part of the Ableton Live mixer interface.
+ * It has been commented out because TrackState is no longer defined.
+ *
+ * To use this component again:
+ * 1. Define TrackState in src/types/osc-messages.ts or create your own type
+ * 2. Update your store to manage track state
+ * 3. Uncomment and adapt this component to your needs
+ */
+
+// Example TrackState type you might define:
+interface TrackState {
+  volume: number // 0.0 to 1.0
+  pan: number // -1.0 to 1.0
+  mute: boolean
+  solo: boolean
+  name: string
+}
 
 interface MixerChannelProps {
   trackIndex: number
