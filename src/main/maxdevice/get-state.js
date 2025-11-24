@@ -433,10 +433,10 @@ function serialize_scene(id) {
 }
 
 function serialize_track(id, type) {
-  log('serializing ' + type + ' track id: ' + id, true)
+  log('serializing ' + type + ' track id: ' + id)
   const track = get_object(id)
   const get = construct_get(track)
-  log(get('name'), true)
+  log(get('name'))
   const mixer_device_id = get('mixer_device')
   const mixer_device_data = serialize_mixer_device(mixer_device_id, type === 'master')
   const device_id_arr = get('devices')
@@ -592,5 +592,6 @@ function bang() {
   log('\n\n=======================', true)
   const song_data = serialize_song()
   log(JSON.stringify(song_data).length, true)
-  outlet_dictionary(0, song_data)
+  outlet(0, JSON.stringify(song_data))
+  log('data sent', true)
 }
