@@ -20,7 +20,7 @@ export default function HydraConfigurationLayout() {
                 <LivePreview />
               </Panel>
 
-              <PanelResizeHandle className="h-1 bg-stone-800 cursor-col-resize flex items-center justify-center" />
+              <PanelResizeHandle className="h-px bg-stone-800 cursor-col-resize flex items-center justify-center" />
 
               {/* Ableton Monitor */}
               <Panel defaultSize={40} minSize={20}>
@@ -29,7 +29,7 @@ export default function HydraConfigurationLayout() {
             </PanelGroup>
           </Panel>
 
-          <PanelResizeHandle className="w-1 bg-stone-800 cursor-row-resize flex items-center justify-center" />
+          <PanelResizeHandle className="w-px bg-stone-800 cursor-row-resize flex items-center justify-center" />
 
           {/* Right Section - Hydra Preview & Hydra Patches */}
           <Panel defaultSize={30} minSize={20}>
@@ -39,14 +39,14 @@ export default function HydraConfigurationLayout() {
                 <HydraPreview />
               </Panel>
 
-              <PanelResizeHandle className="h-1 bg-stone-800 cursor-col-resize flex items-center justify-center" />
+              <PanelResizeHandle className="h-px bg-stone-800 cursor-col-resize flex items-center justify-center" />
 
               {/* Video Controls */}
               <Panel defaultSize={20} minSize={20}>
                 <VideoControls />
               </Panel>
 
-              <PanelResizeHandle className="h-1 bg-stone-800 cursor-col-resize flex items-center justify-center" />
+              <PanelResizeHandle className="h-px bg-stone-800 cursor-col-resize flex items-center justify-center" />
 
               {/* Hydra Patches */}
               <Panel defaultSize={50} minSize={20}>

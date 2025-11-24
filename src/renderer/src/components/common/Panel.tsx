@@ -2,7 +2,6 @@ import { ReactNode, useState } from 'react'
 
 interface PanelProps {
   title?: string
-  bg?: string
   collapsible?: boolean
   defaultCollapsed?: boolean
   headerActions?: ReactNode
@@ -13,7 +12,6 @@ interface PanelProps {
 
 export default function Panel({
   title,
-  bg = 'bg-stone-700',
   collapsible = false,
   defaultCollapsed = false,
   headerActions,
@@ -24,7 +22,7 @@ export default function Panel({
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
 
   return (
-    <div className={`w-full h-full ${bg} flex flex-col ${className}`}>
+    <div className={`w-full h-full flex flex-col ${className}`}>
       {/* Header - only show if title or collapsible or headerActions exist */}
       {(title || collapsible || headerActions) && (
         <div className="flex items-center justify-between p-4 shrink-0">
