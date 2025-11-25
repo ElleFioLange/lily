@@ -313,7 +313,7 @@ function setupIPCHandlers(): void {
   // ============================================================================
   // Configuration File Handlers
   // ============================================================================
-  const getConfigPath = () => join(app.getPath('userData'), 'lily.config.json')
+  const getConfigPath = () => join(app.getPath('userData'), 'lily.config.yaml')
 
   ipcMain.handle('config:getPath', async () => {
     return getConfigPath()

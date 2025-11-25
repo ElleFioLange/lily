@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback } from 'react'
 import Panel from '../common/Panel'
 import type { PanelId } from '../../stores/useFocusStore'
-import JSONEditor, { type JSONEditorRef } from '../JSONEditor'
+import YAMLEditor, { type YAMLEditorRef } from '../YAMLEditor'
 import JSONNavigation from '../JSONNavigation'
 import { useConfigurationStore } from '../../stores/useConfigurationStore'
 
@@ -10,7 +10,7 @@ interface ProjectConfigProps {
 }
 
 export default function ProjectConfig({ panelId }: ProjectConfigProps) {
-  const editorRef = useRef<JSONEditorRef>(null)
+  const editorRef = useRef<YAMLEditorRef>(null)
   const [topLevelKeys, setTopLevelKeys] = useState<string[]>([])
 
   const { config, setConfig, loadConfig, saveConfig, resetConfig, configPath, isValid, error } =
@@ -71,7 +71,7 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
 
       {/* Editor Container */}
       <div className="relative flex-1 overflow-hidden flex">
-        <JSONEditor
+        <YAMLEditor
           ref={editorRef}
           value={config}
           onChange={setConfig}

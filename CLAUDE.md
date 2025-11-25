@@ -226,7 +226,7 @@ All three layouts currently share the same structure:
 - **AbletonMonitor.tsx** - Example panel with button that sends custom OSC message via `window.api.osc.send()`
 - **HydraPatches.tsx** - Placeholder for Hydra patch browser/editor
 - **VideoControls.tsx** - Video control panel
-- **ProjectConfig.tsx** - JSON configuration editor with CodeMirror, navigation, and file persistence
+- **ProjectConfig.tsx** - YAML configuration editor with CodeMirror, navigation, and file persistence
 
 ### Keyboard Shortcuts
 
@@ -291,55 +291,53 @@ All three layouts currently share the same structure:
 
 ### Configuration System
 
-**JSON Configuration Editor** (`src/renderer/src/components/panels/ProjectConfig.tsx`):
+**YAML Configuration Editor** (`src/renderer/src/components/panels/ProjectConfig.tsx`):
 
-- Full-featured JSON editor powered by CodeMirror 6
+- Full-featured YAML editor powered by CodeMirror 6
 - Syntax highlighting with stone color theme
 - Code folding for objects and arrays
-- Navigation panel showing top-level keys
+- Navigation panel showing top-level keys (collapsible)
 - Click navigation to scroll to specific keys
 - Load/Save/Reset buttons for file operations
-- Real-time JSON validation with error display
+- Real-time YAML validation with error display
 - File path display
 
 **Configuration Store** (`src/renderer/src/stores/useConfigurationStore.ts`):
 
 - Zustand store managing configuration state
-- State: `config` (JSON string), `configPath`, `isValid`, `error`
+- State: `config` (YAML string), `configPath`, `isValid`, `error`
 - Actions: `setConfig()`, `loadConfig()`, `saveConfig()`, `resetConfig()`
-- File location: `lily.config.json` in Electron `userData` directory
+- File location: `lily.config.yaml` in Electron `userData` directory
 - Default template with project, OSC, UI, and custom sections
 
 **Default Configuration Structure**:
 
-```json
-{
-  "_comment_project": "Project metadata and settings",
-  "project": {
-    "name": "Lily Project",
-    "version": "1.0.0",
-    "author": ""
-  },
-  "_comment_osc": "Open Sound Control configuration",
-  "osc": {
-    "outputPort": 5459,
-    "inputPort": 5460,
-    "targetHost": "localhost"
-  },
-  "_comment_ui": "User interface settings",
-  "ui": {
-    "theme": "dark",
-    "defaultLayout": "performance",
-    "panelSizes": {}
-  },
-  "_comment_custom": "Add your own configuration here",
-  "custom": {}
-}
+```yaml
+# Project metadata and settings
+project:
+  name: Lily Project
+  version: "1.0.0"
+  author: ""
+
+# Open Sound Control configuration
+osc:
+  outputPort: 5459
+  inputPort: 5460
+  targetHost: localhost
+
+# User interface settings
+ui:
+  theme: dark
+  defaultLayout: performance
+  panelSizes: {}
+
+# Add your own configuration here
+custom: {}
 ```
 
 **CodeMirror Extensions Used**:
 
-- `json()` - JSON language support
+- `yaml()` - YAML language support
 - `foldGutter()` - Code folding UI
 - `lineNumbers()` - Line number gutter
 - `highlightActiveLine()` - Active line highlighting
@@ -353,7 +351,7 @@ All three layouts currently share the same structure:
 
 **Components**:
 
-- **JSONEditor** (`src/renderer/src/components/JSONEditor.tsx`) - CodeMirror wrapper
+- **YAMLEditor** (`src/renderer/src/components/YAMLEditor.tsx`) - CodeMirror wrapper
 - **JSONNavigation** (`src/renderer/src/components/JSONNavigation.tsx`) - Key navigation panel
 
 **Usage**:
@@ -366,7 +364,7 @@ const { config, setConfig, loadConfig, saveConfig } = useConfigurationStore()
 await loadConfig()
 
 // Update configuration
-setConfig(newJsonString)
+setConfig(newYamlString)
 
 // Save configuration to disk
 await saveConfig()

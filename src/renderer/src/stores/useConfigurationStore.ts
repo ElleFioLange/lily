@@ -1,31 +1,27 @@
 import { create } from 'zustand'
+import * as jsyaml from 'js-yaml'
 
 // Default configuration template
-const DEFAULT_CONFIG = {
-  _comment_project: 'Project metadata and settings',
-  project: {
-    name: 'Lily Project',
-    version: '1.0.0',
-    author: ''
-  },
+const DEFAULT_CONFIG = `# Project metadata and settings
+project:
+  name: Lily Project
+  version: "1.0.0"
+  author: ""
 
-  _comment_osc: 'Open Sound Control configuration',
-  osc: {
-    outputPort: 5459,
-    inputPort: 5460,
-    targetHost: 'localhost'
-  },
+# Open Sound Control configuration
+osc:
+  outputPort: 5459
+  inputPort: 5460
+  targetHost: localhost
 
-  _comment_ui: 'User interface settings',
-  ui: {
-    theme: 'dark',
-    defaultLayout: 'performance',
-    panelSizes: {}
-  },
+# User interface settings
+ui:
+  theme: dark
+  defaultLayout: performance
+  panelSizes: {}
 
-  _comment_custom: 'Add your own configuration here',
-  custom: {}
-}
+# Add your own configuration here
+custom: {}`
 
 interface ConfigurationState {
   config: string
@@ -40,21 +36,21 @@ interface ConfigurationState {
 }
 
 export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
-  config: JSON.stringify(DEFAULT_CONFIG, null, 2),
+  config: DEFAULT_CONFIG,
   configPath: null,
   isValid: true,
   error: null,
 
   setConfig: (config: string) => {
-    // Validate JSON
+    // Validate YAML
     try {
-      JSON.parse(config)
+      jsyaml.load(config)
       set({ config, isValid: true, error: null })
     } catch (err) {
       set({
         config,
         isValid: false,
-        error: err instanceof Error ? err.message : 'Invalid JSON'
+        error: err instanceof Error ? err.message : 'Invalid YAML'
       })
     }
   },
@@ -64,7 +60,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
       const result = await window.api.config.load()
       if (result.success && result.content) {
         // Validate loaded content
-        JSON.parse(result.content)
+        jsyaml.load(result.content)
         set({
           config: result.content,
           configPath: result.path || null,
@@ -85,7 +81,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
   saveConfig: async () => {
     const state = get()
     if (!state.isValid) {
-      set({ error: 'Cannot save invalid JSON' })
+      set({ error: 'Cannot save invalid YAML' })
       return
     }
 
@@ -103,7 +99,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
 
   resetConfig: () => {
     set({
-      config: JSON.stringify(DEFAULT_CONFIG, null, 2),
+      config: DEFAULT_CONFIG,
       isValid: true,
       error: null
     })

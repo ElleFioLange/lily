@@ -9,25 +9,24 @@ import {
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap, lineNumbers, highlightActiveLine } from '@codemirror/view'
 import { defaultKeymap, history, indentWithTab } from '@codemirror/commands'
-import { json } from '@codemirror/lang-json'
+import { yaml } from '@codemirror/lang-yaml'
 import { foldGutter, foldKeymap, syntaxHighlighting, HighlightStyle } from '@codemirror/language'
 import { search, searchKeymap } from '@codemirror/search'
 import { tags } from '@lezer/highlight'
-// TODO
-// import rainbowBrackets from 'rainbowbrackets'
+import * as jsyaml from 'js-yaml'
 
-interface JSONEditorProps {
+interface YAMLEditorProps {
   value: string
   onChange: (value: string) => void
   onTopLevelKeysChange?: (keys: string[]) => void
 }
 
-export interface JSONEditorRef {
+export interface YAMLEditorRef {
   scrollToKey: (key: string) => void
 }
 
-const JSONEditor = forwardRef<JSONEditorRef, JSONEditorProps>(
-  ({ value, onChange, onTopLevelKeysChange }, ref: ForwardedRef<JSONEditorRef>) => {
+const YAMLEditor = forwardRef<YAMLEditorRef, YAMLEditorProps>(
+  ({ value, onChange, onTopLevelKeysChange }, ref: ForwardedRef<YAMLEditorRef>) => {
     const editorRef = useRef<HTMLDivElement>(null)
     const viewRef = useRef<EditorView | null>(null)
 
@@ -77,9 +76,9 @@ const JSONEditor = forwardRef<JSONEditorRef, JSONEditorProps>(
       '.cm-cursor': {
         borderLeftColor: '#f5f5f4'
       },
-      // JSON syntax highlighting
+      // YAML syntax highlighting
       '.cm-property': {
-        color: '#d6d3d1' // stone-300 - JSON keys
+        color: '#d6d3d1' // stone-300 - YAML keys
       },
       '.cm-string': {
         color: '#a8a29e' // stone-400 - string values
@@ -94,7 +93,7 @@ const JSONEditor = forwardRef<JSONEditorRef, JSONEditorProps>(
         color: '#57534e' // stone-600 - brackets, colons, commas
       },
       '.cm-comment': {
-        color: '#78716c', // stone-500 - comments (if supported)
+        color: '#78716c', // stone-500 - comments
         fontStyle: 'italic'
       }
     })
@@ -108,15 +107,15 @@ const JSONEditor = forwardRef<JSONEditorRef, JSONEditorProps>(
       { tag: tags.punctuation, color: '#38bdf8' } // sky 400
     ])
 
-    // Extract top-level keys from JSON string
-    const extractTopLevelKeys = useCallback((jsonString: string): string[] => {
+    // Extract top-level keys from YAML string
+    const extractTopLevelKeys = useCallback((yamlString: string): string[] => {
       try {
-        const parsed = JSON.parse(jsonString)
+        const parsed = jsyaml.load(yamlString)
         if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
           return Object.keys(parsed).filter((key) => !key.startsWith('_comment'))
         }
       } catch {
-        // Invalid JSON, return empty array
+        // Invalid YAML, return empty array
       }
       return []
     }, [])
@@ -127,7 +126,7 @@ const JSONEditor = forwardRef<JSONEditorRef, JSONEditorProps>(
       if (!view) return
 
       const doc = view.state.doc
-      const searchPattern = `"${key}":`
+      const searchPattern = `${key}:`
 
       // Search through the document for the key
       for (let lineNum = 1; lineNum <= doc.lines; lineNum++) {
@@ -162,12 +161,10 @@ const JSONEditor = forwardRef<JSONEditorRef, JSONEditorProps>(
           lineNumbers(),
           highlightActiveLine(),
           foldGutter(),
-          json(),
+          yaml(),
           search(),
           stoneTheme,
           syntaxHighlighting(highlightStyle),
-          // TODO
-          // rainbowBrackets(),
           EditorView.lineWrapping,
           history(),
           keymap.of([...defaultKeymap, ...foldKeymap, ...searchKeymap, indentWithTab]),
@@ -231,6 +228,6 @@ const JSONEditor = forwardRef<JSONEditorRef, JSONEditorProps>(
   }
 )
 
-JSONEditor.displayName = 'JSONEditor'
+YAMLEditor.displayName = 'YAMLEditor'
 
-export default JSONEditor
+export default YAMLEditor
