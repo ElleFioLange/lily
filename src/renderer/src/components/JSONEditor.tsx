@@ -38,7 +38,7 @@ const JSONEditor = forwardRef<JSONEditorRef, JSONEditorProps>(
       },
       '.cm-content': {
         caretColor: '#f5f5f4',
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+        fontFamily: 'Monaspace Neon',
         padding: '8px 0'
       },
       '.cm-gutters': {
@@ -189,6 +189,7 @@ const JSONEditor = forwardRef<JSONEditorRef, JSONEditorProps>(
         view.destroy()
         viewRef.current = null
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []) // Only run once on mount
 
     // Update editor content when value prop changes from outside

@@ -70,14 +70,14 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
       )}
 
       {/* Editor Container */}
-      <div className="relative flex-1 overflow-hidden">
-        <JSONNavigation keys={topLevelKeys} onKeyClick={handleKeyClick} />
+      <div className="relative flex-1 overflow-hidden flex">
         <JSONEditor
           ref={editorRef}
           value={config}
           onChange={setConfig}
           onTopLevelKeysChange={setTopLevelKeys}
         />
+        <JSONNavigation keys={topLevelKeys} onKeyClick={handleKeyClick} />
       </div>
     </Panel>
   )
