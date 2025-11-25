@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { useFocusStore, type PanelId } from '../stores/useFocusStore'
 import { useLayoutStore } from '../stores/useLayoutStore'
 import type { LayoutType } from 'src/types/layouts'
+import { useInputStore } from '@renderer/stores/useInputStore'
+import parseInput from '@renderer/utils/parseInput'
 
 type ModifierKey = 'ctrl' | 'shift' | 'alt' | 'meta'
 
@@ -84,8 +86,11 @@ export function useKeyboardShortcuts(): void {
         key: 'Enter',
         modifiers: ['ctrl', 'shift'],
         handler: () => {
-          console.log('LivePreview: Ctrl+Shift+Enter pressed')
-          // TODO: Implement specific action
+          const { input } = useInputStore.getState()
+          const messages = parseInput(input)
+          messages.forEach(({ address, args }) => {
+            window.api.osc.send(address, args)
+          })
         },
         bypassTextInputs: true,
         description: 'LivePreview special action (works even in text inputs)'
