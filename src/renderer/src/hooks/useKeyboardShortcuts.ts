@@ -93,7 +93,7 @@ export function useKeyboardShortcuts(): void {
           })
         },
         bypassTextInputs: true,
-        description: 'LivePreview special action (works even in text inputs)'
+        description: 'Evaluate input and send control messages'
       },
       {
         panelId: 'ableton-monitor',
