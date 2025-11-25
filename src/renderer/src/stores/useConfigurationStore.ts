@@ -1,68 +1,104 @@
 import { create } from 'zustand'
 import * as jsyaml from 'js-yaml'
+import parseConfig from '@renderer/utils/parseConfig'
 
 // Default configuration template
-const DEFAULT_CONFIG = `# Project metadata and settings
-project:
-  name: Lily Project
-  version: "1.0.0"
-  author: ""
+const DEFAULT_CONFIG = `whir_and_hum:
+  type: clip
+  path: live_set tracks 0 clip_slots 0 clip
+  object: active
+  present: true
+  absent: false
 
-# Open Sound Control configuration
-osc:
-  outputPort: 5459
-  inputPort: 5460
-  targetHost: localhost
+base:
+  type: device_parameter
+  path: live_set tracks 0 devices 0 parameters 1
+  object: value
+  present: -12
+  absent: 0
 
-# User interface settings
-ui:
-  theme: dark
-  defaultLayout: performance
-  panelSizes: {}
+kick:
+  type: clip
+  path: live_set tracks 1 clip_slots 0 clip
+  object: active
+  present: true
+  absent: false
 
-# Add your own configuration here
-custom: {}`
+vase:
+  type: clip
+  path: live_set tracks 0 devices 0 parameters 1
+  object: active
+  present: true
+  absent: false
+
+chaos:
+  type: track
+  path: live_set return_tracks 0
+  object: active
+  present: true
+  absent: false
+`
+
+export type ConfigurationJSON = {
+  [keyword: string]: {
+    type: 'track' | 'clip' | 'device' | 'device_parameter'
+    path: string
+    object: 'active' | 'value'
+    present: boolean | number
+    absent: boolean | number
+  }
+} | null
 
 interface ConfigurationState {
-  config: string
+  rawConfig: string
+  parsedConfig: ConfigurationJSON | null
   configPath: string | null
   isValid: boolean
   error: string | null
-  setConfig: (config: string) => void
-  loadConfig: () => Promise<void>
-  saveConfig: () => Promise<void>
-  resetConfig: () => void
-  setConfigPath: (path: string | null) => void
+  setRawConfig: (rawConfig: string) => void
+  setParsedConfig: (parsedConfig: ConfigurationJSON) => void
+  loadRawConfig: () => Promise<void>
+  saveRawConfig: () => Promise<void>
+  resetRawConfig: () => void
+  setRawConfigPath: (path: string | null) => void
 }
 
 export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
-  config: DEFAULT_CONFIG,
+  rawConfig: DEFAULT_CONFIG,
+  parsedConfig: parseConfig(DEFAULT_CONFIG).parsedConfig,
   configPath: null,
   isValid: true,
   error: null,
 
-  setConfig: (config: string) => {
+  setRawConfig: (rawConfig: string) => {
     // Validate YAML
     try {
-      jsyaml.load(config)
-      set({ config, isValid: true, error: null })
+      jsyaml.load(rawConfig)
+      const { parsedConfig, err } = parseConfig(rawConfig)
+      if (err) throw err
+      set({ rawConfig, parsedConfig, isValid: true, error: null })
     } catch (err) {
       set({
-        config,
+        rawConfig,
+        parsedConfig: null,
         isValid: false,
         error: err instanceof Error ? err.message : 'Invalid YAML'
       })
     }
   },
 
-  loadConfig: async () => {
+  setParsedConfig: (parsedConfig: ConfigurationJSON) => {
+    set({ parsedConfig })
+  },
+
+  loadRawConfig: async () => {
     try {
       const result = await window.api.config.load()
       if (result.success && result.content) {
         // Validate loaded content
         jsyaml.load(result.content)
         set({
-          config: result.content,
+          rawConfig: result.content,
           configPath: result.path || null,
           isValid: true,
           error: null
@@ -78,7 +114,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     }
   },
 
-  saveConfig: async () => {
+  saveRawConfig: async () => {
     const state = get()
     if (!state.isValid) {
       set({ error: 'Cannot save invalid YAML' })
@@ -86,7 +122,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     }
 
     try {
-      const result = await window.api.config.save(state.config)
+      const result = await window.api.config.save(state.rawConfig)
       if (result.success) {
         set({ configPath: result.path || null, error: null })
       } else if (result.error) {
@@ -97,22 +133,23 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     }
   },
 
-  resetConfig: () => {
+  resetRawConfig: () => {
     set({
-      config: DEFAULT_CONFIG,
+      rawConfig: DEFAULT_CONFIG,
+      parsedConfig: parseConfig(DEFAULT_CONFIG).parsedConfig,
       isValid: true,
       error: null
     })
   },
 
-  setConfigPath: (path) => set({ configPath: path })
+  setRawConfigPath: (path) => set({ configPath: path })
 }))
 
 // Initialize config path on app start
 export async function initializeConfigStore(): Promise<void> {
   try {
     const path = await window.api.config.getPath()
-    useConfigurationStore.getState().setConfigPath(path)
+    useConfigurationStore.getState().setRawConfigPath(path)
   } catch (err) {
     console.error('Failed to initialize config path:', err)
   }

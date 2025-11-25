@@ -13,20 +13,28 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
   const editorRef = useRef<YAMLEditorRef>(null)
   const [topLevelKeys, setTopLevelKeys] = useState<string[]>([])
 
-  const { config, setConfig, loadConfig, saveConfig, resetConfig, configPath, isValid, error } =
-    useConfigurationStore()
+  const {
+    rawConfig,
+    setRawConfig,
+    loadRawConfig,
+    saveRawConfig,
+    resetRawConfig,
+    configPath,
+    isValid,
+    error
+  } = useConfigurationStore()
 
   const handleLoad = useCallback(async () => {
-    await loadConfig()
-  }, [loadConfig])
+    await loadRawConfig()
+  }, [loadRawConfig])
 
   const handleSave = useCallback(async () => {
-    await saveConfig()
-  }, [saveConfig])
+    await saveRawConfig()
+  }, [saveRawConfig])
 
   const handleReset = useCallback(() => {
-    resetConfig()
-  }, [resetConfig])
+    resetRawConfig()
+  }, [resetRawConfig])
 
   const handleKeyClick = useCallback((key: string) => {
     editorRef.current?.scrollToKey(key)
@@ -73,8 +81,8 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
       <div className="relative flex-1 overflow-hidden flex">
         <YAMLEditor
           ref={editorRef}
-          value={config}
-          onChange={setConfig}
+          value={rawConfig}
+          onChange={setRawConfig}
           onTopLevelKeysChange={setTopLevelKeys}
         />
         <JSONNavigation keys={topLevelKeys} onKeyClick={handleKeyClick} />
