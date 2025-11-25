@@ -137,9 +137,28 @@ export class OSCClient {
       return
     }
 
+    // Need to add OSC typings to the arguments
+    const typedArgs = args.map((arg) => {
+      let type: string = typeof arg
+      switch (type) {
+        case 'number': {
+          type = Number.isInteger(arg) ? 'i' : 'f'
+          break
+        }
+        case 'string': {
+          type = 's'
+          break
+        }
+        case 'boolean': {
+          type = arg ? 'T' : 'F'
+        }
+      }
+      return { type, value: arg }
+    })
+
     this.udpPort.send({
       address,
-      args
+      args: typedArgs
     })
 
     console.log('Sent OSC:', address, args)

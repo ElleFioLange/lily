@@ -8,7 +8,7 @@ interface AbletonMonitorProps {
 
 export default function AbletonMonitor({ panelId }: AbletonMonitorProps) {
   const handleInitRequest = async () => {
-    await window.api.osc.send('/request/connection/confirm')
+    await window.api.osc.send('/request/connection/confirm', [true])
     window.api.osc.onMessage((msg) => {
       if (msg.address === '/send/connection/confirm') console.log('connection confirmed')
     })
