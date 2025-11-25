@@ -1,6 +1,9 @@
 @import './base.css';
 @import 'tailwindcss';
 
+/* TODO */
+/* .rainbow-bracket-red: { color: } */
+
 @layer base {
   body {
     @apply bg-stone-950 text-stone-100 overflow-hidden select-none;

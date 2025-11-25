@@ -6,7 +6,7 @@ interface JSONNavigationProps {
 }
 
 export default function JSONNavigation({ keys, onKeyClick }: JSONNavigationProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(true)
 
   if (keys.length === 0) {
     return null

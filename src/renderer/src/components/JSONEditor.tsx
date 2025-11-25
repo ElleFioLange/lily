@@ -8,10 +8,13 @@ import {
 } from 'react'
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap, lineNumbers, highlightActiveLine } from '@codemirror/view'
-import { defaultKeymap, indentWithTab } from '@codemirror/commands'
+import { defaultKeymap, history, indentWithTab } from '@codemirror/commands'
 import { json } from '@codemirror/lang-json'
-import { foldGutter, foldKeymap } from '@codemirror/language'
+import { foldGutter, foldKeymap, syntaxHighlighting, HighlightStyle } from '@codemirror/language'
 import { search, searchKeymap } from '@codemirror/search'
+import { tags } from '@lezer/highlight'
+// TODO
+// import rainbowBrackets from 'rainbowbrackets'
 
 interface JSONEditorProps {
   value: string
@@ -32,7 +35,7 @@ const JSONEditor = forwardRef<JSONEditorRef, JSONEditorProps>(
     const stoneTheme = EditorView.theme({
       '&': {
         backgroundColor: '#1c1917', // stone-900
-        color: '#f5f5f4', // stone-100
+        // color: '#f5f5f4', // stone-100
         height: '100%',
         fontSize: '14px'
       },
@@ -96,6 +99,15 @@ const JSONEditor = forwardRef<JSONEditorRef, JSONEditorProps>(
       }
     })
 
+    const highlightStyle = HighlightStyle.define([
+      { tag: tags.string, color: '#6ee7b7' }, // emerald  300
+      { tag: tags.number, color: '#c4b5fd' }, // violet 300
+      { tag: tags.bool, color: '#fb7185' }, // rose 400
+      { tag: tags.null, color: '#c4b5fd' }, // violet 300
+      { tag: tags.brace, color: '#fcd34d' }, // amber 300
+      { tag: tags.punctuation, color: '#38bdf8' } // sky 400
+    ])
+
     // Extract top-level keys from JSON string
     const extractTopLevelKeys = useCallback((jsonString: string): string[] => {
       try {
@@ -153,7 +165,11 @@ const JSONEditor = forwardRef<JSONEditorRef, JSONEditorProps>(
           json(),
           search(),
           stoneTheme,
+          syntaxHighlighting(highlightStyle),
+          // TODO
+          // rainbowBrackets(),
           EditorView.lineWrapping,
+          history(),
           keymap.of([...defaultKeymap, ...foldKeymap, ...searchKeymap, indentWithTab]),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {

@@ -10,7 +10,7 @@ export default function Layout() {
   return (
     <PanelGroup direction="horizontal" className="w-full h-full">
       {/* Main Content Area - Left Side */}
-      <Panel defaultSize={85} minSize={50}>
+      <Panel defaultSize={70} minSize={50}>
         <PanelGroup direction="horizontal">
           {/* Left Section - Live Preview & Ableton Monitor */}
           <Panel defaultSize={70} minSize={40}>
@@ -60,7 +60,7 @@ export default function Layout() {
       <PanelResizeHandle className="w-px bg-stone-800 cursor-col-resize flex items-center justify-center" />
 
       {/* Project Config - Right Sidebar */}
-      <Panel defaultSize={15} minSize={10} maxSize={30} collapsible>
+      <Panel defaultSize={30} minSize={10} maxSize={30} collapsible>
         <ProjectConfig panelId="project-config" />
       </Panel>
     </PanelGroup>
