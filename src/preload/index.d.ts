@@ -74,6 +74,17 @@ interface LilyAPI {
     setLayout: (layout: LayoutType) => Promise<void>
     onLayoutChange: (callback: (layout: LayoutType) => void) => void
   }
+
+  /**
+   * Configuration File API
+   *
+   * Methods for loading, saving, and managing configuration files
+   */
+  config: {
+    load: () => Promise<{ success: boolean; content?: string; path?: string; error?: string }>
+    save: (content: string) => Promise<{ success: boolean; path?: string; error?: string }>
+    getPath: () => Promise<string>
+  }
 }
 
 declare global {

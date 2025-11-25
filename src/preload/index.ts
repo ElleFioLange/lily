@@ -129,6 +129,17 @@ const api = {
     onLayoutChange: (callback: (layout: LayoutType) => void) => {
       ipcRenderer.on('layout:change', (_, layout) => callback(layout))
     }
+  },
+
+  // ============================================================================
+  // Configuration File API
+  // ============================================================================
+  config: {
+    load: (): Promise<{ success: boolean; content?: string; path?: string; error?: string }> =>
+      ipcRenderer.invoke('config:load'),
+    save: (content: string): Promise<{ success: boolean; path?: string; error?: string }> =>
+      ipcRenderer.invoke('config:save', content),
+    getPath: (): Promise<string> => ipcRenderer.invoke('config:getPath')
   }
 }
 

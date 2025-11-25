@@ -226,7 +226,7 @@ All three layouts currently share the same structure:
 - **AbletonMonitor.tsx** - Example panel with button that sends custom OSC message via `window.api.osc.send()`
 - **HydraPatches.tsx** - Placeholder for Hydra patch browser/editor
 - **VideoControls.tsx** - Video control panel
-- **ProjectConfig.tsx** - Placeholder for project configuration options
+- **ProjectConfig.tsx** - JSON configuration editor with CodeMirror, navigation, and file persistence
 
 ### Keyboard Shortcuts
 
@@ -283,9 +283,93 @@ All three layouts currently share the same structure:
 **Modifier Keys**: `'ctrl'`, `'shift'`, `'alt'`, `'meta'` (Cmd on macOS maps to Ctrl for cross-platform compatibility)
 
 **Panel IDs**: Pass `panelId` prop to panel components in layouts:
+
 ```typescript
 <LivePreview panelId="live-preview" />
 <AbletonMonitor panelId="ableton-monitor" />
+```
+
+### Configuration System
+
+**JSON Configuration Editor** (`src/renderer/src/components/panels/ProjectConfig.tsx`):
+
+- Full-featured JSON editor powered by CodeMirror 6
+- Syntax highlighting with stone color theme
+- Code folding for objects and arrays
+- Navigation panel showing top-level keys
+- Click navigation to scroll to specific keys
+- Load/Save/Reset buttons for file operations
+- Real-time JSON validation with error display
+- File path display
+
+**Configuration Store** (`src/renderer/src/stores/useConfigurationStore.ts`):
+
+- Zustand store managing configuration state
+- State: `config` (JSON string), `configPath`, `isValid`, `error`
+- Actions: `setConfig()`, `loadConfig()`, `saveConfig()`, `resetConfig()`
+- File location: `lily.config.json` in Electron `userData` directory
+- Default template with project, OSC, UI, and custom sections
+
+**Default Configuration Structure**:
+
+```json
+{
+  "_comment_project": "Project metadata and settings",
+  "project": {
+    "name": "Lily Project",
+    "version": "1.0.0",
+    "author": ""
+  },
+  "_comment_osc": "Open Sound Control configuration",
+  "osc": {
+    "outputPort": 5459,
+    "inputPort": 5460,
+    "targetHost": "localhost"
+  },
+  "_comment_ui": "User interface settings",
+  "ui": {
+    "theme": "dark",
+    "defaultLayout": "performance",
+    "panelSizes": {}
+  },
+  "_comment_custom": "Add your own configuration here",
+  "custom": {}
+}
+```
+
+**CodeMirror Extensions Used**:
+
+- `json()` - JSON language support
+- `foldGutter()` - Code folding UI
+- `lineNumbers()` - Line number gutter
+- `highlightActiveLine()` - Active line highlighting
+- Custom stone theme matching application palette
+
+**File Operations** (via Electron IPC):
+
+- `window.api.config.load()` - Load from disk
+- `window.api.config.save(content)` - Save to disk
+- `window.api.config.getPath()` - Get file path
+
+**Components**:
+
+- **JSONEditor** (`src/renderer/src/components/JSONEditor.tsx`) - CodeMirror wrapper
+- **JSONNavigation** (`src/renderer/src/components/JSONNavigation.tsx`) - Key navigation panel
+
+**Usage**:
+
+```typescript
+// Access config store
+const { config, setConfig, loadConfig, saveConfig } = useConfigurationStore()
+
+// Load configuration from disk
+await loadConfig()
+
+// Update configuration
+setConfig(newJsonString)
+
+// Save configuration to disk
+await saveConfig()
 ```
 
 **Legacy/Example Components** (simplified to placeholders with guidance):

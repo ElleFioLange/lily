@@ -5,6 +5,7 @@ import { setupOSCListeners } from './stores/useOSCStore'
 import { useLayoutStore, setupLayoutListeners } from './stores/useLayoutStore'
 import HydraConfigurationLayout from './components/HydraConfigurationLayout'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { initializeConfigStore } from './stores/useConfigurationStore'
 
 function App(): React.JSX.Element {
   const currentLayout = useLayoutStore((state) => state.currentLayout)
@@ -18,6 +19,9 @@ function App(): React.JSX.Element {
 
     // Setup layout switching listeners
     setupLayoutListeners()
+
+    // Initialize configuration store
+    initializeConfigStore()
 
     window.api.osc.send('/request/connection/confirm')
   }, [])

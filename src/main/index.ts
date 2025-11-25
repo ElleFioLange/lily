@@ -5,6 +5,7 @@ import icon from '../../resources/icon.png?asset'
 import { getOSCServer } from './osc/server'
 import { getOSCClient } from './osc/client'
 import { exportMaxDevice, quickInstallMaxDevice, checkMaxDeviceExists } from './maxdevice/export'
+import { promises as fs } from 'fs'
 
 // Initialize OSC server and client
 const oscServer = getOSCServer({ port: 5460 })
@@ -307,5 +308,43 @@ function setupIPCHandlers(): void {
   // ============================================================================
   ipcMain.handle('layout:set', async (_, layout: 'performance' | 'ableton-configuration') => {
     mainWindowRef?.webContents.send('layout:change', layout)
+  })
+
+  // ============================================================================
+  // Configuration File Handlers
+  // ============================================================================
+  const getConfigPath = () => join(app.getPath('userData'), 'lily.config.json')
+
+  ipcMain.handle('config:getPath', async () => {
+    return getConfigPath()
+  })
+
+  ipcMain.handle('config:load', async () => {
+    const configPath = getConfigPath()
+    try {
+      const content = await fs.readFile(configPath, 'utf-8')
+      return { success: true, content, path: configPath }
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        return { success: false, error: 'Configuration file not found' }
+      }
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to load configuration'
+      }
+    }
+  })
+
+  ipcMain.handle('config:save', async (_, content: string) => {
+    const configPath = getConfigPath()
+    try {
+      await fs.writeFile(configPath, content, 'utf-8')
+      return { success: true, path: configPath }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to save configuration'
+      }
+    }
   })
 }
