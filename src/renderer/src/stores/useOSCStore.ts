@@ -33,15 +33,16 @@ import { useLiveStore } from './useLiveStore'
 // Store Interface
 // ============================================================================
 
+type ConnectionStatus = 'uninitialized' | 'confirmed' | 'failed'
+
 interface OSCStore {
-  // State: Last received OSC message
+  // State
   lastMessage: OSCMessage | null
+  connectionStatus: ConnectionStatus
 
-  // Action: Update last message
   setLastMessage: (message: OSCMessage) => void
-
-  // Action: Send an OSC message
   sendMessage: (address: string, args?: Array<number | string | boolean>) => Promise<void>
+  setConnectionStatus: (status: ConnectionStatus) => void
 }
 
 // ============================================================================
@@ -51,6 +52,7 @@ interface OSCStore {
 export const useOSCStore = create<OSCStore>((set) => ({
   // Initial state
   lastMessage: null,
+  connectionStatus: 'uninitialized' as ConnectionStatus,
 
   // Update last message
   setLastMessage: (message) =>
@@ -58,10 +60,11 @@ export const useOSCStore = create<OSCStore>((set) => ({
       lastMessage: message
     }),
 
-  // Send OSC message
   sendMessage: async (address, args = []) => {
     await window.api.osc.send(address, args)
-  }
+  },
+
+  setConnectionStatus: (status) => set({ connectionStatus: status })
 }))
 
 // ============================================================================
@@ -94,36 +97,42 @@ export function setupOSCListeners(): void {
     // Update last message
     oscStore.setLastMessage(message)
 
-    if (message.address === '/send/state') {
-      const payload = message.args[0] as string
+    switch (message.address) {
+      // Full project state
+      case '/send/state': {
+        const payload = message.args[0] as string
 
-      // Messages are sent with a structure that looks like messageIndex/totalMessages [DATA]
-      // First break out marker and data using space character as separation point
-      const breakIndex = payload.indexOf(' ')
-      const marker = payload.slice(0, breakIndex)
-      const data = payload.slice(breakIndex + 1)
+        // Messages are sent with a structure that looks like messageIndex/totalMessages [DATA]
+        // First break out marker and data using space character as separation point
+        const breakIndex = payload.indexOf(' ')
+        const marker = payload.slice(0, breakIndex)
+        const data = payload.slice(breakIndex + 1)
 
-      // Then break out the message index and total number of messages from the marker
-      const [messageIndex, totalMessages] = marker.split('/')
+        // Then break out the message index and total number of messages from the marker
+        const [messageIndex, totalMessages] = marker.split('/')
 
-      if (!liveStore.liveProjectBuffer[messageIndex])
-        console.error('Received duplicate packet #' + messageIndex)
+        if (!liveStore.liveProjectBuffer[messageIndex])
+          console.error('Received duplicate packet #' + messageIndex)
 
-      liveStore.setLiveProjectBuffer({ ...liveStore.liveProjectBuffer, [messageIndex]: data })
+        liveStore.setLiveProjectBuffer({ ...liveStore.liveProjectBuffer, [messageIndex]: data })
 
-      if (messageIndex === totalMessages) {
-        const messages = Object.values(liveStore.liveProjectBuffer)
+        if (messageIndex === totalMessages) {
+          const messages = Object.values(liveStore.liveProjectBuffer)
 
-        // liveStore doesn't update from new set state immediately
-        if (messages.length !== Number(totalMessages)) messages.push(data)
+          // liveStore doesn't update from new set state immediately
+          if (messages.length !== Number(totalMessages)) messages.push(data)
 
-        const fullData = messages.reduce((a, b) => a + b)
-        liveStore.setLiveProject(JSON.parse(fullData))
-        liveStore.setLiveProjectBuffer({})
+          const fullData = messages.reduce((a, b) => a + b)
+          liveStore.setLiveProject(JSON.parse(fullData))
+          liveStore.setLiveProjectBuffer({})
+        }
+        break
       }
-      // const state = JSON.parse(message.args[0] as string)
-      // console.log('live project state: \n', state)
-      // liveStore.setLiveProject(state)
+      // TODO
+      // Connection confirmation
+      // case '/send/connection/confirm': {
+      //   oscStore.
+      // }
     }
 
     console.log('OSC Message Received:', message.address, message.args)
