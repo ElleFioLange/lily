@@ -77,14 +77,6 @@ export function useKeyboardShortcuts(): void {
         },
         description: 'Switch to Hydra Configuration layout'
       },
-      {
-        key: 'r',
-        modifiers: ['ctrl'],
-        handler: async () => {
-          await window.api.osc.send('/request/connection/confirm')
-        },
-        description: 'Request OSC init from Max device'
-      },
 
       // Panel-specific shortcuts - Examples
       {
