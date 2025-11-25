@@ -12,7 +12,10 @@ export default function LivePreview({ panelId }: LivePreviewProps) {
       contentClassName="flex items-center justify-center"
       panelId={panelId}
     >
-      {/* Future: Video feed or camera input */}
+      <div
+        className="w-full h-full bg-stone-900 outline-none flex justify-center items-center"
+        contentEditable
+      />
     </Panel>
   )
 }
