@@ -39,14 +39,16 @@ chaos:
   absent: false
 `
 
+export type ConfigurationKey = {
+  type: 'track' | 'clip' | 'device' | 'device_parameter'
+  path: string
+  object: 'active' | 'value'
+  present: boolean | number
+  absent: boolean | number
+}
+
 export type ConfigurationJSON = {
-  [keyword: string]: {
-    type: 'track' | 'clip' | 'device' | 'device_parameter'
-    path: string
-    object: 'active' | 'value'
-    present: boolean | number
-    absent: boolean | number
-  }
+  [keyword: string]: ConfigurationKey
 } | null
 
 interface ConfigurationState {
