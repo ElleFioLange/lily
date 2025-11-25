@@ -1,5 +1,7 @@
+// Ableton Live Project Store
 import { create } from 'zustand'
 import type { OSCMessage } from '../../../types/osc-messages'
+import { useLiveStore } from './useLiveStore'
 
 /**
  * Minimal OSC Store Template
@@ -28,7 +30,7 @@ import type { OSCMessage } from '../../../types/osc-messages'
  */
 
 // ============================================================================
-// OSC Store Interface
+// Store Interface
 // ============================================================================
 
 interface OSCStore {
@@ -43,7 +45,7 @@ interface OSCStore {
 }
 
 // ============================================================================
-// OSC Store Implementation
+// Store Implementation
 // ============================================================================
 
 export const useOSCStore = create<OSCStore>((set) => ({
@@ -87,229 +89,43 @@ export function setupOSCListeners(): void {
   // Listen for all OSC messages
   window.api.osc.onMessage((message) => {
     const oscStore = useOSCStore.getState()
+    const liveStore = useLiveStore.getState()
 
     // Update last message
     oscStore.setLastMessage(message)
 
+    if (message.address === '/send/state') {
+      const payload = message.args[0] as string
+
+      // Messages are sent with a structure that looks like messageIndex/totalMessages [DATA]
+      // First break out marker and data using space character as separation point
+      const breakIndex = payload.indexOf(' ')
+      const marker = payload.slice(0, breakIndex)
+      const data = payload.slice(breakIndex + 1)
+
+      // Then break out the message index and total number of messages from the marker
+      const [messageIndex, totalMessages] = marker.split('/')
+
+      if (!liveStore.liveProjectBuffer[messageIndex])
+        console.error('Received duplicate packet #' + messageIndex)
+
+      liveStore.setLiveProjectBuffer({ ...liveStore.liveProjectBuffer, [messageIndex]: data })
+
+      if (messageIndex === totalMessages) {
+        const messages = Object.values(liveStore.liveProjectBuffer)
+
+        // liveStore doesn't update from new set state immediately
+        if (messages.length !== Number(totalMessages)) messages.push(data)
+
+        const fullData = messages.reduce((a, b) => a + b)
+        liveStore.setLiveProject(JSON.parse(fullData))
+        liveStore.setLiveProjectBuffer({})
+      }
+      // const state = JSON.parse(message.args[0] as string)
+      // console.log('live project state: \n', state)
+      // liveStore.setLiveProject(state)
+    }
+
     console.log('OSC Message Received:', message.address, message.args)
   })
 }
-
-// ============================================================================
-// USAGE EXAMPLES
-// ============================================================================
-
-/*
-Example 1: Basic store with custom state
------------------------------------------
-interface MyOSCStore {
-  // State
-  synthFrequency: number
-  synthAmplitude: number
-  lastMessage: OSCMessage | null
-
-  // Actions
-  setSynthFrequency: (freq: number) => void
-  setSynthAmplitude: (amp: number) => void
-  setLastMessage: (msg: OSCMessage) => void
-
-  // OSC senders
-  sendFrequency: (freq: number) => Promise<void>
-  sendAmplitude: (amp: number) => Promise<void>
-}
-
-export const useMyOSCStore = create<MyOSCStore>((set) => ({
-  // Initial state
-  synthFrequency: 440.0,
-  synthAmplitude: 0.5,
-  lastMessage: null,
-
-  // State setters
-  setSynthFrequency: (freq) => set({ synthFrequency: freq }),
-  setSynthAmplitude: (amp) => set({ synthAmplitude: amp }),
-  setLastMessage: (msg) => set({ lastMessage: msg }),
-
-  // OSC senders
-  sendFrequency: async (freq) => {
-    await window.api.osc.send('/synth/freq', [freq])
-    set({ synthFrequency: freq }) // Optimistic update
-  },
-  sendAmplitude: async (amp) => {
-    await window.api.osc.send('/synth/amp', [amp])
-    set({ synthAmplitude: amp }) // Optimistic update
-  }
-}))
-
-// Setup listeners
-export function setupMyOSCListeners() {
-  window.api.osc.onMessage((msg) => {
-    const store = useMyOSCStore.getState()
-    store.setLastMessage(msg)
-
-    // Route incoming messages
-    switch (msg.address) {
-      case '/synth/freq':
-        store.setSynthFrequency(msg.args[0] as number)
-        break
-      case '/synth/amp':
-        store.setSynthAmplitude(msg.args[0] as number)
-        break
-    }
-  })
-}
-
-
-Example 2: Separate stores for different concerns
--------------------------------------------------
-// Transport store
-interface TransportStore {
-  isPlaying: boolean
-  tempo: number
-  play: () => Promise<void>
-  stop: () => Promise<void>
-  setTempo: (tempo: number) => Promise<void>
-}
-
-export const useTransportStore = create<TransportStore>((set) => ({
-  isPlaying: false,
-  tempo: 120,
-
-  play: async () => {
-    await window.api.osc.send('/transport/play')
-    set({ isPlaying: true })
-  },
-
-  stop: async () => {
-    await window.api.osc.send('/transport/stop')
-    set({ isPlaying: false })
-  },
-
-  setTempo: async (tempo) => {
-    await window.api.osc.send('/transport/tempo', [tempo])
-    set({ tempo })
-  }
-}))
-
-// Mixer store
-interface MixerStore {
-  tracks: Array<{ volume: number; mute: boolean }>
-  setTrackVolume: (index: number, volume: number) => Promise<void>
-  setTrackMute: (index: number, mute: boolean) => Promise<void>
-}
-
-export const useMixerStore = create<MixerStore>((set) => ({
-  tracks: Array(8).fill({ volume: 0.8, mute: false }),
-
-  setTrackVolume: async (index, volume) => {
-    await window.api.osc.send(`/track/${index}/volume`, [volume])
-    set((state) => {
-      const newTracks = [...state.tracks]
-      newTracks[index] = { ...newTracks[index], volume }
-      return { tracks: newTracks }
-    })
-  },
-
-  setTrackMute: async (index, mute) => {
-    await window.api.osc.send(`/track/${index}/mute`, [mute ? 1 : 0])
-    set((state) => {
-      const newTracks = [...state.tracks]
-      newTracks[index] = { ...newTracks[index], mute }
-      return { tracks: newTracks }
-    })
-  }
-}))
-
-// Setup listeners for both stores
-export function setupAllListeners() {
-  window.api.osc.onMessage((msg) => {
-    // Route to transport store
-    if (msg.address.startsWith('/transport/')) {
-      const transport = useTransportStore.getState()
-      if (msg.address === '/transport/state') {
-        const playing = msg.args[0] === 1
-        const tempo = msg.args[1] as number
-        transport.isPlaying = playing
-        transport.tempo = tempo
-      }
-    }
-
-    // Route to mixer store
-    if (msg.address.startsWith('/track/')) {
-      const match = msg.address.match(/\/track\/(\d+)\/(\w+)/)
-      if (match) {
-        const index = parseInt(match[1])
-        const property = match[2]
-        const mixer = useMixerStore.getState()
-
-        // Update mixer state based on property
-        // mixer.setTrackVolume, etc.
-      }
-    }
-  })
-}
-
-
-Example 3: Using middleware for logging/debugging
--------------------------------------------------
-import { create } from 'zustand'
-import { devtools } from 'zustand/middleware'
-
-interface MyStore {
-  value: number
-  setValue: (val: number) => void
-}
-
-export const useMyStore = create<MyStore>()(
-  devtools(
-    (set) => ({
-      value: 0,
-      setValue: (val) => set({ value: val }, false, 'setValue')
-    }),
-    { name: 'MyOSCStore' }
-  )
-)
-
-// Now you can use Redux DevTools to inspect state changes
-
-
-Example 4: Pattern-based routing with helper functions
-------------------------------------------------------
-// Create helper functions for common patterns
-function parseTrackMessage(address: string): { index: number; property: string } | null {
-  const match = address.match(/\/track\/(\d+)\/(\w+)/)
-  if (match) {
-    return {
-      index: parseInt(match[1]),
-      property: match[2]
-    }
-  }
-  return null
-}
-
-function parseSynthMessage(address: string): { param: string } | null {
-  const match = address.match(/\/synth\/(\w+)/)
-  if (match) {
-    return { param: match[1] }
-  }
-  return null
-}
-
-// Use in listener setup
-export function setupSmartListeners() {
-  window.api.osc.onMessage((msg) => {
-    // Route track messages
-    const trackInfo = parseTrackMessage(msg.address)
-    if (trackInfo) {
-      console.log(`Track ${trackInfo.index} ${trackInfo.property}:`, msg.args[0])
-      // Update store...
-    }
-
-    // Route synth messages
-    const synthInfo = parseSynthMessage(msg.address)
-    if (synthInfo) {
-      console.log(`Synth ${synthInfo.param}:`, msg.args[0])
-      // Update store...
-    }
-  })
-}
-*/

@@ -588,10 +588,39 @@ function serialize_song() {
   return song_data
 }
 
+function break_into_packets(long_string) {
+  const PACKET_SIZE = 3000
+  const packets = []
+  const total_packets = Math.ceil(long_string.length / PACKET_SIZE)
+
+  for (let i = 0; i < total_packets; i++) {
+    const start = i * PACKET_SIZE
+    const end = Math.min(start + PACKET_SIZE, long_string.length)
+    const chunk = long_string.slice(start, end)
+
+    const packet_number = i + 1
+    const marker = `${packet_number}/${total_packets}`
+
+    const packet = `${marker} ${chunk}`.trim()
+    packets.push(packet)
+  }
+
+  return packets
+}
+
 function bang() {
   log('\n\n=======================', true)
   const song_data = serialize_song()
-  log(JSON.stringify(song_data).length, true)
-  outlet(0, JSON.stringify(song_data))
+  const song_data_string = JSON.stringify(song_data)
+
+  log(song_data_string.length, true)
+
+  const packets = break_into_packets(song_data_string)
+
+  packets.forEach((packet, i) => {
+    log('sending packet ' + i, true)
+    outlet(0, packet)
+  })
+
   log('data sent', true)
 }
