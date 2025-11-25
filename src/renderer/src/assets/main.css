@@ -4,6 +4,7 @@
 @layer base {
   body {
     @apply bg-stone-950 text-stone-100 overflow-hidden select-none;
+    scrollbar-color: var(--color-stone-100) #00000000;
   }
 
   #root {
