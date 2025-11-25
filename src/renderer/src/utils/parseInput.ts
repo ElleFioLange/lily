@@ -1,32 +1,29 @@
-import { ConfigurationJSON } from '@renderer/stores/useConfigurationStore'
+import { useConfigurationStore } from '@renderer/stores/useConfigurationStore'
+import { OSCMessage } from 'src/types/osc-messages'
 
-export default function parseInput(input: string, config: ConfigurationJSON) {
+export default function parseInput(input: string) {
+  const { parsedConfig: config } = useConfigurationStore.getState()
+
   if (config === null) throw new Error('Cannot parse input with invalid config')
 
-  const keys = Object.keys(config)
+  const keys = Object.entries(config)
+  const messages: OSCMessage[] = []
 
-  const presentKeysRecord: {
-    [key: string]: number[]
-  } = {}
-
-  keys.forEach((key) => {
-    const instances: number[] = []
-
-    let startIndex = 0
-    let allFound = false
-
-    while (allFound === false) {
-      const instance = input.indexOf(key, startIndex)
-      if (instance !== -1) {
-        instances.push(instance)
-        startIndex += key.length
-      } else {
-        allFound = true
-      }
+  keys.forEach(([key, params]) => {
+    // The actual regex has single backslashes after escaping is done
+    const regex = new RegExp(`\\b${key}\\(([^\\)]*)\\)`, 'g')
+    const matches = input.matchAll(regex)
+    const instances = Array.from(matches)
+    const isPresent = instances.length > 0
+    const { type, path, object, present, absent } = params
+    const value = isPresent ? present : absent
+    const message = {
+      address: `/set/${type}/${object}`,
+      args: [path, value]
     }
 
-    if (instances.length > 0) presentKeysRecord[key] = instances
+    messages.push(message)
   })
 
-  const presentKeys = Object.keys(presentKeysRecord)
+  return messages
 }
