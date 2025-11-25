@@ -1,4 +1,5 @@
 import { ReactNode, useState } from 'react'
+import { useFocusStore, type PanelId } from '../../stores/useFocusStore'
 
 interface PanelProps {
   title?: string
@@ -8,6 +9,7 @@ interface PanelProps {
   children?: ReactNode
   className?: string
   contentClassName?: string
+  panelId?: PanelId
 }
 
 export default function Panel({
@@ -17,12 +19,30 @@ export default function Panel({
   headerActions,
   children,
   className = '',
-  contentClassName = ''
+  contentClassName = '',
+  panelId
 }: PanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
 
+  const handleFocus = () => {
+    if (panelId) {
+      useFocusStore.getState().setFocusedPanel(panelId)
+    }
+  }
+
+  const handleBlur = () => {
+    if (panelId) {
+      useFocusStore.getState().setFocusedPanel(null)
+    }
+  }
+
   return (
-    <div className={`w-full h-full flex flex-col ${className}`}>
+    <div
+      className={`w-full h-full flex flex-col ${className}`}
+      tabIndex={panelId ? 0 : undefined}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+    >
       {/* Header - only show if title or collapsible or headerActions exist */}
       {(title || collapsible || headerActions) && (
         <div className="flex items-center justify-between p-4 shrink-0">

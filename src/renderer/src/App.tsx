@@ -4,9 +4,13 @@ import AbletonConfigurationLayout from './components/AbletonConfigurationLayout'
 import { setupOSCListeners } from './stores/useOSCStore'
 import { useLayoutStore, setupLayoutListeners } from './stores/useLayoutStore'
 import HydraConfigurationLayout from './components/HydraConfigurationLayout'
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 
 function App(): React.JSX.Element {
   const currentLayout = useLayoutStore((state) => state.currentLayout)
+
+  // Initialize keyboard shortcuts
+  useKeyboardShortcuts()
 
   useEffect(() => {
     // Setup OSC event listeners when component mounts
@@ -15,9 +19,7 @@ function App(): React.JSX.Element {
     // Setup layout switching listeners
     setupLayoutListeners()
 
-    // Customize this initialization for your application
-    // Example: Request initial state, send handshake message, etc.
-    // window.api.osc.send('/app/init')
+    window.api.osc.send('/request/connection/confirm')
   }, [])
 
   switch (currentLayout) {

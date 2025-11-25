@@ -1,7 +1,12 @@
 import Panel from '../common/Panel'
 import { useLiveStore } from '@renderer/stores/useLiveStore'
+import type { PanelId } from '../../stores/useFocusStore'
 
-export default function AbletonMonitor() {
+interface AbletonMonitorProps {
+  panelId?: PanelId
+}
+
+export default function AbletonMonitor({ panelId }: AbletonMonitorProps) {
   const handleInitRequest = async () => {
     await window.api.osc.send('/request/connection/confirm')
     window.api.osc.onMessage((msg) => {
@@ -19,7 +24,11 @@ export default function AbletonMonitor() {
   const liveProject = useLiveStore((state) => state.liveProject)
 
   return (
-    <Panel title="Ableton monitor" contentClassName="flex flex-col items-center justify-center p-4">
+    <Panel
+      title="Ableton monitor"
+      contentClassName="flex flex-col items-center justify-center p-4"
+      panelId={panelId}
+    >
       <button
         onClick={handleInitRequest}
         className="px-4 py-2 bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"

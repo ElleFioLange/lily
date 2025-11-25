@@ -17,14 +17,14 @@ export default function AbletonConfigurationLayout() {
             <PanelGroup direction="vertical">
               {/* Live Preview */}
               <Panel defaultSize={60} minSize={20}>
-                <LivePreview />
+                <LivePreview panelId="live-preview" />
               </Panel>
 
               <PanelResizeHandle className="h-px bg-stone-800 cursor-col-resize flex items-center justify-center" />
 
               {/* Ableton Monitor */}
               <Panel defaultSize={40} minSize={20}>
-                <AbletonMonitor />
+                <AbletonMonitor panelId="ableton-monitor" />
               </Panel>
             </PanelGroup>
           </Panel>
@@ -36,21 +36,21 @@ export default function AbletonConfigurationLayout() {
             <PanelGroup direction="vertical">
               {/* Hydra Preview */}
               <Panel defaultSize={30} minSize={20}>
-                <HydraPreview />
+                <HydraPreview panelId="hydra-preview" />
               </Panel>
 
               <PanelResizeHandle className="h-px bg-stone-800 cursor-col-resize flex items-center justify-center" />
 
               {/* Video Controls */}
               <Panel defaultSize={20} minSize={20}>
-                <VideoControls />
+                <VideoControls panelId="video-controls" />
               </Panel>
 
               <PanelResizeHandle className="h-px bg-stone-800 cursor-col-resize flex items-center justify-center" />
 
               {/* Hydra Patches */}
               <Panel defaultSize={50} minSize={20}>
-                <HydraPatches />
+                <HydraPatches panelId="hydra-patches" />
               </Panel>
             </PanelGroup>
           </Panel>
@@ -61,7 +61,7 @@ export default function AbletonConfigurationLayout() {
 
       {/* Project Config - Right Sidebar */}
       <Panel defaultSize={15} minSize={10} maxSize={30} collapsible>
-        <ProjectConfig />
+        <ProjectConfig panelId="project-config" />
       </Panel>
     </PanelGroup>
   )

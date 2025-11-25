@@ -214,9 +214,10 @@ All three layouts currently share the same structure:
 **Base Components**:
 
 - **Panel** (`src/renderer/src/components/common/Panel.tsx`) - Reusable panel wrapper
-  - Props: `title`, `collapsible`, `headerActions`, `children`, `className`, `contentClassName`
+  - Props: `title`, `collapsible`, `headerActions`, `children`, `className`, `contentClassName`, `panelId`
   - Default styling: `text-stone-100` text, `hover:bg-stone-800` buttons
   - Handles collapse/expand state internally
+  - When `panelId` is provided, panel becomes focusable and updates focus store
 
 **Panel Components** (`src/renderer/src/components/panels/`):
 
@@ -226,6 +227,66 @@ All three layouts currently share the same structure:
 - **HydraPatches.tsx** - Placeholder for Hydra patch browser/editor
 - **VideoControls.tsx** - Video control panel
 - **ProjectConfig.tsx** - Placeholder for project configuration options
+
+### Keyboard Shortcuts
+
+**Focus Management** (`src/renderer/src/stores/useFocusStore.ts`):
+
+- Tracks which panel is currently focused using Zustand
+- Panel IDs: `'live-preview'`, `'ableton-monitor'`, `'hydra-preview'`, `'video-controls'`, `'hydra-patches'`, `'project-config'`
+- Panels become focusable when assigned a `panelId` prop
+- Panel component handles focus/blur events and updates store
+
+**Keyboard Shortcut System** (`src/renderer/src/hooks/useKeyboardShortcuts.ts`):
+
+- Centralized hook that manages all keyboard shortcuts
+- Initialized in `App.tsx` via `useKeyboardShortcuts()`
+- Supports global shortcuts and panel-specific shortcuts
+- **Text Input Bypass**: Shortcuts can optionally activate even when typing in text inputs
+
+**Global Shortcuts**:
+
+- **Cmd/Ctrl+1** - Switch to Performance layout
+- **Cmd/Ctrl+2** - Switch to Ableton Configuration layout
+- **Cmd/Ctrl+3** - Switch to Hydra Configuration layout
+- **Cmd/Ctrl+R** - Request OSC init from Max device
+
+**Panel-Specific Shortcuts** (examples):
+
+- **LivePreview Panel**: Ctrl+Shift+Enter (with `bypassTextInputs: true`)
+- **AbletonMonitor Panel**: Tab key
+
+**Adding New Shortcuts**:
+
+```typescript
+// In useKeyboardShortcuts.ts, add to shortcuts array:
+
+// Global shortcut
+{
+  key: 'p',
+  modifiers: ['ctrl'],
+  handler: () => { /* action */ },
+  description: 'Play/Pause'
+}
+
+// Panel-specific shortcut
+{
+  panelId: 'live-preview',
+  key: 'Enter',
+  modifiers: ['ctrl', 'shift'],
+  handler: () => { /* action */ },
+  bypassTextInputs: true,  // Optional: works even in text inputs
+  description: 'Submit input'
+}
+```
+
+**Modifier Keys**: `'ctrl'`, `'shift'`, `'alt'`, `'meta'` (Cmd on macOS maps to Ctrl for cross-platform compatibility)
+
+**Panel IDs**: Pass `panelId` prop to panel components in layouts:
+```typescript
+<LivePreview panelId="live-preview" />
+<AbletonMonitor panelId="ableton-monitor" />
+```
 
 **Legacy/Example Components** (simplified to placeholders with guidance):
 
