@@ -1,6 +1,7 @@
 import Panel from '../common/Panel'
 import { useLiveStore } from '@renderer/stores/useLiveStore'
 import type { PanelId } from '../../stores/useFocusStore'
+import { useConfigurationStore } from '@renderer/stores/useConfigurationStore'
 
 interface AbletonMonitorProps {
   panelId?: PanelId
@@ -40,6 +41,15 @@ export default function AbletonMonitor({ panelId }: AbletonMonitorProps) {
         className="px-4 py-2 bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
       >
         Request State from Max Device
+      </button>
+      <button
+        onClick={() => {
+          const { rawConfig, parsedConfig } = useConfigurationStore.getState()
+          console.log(rawConfig, parsedConfig)
+        }}
+        className="px-4 py-2 bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
+      >
+        Log config
       </button>
       <pre className="w-60 h-20 overflow-scroll bg-stone-800 text-xs">
         {JSON.stringify(liveProject)}
