@@ -65,6 +65,8 @@ interface ConfigurationState {
   setParsedConfig: (parsedConfig: ConfigurationJSON) => void
   loadRawConfig: () => Promise<void>
   saveRawConfig: () => Promise<void>
+  openConfigFile: () => Promise<void>
+  saveConfigFileAs: () => Promise<void>
   resetRawConfig: () => void
   setRawConfigPath: (path: string | null) => void
   setHydraShader: (shader: string) => void
@@ -141,6 +143,56 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
       }
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Failed to save configuration' })
+    }
+  },
+
+  openConfigFile: async () => {
+    try {
+      const result = await window.api.config.openFile()
+      if (result.success && result.content) {
+        // Parse and validate loaded content
+        const { parsedConfig, err } = parseConfig(result.content)
+        if (err) throw err
+        set({
+          rawConfig: result.content,
+          parsedConfig,
+          configPath: result.path || null,
+          isValid: true,
+          error: null
+        })
+      } else if (result.error) {
+        // Don't set error for cancellation
+        if (result.error !== 'No file selected') {
+          set({ error: result.error, isValid: false })
+        }
+      }
+    } catch (err) {
+      set({
+        error: err instanceof Error ? err.message : 'Failed to open file',
+        isValid: false
+      })
+    }
+  },
+
+  saveConfigFileAs: async () => {
+    const state = get()
+    if (!state.isValid) {
+      set({ error: 'Cannot save invalid YAML' })
+      return
+    }
+
+    try {
+      const result = await window.api.config.saveFileAs(state.rawConfig)
+      if (result.success) {
+        set({ configPath: result.path || null, error: null })
+      } else if (result.error) {
+        // Don't set error for cancellation
+        if (result.error !== 'No file selected') {
+          set({ error: result.error })
+        }
+      }
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : 'Failed to save file' })
     }
   },
 

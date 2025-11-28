@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, Menu } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -378,6 +378,57 @@ function setupIPCHandlers(): void {
       return {
         success: false,
         error: err instanceof Error ? err.message : 'Failed to save configuration'
+      }
+    }
+  })
+
+  ipcMain.handle('config:openFile', async () => {
+    try {
+      const result = await dialog.showOpenDialog(mainWindowRef!, {
+        title: 'Open Configuration File',
+        filters: [
+          { name: 'YAML Files', extensions: ['yaml', 'yml'] },
+          { name: 'All Files', extensions: ['*'] }
+        ],
+        properties: ['openFile']
+      })
+
+      if (result.canceled || result.filePaths.length === 0) {
+        return { success: false, error: 'No file selected' }
+      }
+
+      const filePath = result.filePaths[0]
+      const content = await fs.readFile(filePath, 'utf-8')
+      return { success: true, content, path: filePath }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to open file'
+      }
+    }
+  })
+
+  ipcMain.handle('config:saveFileAs', async (_, content: string) => {
+    try {
+      const result = await dialog.showSaveDialog(mainWindowRef!, {
+        title: 'Save Configuration File',
+        defaultPath: 'lily.config.yaml',
+        filters: [
+          { name: 'YAML Files', extensions: ['yaml', 'yml'] },
+          { name: 'All Files', extensions: ['*'] }
+        ]
+      })
+
+      if (result.canceled || !result.filePath) {
+        return { success: false, error: 'No file selected' }
+      }
+
+      await fs.writeFile(result.filePath, content, 'utf-8')
+      return { success: true, path: result.filePath }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to save file'
       }
     }
   })

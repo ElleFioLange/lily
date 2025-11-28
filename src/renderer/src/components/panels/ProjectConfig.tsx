@@ -22,6 +22,8 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
     setRawConfig,
     loadRawConfig,
     saveRawConfig,
+    openConfigFile,
+    saveConfigFileAs,
     resetRawConfig,
     configPath,
     isValid,
@@ -38,6 +40,14 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
   const handleSave = useCallback(async () => {
     await saveRawConfig()
   }, [saveRawConfig])
+
+  const handleOpenFile = useCallback(async () => {
+    await openConfigFile()
+  }, [openConfigFile])
+
+  const handleSaveFileAs = useCallback(async () => {
+    await saveConfigFileAs()
+  }, [saveConfigFileAs])
 
   const handleReset = useCallback(() => {
     if (activeTab === 'config') {
@@ -82,17 +92,33 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
         {activeTab === 'config' && (
           <>
             <button
-              onClick={handleLoad}
+              onClick={handleOpenFile}
               className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
             >
-              Load
+              Open...
+            </button>
+            <button
+              onClick={handleSaveFileAs}
+              disabled={!isValid}
+              className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Save As...
+            </button>
+            <div className="w-px h-6 bg-stone-700" />
+            <button
+              onClick={handleLoad}
+              className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
+              title="Load from default location"
+            >
+              Load Default
             </button>
             <button
               onClick={handleSave}
               disabled={!isValid}
               className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Save to default location"
             >
-              Save
+              Save Default
             </button>
           </>
         )}

@@ -139,7 +139,11 @@ const api = {
       ipcRenderer.invoke('config:load'),
     save: (content: string): Promise<{ success: boolean; path?: string; error?: string }> =>
       ipcRenderer.invoke('config:save', content),
-    getPath: (): Promise<string> => ipcRenderer.invoke('config:getPath')
+    getPath: (): Promise<string> => ipcRenderer.invoke('config:getPath'),
+    openFile: (): Promise<{ success: boolean; content?: string; path?: string; error?: string }> =>
+      ipcRenderer.invoke('config:openFile'),
+    saveFileAs: (content: string): Promise<{ success: boolean; path?: string; error?: string }> =>
+      ipcRenderer.invoke('config:saveFileAs', content)
   },
 
   // ============================================================================
