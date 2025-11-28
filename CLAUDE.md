@@ -345,9 +345,19 @@ custom: {}
 
 **File Operations** (via Electron IPC):
 
-- `window.api.config.load()` - Load from disk
-- `window.api.config.save(content)` - Save to disk
-- `window.api.config.getPath()` - Get file path
+- `window.api.config.load()` - Load from default location (userData/lily.config.yaml)
+- `window.api.config.save(content)` - Save to default location
+- `window.api.config.openFile()` - Open file browser to load any YAML file
+- `window.api.config.saveFileAs(content)` - Open save dialog to save to custom location
+- `window.api.config.getPath()` - Get default file path
+
+**UI Controls** (ProjectConfig panel):
+
+- **Open...** - Browse and load configuration from any location
+- **Save As...** - Save configuration to custom location with file dialog
+- **Load Default** - Load from default userData folder
+- **Save Default** - Save to default userData folder
+- **Reset** - Reset to default configuration template
 
 **Components**:
 
@@ -358,16 +368,29 @@ custom: {}
 
 ```typescript
 // Access config store
-const { config, setConfig, loadConfig, saveConfig } = useConfigurationStore()
+const {
+  rawConfig,
+  setRawConfig,
+  loadRawConfig,
+  saveRawConfig,
+  openConfigFile,
+  saveConfigFileAs
+} = useConfigurationStore()
 
-// Load configuration from disk
-await loadConfig()
+// Load from default location
+await loadRawConfig()
+
+// Open file browser and load
+await openConfigFile()
 
 // Update configuration
-setConfig(newYamlString)
+setRawConfig(newYamlString)
 
-// Save configuration to disk
-await saveConfig()
+// Save to default location
+await saveRawConfig()
+
+// Save to custom location
+await saveConfigFileAs()
 ```
 
 **Legacy/Example Components** (simplified to placeholders with guidance):
