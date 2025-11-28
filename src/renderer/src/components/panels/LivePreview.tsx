@@ -24,7 +24,7 @@ export default function LivePreview({ panelId }: LivePreviewProps) {
       '&': {
         backgroundColor: 'transparent',
         height: '100%',
-        fontSize: '48px'
+        fontSize: '24px'
       },
       '.cm-scroller': {
         display: 'flex',
@@ -106,10 +106,10 @@ export default function LivePreview({ panelId }: LivePreviewProps) {
   return (
     <Panel
       title="Live preview"
-      contentClassName="flex items-center justify-center"
+      contentClassName="flex items-center justify-center bg-stone-900"
       panelId={panelId}
     >
-      <div ref={editorRef} className="w-full h-full bg-stone-900 outline-none" />
+      <div ref={editorRef} className="w-full max-h-full overflow-auto  outline-none" />
     </Panel>
   )
 }
