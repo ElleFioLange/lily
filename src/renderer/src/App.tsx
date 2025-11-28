@@ -5,7 +5,7 @@ import { setupOSCListeners } from './stores/useOSCStore'
 import { useLayoutStore, setupLayoutListeners } from './stores/useLayoutStore'
 import HydraConfigurationLayout from './components/HydraConfigurationLayout'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
-import { initializeConfigStore } from './stores/useConfigurationStore'
+import { initializeConfigStore, useConfigurationStore } from './stores/useConfigurationStore'
 
 function App(): React.JSX.Element {
   const currentLayout = useLayoutStore((state) => state.currentLayout)
@@ -22,6 +22,12 @@ function App(): React.JSX.Element {
 
     // Initialize configuration store
     initializeConfigStore()
+
+    // Setup Hydra shader request handler for popup window
+    window.api.hydra.onRequestShader(() => {
+      const shader = useConfigurationStore.getState().hydraShader
+      window.api.hydra.sendShaderResponse(shader)
+    })
 
     window.api.osc.send('/request/connection/confirm')
   }, [])

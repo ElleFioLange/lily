@@ -85,6 +85,20 @@ interface LilyAPI {
     save: (content: string) => Promise<{ success: boolean; path?: string; error?: string }>
     getPath: () => Promise<string>
   }
+
+  /**
+   * Hydra Video Synthesizer API
+   *
+   * Methods for managing Hydra popup window and shader evaluation
+   */
+  hydra: {
+    openPopup: () => Promise<{ success: boolean }>
+    evaluate: (code: string) => Promise<{ success: boolean }>
+    onEvaluateShader: (callback: (code: string) => void) => void
+    requestShader: () => void
+    onRequestShader: (callback: () => void) => void
+    sendShaderResponse: (code: string) => void
+  }
 }
 
 declare global {

@@ -140,6 +140,27 @@ const api = {
     save: (content: string): Promise<{ success: boolean; path?: string; error?: string }> =>
       ipcRenderer.invoke('config:save', content),
     getPath: (): Promise<string> => ipcRenderer.invoke('config:getPath')
+  },
+
+  // ============================================================================
+  // Hydra Video Synthesizer API
+  // ============================================================================
+  hydra: {
+    openPopup: (): Promise<{ success: boolean }> => ipcRenderer.invoke('hydra:open-popup'),
+    evaluate: (code: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('hydra:evaluate', code),
+    onEvaluateShader: (callback: (code: string) => void) => {
+      ipcRenderer.on('hydra:evaluate-shader', (_, code) => callback(code))
+    },
+    requestShader: () => {
+      ipcRenderer.send('hydra:request-shader')
+    },
+    onRequestShader: (callback: () => void) => {
+      ipcRenderer.on('hydra:request-shader', callback)
+    },
+    sendShaderResponse: (code: string) => {
+      ipcRenderer.send('hydra:shader-response', code)
+    }
   }
 }
 

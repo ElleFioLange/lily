@@ -1,8 +1,9 @@
 import { useEffect } from 'react'
-import { useFocusStore, type PanelId } from '../stores/useFocusStore'
+import { useFocusStore, type PanelId, type ProjectConfigTab } from '../stores/useFocusStore'
 import { useLayoutStore } from '../stores/useLayoutStore'
 import type { LayoutType } from 'src/types/layouts'
 import { useInputStore } from '@renderer/stores/useInputStore'
+import { useHydraStore } from '@renderer/stores/useHydraStore'
 import parseInput from '@renderer/utils/parseInput'
 
 type ModifierKey = 'ctrl' | 'shift' | 'alt' | 'meta'
@@ -12,6 +13,7 @@ interface ShortcutConfig {
   modifiers?: ModifierKey[]
   handler: () => void
   panelId?: PanelId
+  requiredTab?: ProjectConfigTab
   bypassTextInputs?: boolean
   description?: string
 }
@@ -103,11 +105,25 @@ export function useKeyboardShortcuts(): void {
           // TODO: Implement toggle action
         },
         description: 'AbletonMonitor toggle action'
+      },
+
+      // Tab-specific shortcut - Hydra shader evaluation
+      {
+        panelId: 'project-config',
+        requiredTab: 'hydra',
+        key: 'Enter',
+        modifiers: ['ctrl', 'shift'],
+        handler: () => {
+          useHydraStore.getState().evaluateShader()
+        },
+        bypassTextInputs: true,
+        description: 'Evaluate Hydra shader code'
       }
     ]
 
     const handleKeyDown = (event: KeyboardEvent): void => {
       const focusedPanel = useFocusStore.getState().focusedPanel
+      const activeTab = useFocusStore.getState().activeProjectConfigTab
 
       // Check if we're in a text input
       const isTextInput =
@@ -121,6 +137,9 @@ export function useKeyboardShortcuts(): void {
 
         // Check if shortcut is panel-specific and panel is focused
         if (shortcut.panelId && shortcut.panelId !== focusedPanel) continue
+
+        // Check if shortcut requires a specific tab to be active
+        if (shortcut.requiredTab && shortcut.requiredTab !== activeTab) continue
 
         // Check if we should skip due to text input focus
         if (isTextInput && !shortcut.bypassTextInputs) continue

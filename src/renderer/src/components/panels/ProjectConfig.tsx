@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback } from 'react'
 import Panel from '../common/Panel'
 import type { PanelId } from '../../stores/useFocusStore'
+import { useFocusStore } from '../../stores/useFocusStore'
 import YAMLEditor, { type YAMLEditorRef } from '../YAMLEditor'
 import JavaScriptEditor from '../JavaScriptEditor'
 import JSONNavigation from '../JSONNavigation'
@@ -10,10 +11,9 @@ interface ProjectConfigProps {
   panelId?: PanelId
 }
 
-type Tab = 'config' | 'hydra'
-
 export default function ProjectConfig({ panelId }: ProjectConfigProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('config')
+  const activeTab = useFocusStore((state) => state.activeProjectConfigTab)
+  const setActiveTab = useFocusStore((state) => state.setActiveProjectConfigTab)
   const editorRef = useRef<YAMLEditorRef>(null)
   const [topLevelKeys, setTopLevelKeys] = useState<string[]>([])
 

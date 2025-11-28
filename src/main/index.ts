@@ -12,6 +12,7 @@ const oscServer = getOSCServer({ port: 5460 })
 const oscClient = getOSCClient({ port: 5459 })
 
 let mainWindowRef: BrowserWindow | null = null
+let hydraPopupWindowRef: BrowserWindow | null = null
 
 function createMenu(): void {
   const isMac = process.platform === 'darwin'
@@ -164,6 +165,39 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+}
+
+function createHydraPopup(): void {
+  // Don't create duplicate windows
+  if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
+    hydraPopupWindowRef.focus()
+    return
+  }
+
+  const popupWindow = new BrowserWindow({
+    width: 1280,
+    height: 720,
+    title: 'Hydra Output',
+    backgroundColor: '#000000',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+
+  hydraPopupWindowRef = popupWindow
+
+  // Load popup HTML
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    popupWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/hydra-popup.html`)
+  } else {
+    popupWindow.loadFile(join(__dirname, '../renderer/hydra-popup.html'))
+  }
+
+  // Cleanup on close
+  popupWindow.on('closed', () => {
+    hydraPopupWindowRef = null
+  })
 }
 
 // This method will be called when Electron has finished
@@ -345,6 +379,34 @@ function setupIPCHandlers(): void {
         success: false,
         error: err instanceof Error ? err.message : 'Failed to save configuration'
       }
+    }
+  })
+
+  // ============================================================================
+  // Hydra Popup Window Handlers
+  // ============================================================================
+  ipcMain.handle('hydra:open-popup', async () => {
+    createHydraPopup()
+    return { success: true }
+  })
+
+  ipcMain.handle('hydra:evaluate', async (_, code: string) => {
+    // Forward to popup window if open
+    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
+      hydraPopupWindowRef.webContents.send('hydra:evaluate-shader', code)
+    }
+    return { success: true }
+  })
+
+  // Handle shader request from popup window
+  ipcMain.on('hydra:request-shader', () => {
+    mainWindowRef?.webContents.send('hydra:request-shader')
+  })
+
+  // Handle shader response from main window
+  ipcMain.on('hydra:shader-response', (_, code: string) => {
+    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
+      hydraPopupWindowRef.webContents.send('hydra:evaluate-shader', code)
     }
   })
 }

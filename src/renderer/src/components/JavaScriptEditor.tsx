@@ -1,4 +1,4 @@
-import { useRef, useEffect, ForwardedRef, forwardRef } from 'react'
+import { useRef, useEffect, forwardRef } from 'react'
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap, lineNumbers, highlightActiveLine } from '@codemirror/view'
 import { defaultKeymap, history, indentWithTab } from '@codemirror/commands'
@@ -17,7 +17,7 @@ export interface JavaScriptEditorRef {
 }
 
 const JavaScriptEditor = forwardRef<JavaScriptEditorRef, JavaScriptEditorProps>(
-  ({ value, onChange }, ref: ForwardedRef<JavaScriptEditorRef>) => {
+  ({ value, onChange }) => {
     const editorRef = useRef<HTMLDivElement>(null)
     const viewRef = useRef<EditorView | null>(null)
 
