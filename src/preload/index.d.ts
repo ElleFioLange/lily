@@ -100,6 +100,8 @@ interface LilyAPI {
     requestShader: () => void
     onRequestShader: (callback: () => void) => void
     sendShaderResponse: (code: string) => void
+    sendTextUpdate: (text: string) => void
+    onTextUpdate: (callback: (text: string) => void) => void
   }
 }
 

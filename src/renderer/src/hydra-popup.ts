@@ -55,3 +55,11 @@ window.api.hydra.onEvaluateShader((code: string) => {
     console.error('Hydra evaluation error:', err)
   }
 })
+
+// Listen for text updates
+window.api.hydra.onTextUpdate((text: string) => {
+  const textOverlay = document.getElementById('text-overlay')
+  if (textOverlay) {
+    textOverlay.textContent = text
+  }
+})

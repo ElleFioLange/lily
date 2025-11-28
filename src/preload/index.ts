@@ -164,6 +164,12 @@ const api = {
     },
     sendShaderResponse: (code: string) => {
       ipcRenderer.send('hydra:shader-response', code)
+    },
+    sendTextUpdate: (text: string) => {
+      ipcRenderer.send('hydra:text-update', text)
+    },
+    onTextUpdate: (callback: (text: string) => void) => {
+      ipcRenderer.on('hydra:text-update', (_, text) => callback(text))
     }
   }
 }

@@ -460,4 +460,11 @@ function setupIPCHandlers(): void {
       hydraPopupWindowRef.webContents.send('hydra:evaluate-shader', code)
     }
   })
+
+  // Handle text update from main window
+  ipcMain.on('hydra:text-update', (_, text: string) => {
+    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
+      hydraPopupWindowRef.webContents.send('hydra:text-update', text)
+    }
+  })
 }

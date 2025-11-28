@@ -21,10 +21,28 @@
         height: 100vh;
         display: block;
       }
+      .text-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: #fafaf9; /* stone-100 */
+        font-size: 16px; /* Default body font size */
+        pointer-events: none; /* Allow clicks to pass through to canvas */
+        z-index: 10;
+        padding: 2rem; /* Add padding for text wrapping */
+        word-wrap: break-word;
+      }
     </style>
   </head>
   <body>
     <canvas id="hydra-canvas"></canvas>
+    <div id="text-overlay" class="text-overlay"></div>
     <script>
       window.global = window
     </script>

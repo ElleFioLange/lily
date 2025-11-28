@@ -368,14 +368,8 @@ custom: {}
 
 ```typescript
 // Access config store
-const {
-  rawConfig,
-  setRawConfig,
-  loadRawConfig,
-  saveRawConfig,
-  openConfigFile,
-  saveConfigFileAs
-} = useConfigurationStore()
+const { rawConfig, setRawConfig, loadRawConfig, saveRawConfig, openConfigFile, saveConfigFileAs } =
+  useConfigurationStore()
 
 // Load from default location
 await loadRawConfig()
