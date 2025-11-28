@@ -10,6 +10,9 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {
+    define: {
+      global: 'globalThis'
+    },
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src')

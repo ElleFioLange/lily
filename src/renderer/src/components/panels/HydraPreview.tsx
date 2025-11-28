@@ -11,6 +11,7 @@ interface HydraPreviewProps {
 
 export default function HydraPreview({ panelId }: HydraPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hydraRef = useRef<any>(null)
   const evaluationVersion = useHydraStore((state) => state.evaluationVersion)
   const lastError = useHydraStore((state) => state.lastError)
