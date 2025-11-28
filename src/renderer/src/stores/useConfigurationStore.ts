@@ -26,7 +26,7 @@ kick:
 
 vase:
   type: clip
-  path: live_set tracks 0 devices 0 parameters 1
+  path: live_set tracks 2 clip_slots 0 clip
   object: active
   present: true
   absent: false

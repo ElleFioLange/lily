@@ -17,12 +17,19 @@ export default function parseInput(input: string) {
     const isPresent = instances.length > 0
     const { type, path, object, present, absent } = params
     const value = isPresent ? present : absent
-    const message = {
-      address: `/set/${type}/${object}`,
-      args: [path, value]
+    if (type === 'clip' || type === 'track') {
+      const message = {
+        address: `/set/${type}/${value ? 'active' : 'inactive'}`,
+        args: [path]
+      }
+      messages.push(message)
+    } else {
+      const message = {
+        address: `/set/${type}/${object}`,
+        args: [path, value]
+      }
+      messages.push(message)
     }
-
-    messages.push(message)
   })
 
   return messages
