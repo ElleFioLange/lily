@@ -63,3 +63,16 @@ window.api.hydra.onTextUpdate((text: string) => {
     textOverlay.textContent = text
   }
 })
+
+// Listen for scroll position updates
+window.api.hydra.onScrollUpdate((scrollPercentage: number) => {
+  const textOverlay = document.getElementById('text-overlay')
+  if (textOverlay) {
+    // Calculate the scroll position based on the percentage
+    const maxScroll = textOverlay.scrollHeight - textOverlay.clientHeight
+    const targetScroll = maxScroll * scrollPercentage
+
+    // Apply the scroll position
+    textOverlay.scrollTop = targetScroll
+  }
+})

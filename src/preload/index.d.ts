@@ -102,6 +102,8 @@ interface LilyAPI {
     sendShaderResponse: (code: string) => void
     sendTextUpdate: (text: string) => void
     onTextUpdate: (callback: (text: string) => void) => void
+    sendScrollUpdate: (scrollPercentage: number) => void
+    onScrollUpdate: (callback: (scrollPercentage: number) => void) => void
   }
 }
 

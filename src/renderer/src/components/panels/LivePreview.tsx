@@ -82,8 +82,24 @@ export default function LivePreview({ panelId }: LivePreviewProps) {
 
     viewRef.current = view
 
+    // Add scroll listener to track scroll position
+    const scroller = view.scrollDOM
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = scroller
+      const maxScroll = scrollHeight - clientHeight
+
+      // Calculate scroll percentage (0 to 1)
+      const scrollPercentage = maxScroll > 0 ? scrollTop / maxScroll : 0
+
+      // Send scroll position to Hydra popup
+      window.api.hydra.sendScrollUpdate(scrollPercentage)
+    }
+
+    scroller.addEventListener('scroll', handleScroll)
+
     // Cleanup
     return () => {
+      scroller.removeEventListener('scroll', handleScroll)
       view.destroy()
       viewRef.current = null
     }

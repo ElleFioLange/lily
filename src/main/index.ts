@@ -467,4 +467,11 @@ function setupIPCHandlers(): void {
       hydraPopupWindowRef.webContents.send('hydra:text-update', text)
     }
   })
+
+  // Handle scroll position update from main window
+  ipcMain.on('hydra:scroll-update', (_, scrollPercentage: number) => {
+    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
+      hydraPopupWindowRef.webContents.send('hydra:scroll-update', scrollPercentage)
+    }
+  })
 }

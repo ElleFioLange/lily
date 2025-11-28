@@ -170,6 +170,12 @@ const api = {
     },
     onTextUpdate: (callback: (text: string) => void) => {
       ipcRenderer.on('hydra:text-update', (_, text) => callback(text))
+    },
+    sendScrollUpdate: (scrollPercentage: number) => {
+      ipcRenderer.send('hydra:scroll-update', scrollPercentage)
+    },
+    onScrollUpdate: (callback: (scrollPercentage: number) => void) => {
+      ipcRenderer.on('hydra:scroll-update', (_, scrollPercentage) => callback(scrollPercentage))
     }
   }
 }
