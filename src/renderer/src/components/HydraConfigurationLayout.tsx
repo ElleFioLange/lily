@@ -59,7 +59,7 @@ export default function HydraConfigurationLayout() {
 
       <PanelResizeHandle className="w-1 bg-stone-800 cursor-col-resize flex items-center justify-center" />
 
-      {/* Project Config - Right Sidebar */}
+      {/* Editor - Right Sidebar */}
       <Panel defaultSize={15} minSize={10} maxSize={30} collapsible>
         <ProjectConfig panelId="project-config" />
       </Panel>

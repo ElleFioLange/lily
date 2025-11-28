@@ -59,7 +59,7 @@ export default function Layout() {
 
       <PanelResizeHandle className="w-px bg-stone-800 cursor-col-resize flex items-center justify-center" />
 
-      {/* Project Config - Right Sidebar */}
+      {/* Editor - Right Sidebar */}
       <Panel defaultSize={30} minSize={10} maxSize={30} collapsible>
         <ProjectConfig panelId="project-config" />
       </Panel>

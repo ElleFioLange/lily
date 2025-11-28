@@ -316,8 +316,8 @@ All three layouts currently share the same structure:
 # Project metadata and settings
 project:
   name: Lily Project
-  version: "1.0.0"
-  author: ""
+  version: '1.0.0'
+  author: ''
 
 # Open Sound Control configuration
 osc:

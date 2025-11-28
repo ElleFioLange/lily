@@ -39,6 +39,9 @@ chaos:
   absent: false
 `
 
+// Default Hydra shader template
+const DEFAULT_HYDRA_SHADER = 'osc().out()'
+
 export type ConfigurationKey = {
   type: 'track' | 'clip' | 'device' | 'device_parameter'
   path: string
@@ -57,12 +60,15 @@ interface ConfigurationState {
   configPath: string | null
   isValid: boolean
   error: string | null
+  hydraShader: string
   setRawConfig: (rawConfig: string) => void
   setParsedConfig: (parsedConfig: ConfigurationJSON) => void
   loadRawConfig: () => Promise<void>
   saveRawConfig: () => Promise<void>
   resetRawConfig: () => void
   setRawConfigPath: (path: string | null) => void
+  setHydraShader: (shader: string) => void
+  resetHydraShader: () => void
 }
 
 export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
@@ -71,6 +77,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
   configPath: null,
   isValid: true,
   error: null,
+  hydraShader: DEFAULT_HYDRA_SHADER,
 
   setRawConfig: (rawConfig: string) => {
     // Validate YAML
@@ -144,7 +151,15 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     })
   },
 
-  setRawConfigPath: (path) => set({ configPath: path })
+  setRawConfigPath: (path) => set({ configPath: path }),
+
+  setHydraShader: (shader: string) => {
+    set({ hydraShader: shader })
+  },
+
+  resetHydraShader: () => {
+    set({ hydraShader: DEFAULT_HYDRA_SHADER })
+  }
 }))
 
 // Initialize config path on app start
