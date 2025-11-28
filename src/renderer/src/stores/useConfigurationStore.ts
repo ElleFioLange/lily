@@ -104,10 +104,12 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     try {
       const result = await window.api.config.load()
       if (result.success && result.content) {
-        // Validate loaded content
-        jsyaml.load(result.content)
+        // Parse and validate loaded content
+        const { parsedConfig, err } = parseConfig(result.content)
+        if (err) throw err
         set({
           rawConfig: result.content,
+          parsedConfig,
           configPath: result.path || null,
           isValid: true,
           error: null
