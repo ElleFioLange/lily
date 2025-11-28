@@ -11,12 +11,30 @@ window.addEventListener('DOMContentLoaded', () => {
     return
   }
 
-  // Initialize Hydra
+  // Set canvas resolution to match window size
+  const setCanvasSize = () => {
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+  }
+
+  setCanvasSize()
+
+  // Initialize Hydra with explicit dimensions
   hydraInstance = new Hydra({
     canvas,
     detectAudio: false,
     makeGlobal: false,
-    autoLoop: true
+    autoLoop: true,
+    width: window.innerWidth,
+    height: window.innerHeight
+  })
+
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    setCanvasSize()
+    if (hydraInstance) {
+      hydraInstance.setResolution(window.innerWidth, window.innerHeight)
+    }
   })
 
   // Request initial shader code from main window
