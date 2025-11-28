@@ -2,6 +2,7 @@
 import { create } from 'zustand'
 import type { OSCMessage } from '../../../types/osc-messages'
 import { useLiveStore } from './useLiveStore'
+import { v4 as uuid } from 'uuid'
 
 /**
  * Minimal OSC Store Template
@@ -126,6 +127,11 @@ export function setupOSCListeners(): void {
           liveStore.setLiveProject(JSON.parse(fullData))
           liveStore.setLiveProjectBuffer({})
         }
+        break
+      }
+      case '/request/lily-id': {
+        const payload = message.args[0] as string
+        window.api.osc.send('/set/lily-id', [payload, uuid()])
         break
       }
       // TODO

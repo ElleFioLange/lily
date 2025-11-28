@@ -21,6 +21,10 @@ export default function AbletonMonitor({ panelId }: AbletonMonitorProps) {
     // })
   }
 
+  const handleIDRequest = async () => {
+    await window.api.osc.send('/set/lily-id', ['3', 'tes'])
+  }
+
   const liveProject = useLiveStore((state) => state.liveProject)
 
   return (
@@ -40,6 +44,12 @@ export default function AbletonMonitor({ panelId }: AbletonMonitorProps) {
         className="px-4 py-2 bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
       >
         Request State from Max Device
+      </button>
+      <button
+        onClick={handleIDRequest}
+        className="px-4 py-2 bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
+      >
+        Set ID for Max Device
       </button>
       <pre className="w-60 h-20 overflow-scroll bg-stone-800 text-xs">
         {JSON.stringify(liveProject)}
