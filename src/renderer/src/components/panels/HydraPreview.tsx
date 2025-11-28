@@ -54,9 +54,12 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
   const evaluateShader = (code: string) => {
     if (!hydraRef.current) return
 
+    console.log(code)
+
     try {
       const synth = hydraRef.current.synth
       const evalFunc = new Function(...Object.keys(synth), code)
+      console.log(synth)
       evalFunc(...Object.values(synth))
       setError(null)
     } catch (err) {
@@ -75,13 +78,22 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
       contentClassName="flex flex-col relative"
       panelId={panelId}
       headerActions={
-        <button
-          onClick={handleOpenPopup}
-          className="px-2 py-1 text-xs bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
-          title="Open popup window"
-        >
-          Popup
-        </button>
+        <>
+          <button
+            onClick={handleOpenPopup}
+            className="px-2 py-1 text-xs bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
+            title="Open popup window"
+          >
+            Popup
+          </button>
+          <button
+            onClick={() => console.log(hydraRef.current.synth.time)}
+            className="px-2 py-1 text-xs bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
+            title="test time"
+          >
+            test time
+          </button>
+        </>
       }
     >
       {/* Error Display */}

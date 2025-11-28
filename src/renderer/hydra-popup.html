@@ -5,7 +5,7 @@
     <title>Hydra Output</title>
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'"
+      content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
     />
     <style>
       * {
@@ -25,6 +25,9 @@
   </head>
   <body>
     <canvas id="hydra-canvas"></canvas>
+    <script>
+      window.global = window
+    </script>
     <script type="module" src="/src/hydra-popup.ts"></script>
   </body>
 </html>

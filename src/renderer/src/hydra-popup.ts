@@ -45,6 +45,8 @@ window.addEventListener('DOMContentLoaded', () => {
 window.api.hydra.onEvaluateShader((code: string) => {
   if (!hydraInstance) return
 
+  console.log(code)
+
   try {
     const synth = hydraInstance.synth
     const evalFunc = new Function(...Object.keys(synth), code)
