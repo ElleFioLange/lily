@@ -23,3 +23,9 @@
       - lily-id devices deduplicate, only one per track
       - they listen for udp signals of the object UUID and return the canonical path
       -
+
+need to create functionality for adding custom javascript
+example:
+brine(sin(t)) sends a sin(time) control signal to the value corresponding to the brine action
+brine(sin(wings())) follows the value of the wings() operator and performs a sin() transform on the value
+brine(brine(brine())) modulation feedback ꉂ(˵˃ ᗜ ˂˵)
