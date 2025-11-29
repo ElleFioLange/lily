@@ -15,12 +15,29 @@ export default function parseInput(input: string) {
     const matches = input.matchAll(regex)
     const instances = Array.from(matches)
     const isPresent = instances.length > 0
-    const { type, path, object, present, absent } = params
+    const { type, path, args, object, present, absent } = params
     const value = isPresent ? present : absent
     if (type === 'clip' || type === 'track') {
+      let _path = path
+      if (args) {
+        Object.entries(args).forEach(([arg, { acts_on, presets, default_value }], index) => {
+          if (acts_on === 'path') {
+            let value
+            if (presets !== undefined && isPresent) {
+              const preset = instances[0][index + 1]
+              value = preset ? presets[preset] : default_value
+            } else {
+              value = default_value
+            }
+            const indexOfArg = _path.indexOf('_' + arg)
+            _path = _path.slice(0, indexOfArg) + value + _path.slice(indexOfArg + arg.length + 1)
+          }
+        })
+      }
+      console.log(_path)
       const message = {
         address: `/set/${type}/${value ? 'active' : 'inactive'}`,
-        args: [path]
+        args: [_path]
       }
       messages.push(message)
     } else {

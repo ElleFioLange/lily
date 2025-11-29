@@ -19,7 +19,18 @@ fabric:
 
 skeleton:
   type: clip
-  path: live_set tracks 2 clip_slots 0 clip
+  path: live_set tracks 2 clip_slots _clip clip
+  args:
+    clip:
+      acts_on: path
+      type: number
+      default_value: 0
+      presets:
+        sparse: 0
+        slight: 1
+        some: 2
+        dense: 3
+        packed: 4
   object: active
   present: true
   absent: false
@@ -33,7 +44,15 @@ sparring_bells:
 
 brine:
   type: clip
-  path: live_set tracks 4 clip_slots 0 clip
+  path: live_set tracks 4 clip_slots _clip clip
+  args:
+    clip:
+      acts_on: path
+      type: number
+      default_value: 0
+      presets:
+        salty: 0
+        foamy: 1
   object: active
   present: true
   absent: false
@@ -89,9 +108,17 @@ src(o2).brightness(-0.1).add(src(o1), 0.2).modulateScale(src(o1), -0.05).modulat
 
 render(o2)`
 
+export type KeyArgument = {
+  acts_on: 'path'
+  type: 'number' | 'string' | 'boolean'
+  presets?: { [preset: string]: number | string | boolean }
+  default_value: number | string | boolean
+}
+
 export type ConfigurationKey = {
   type: 'track' | 'clip' | 'device' | 'device_parameter'
   path: string
+  args?: { [arg: string]: KeyArgument }
   object: 'active' | 'value'
   present: boolean | number
   absent: boolean | number
