@@ -3,44 +3,91 @@ import * as jsyaml from 'js-yaml'
 import parseConfig from '@renderer/utils/parseConfig'
 
 // Default configuration template
-const DEFAULT_CONFIG = `whir_and_hum:
+const DEFAULT_CONFIG = `foundry:
   type: clip
   path: live_set tracks 0 clip_slots 0 clip
   object: active
   present: true
   absent: false
 
-base:
-  type: device_parameter
-  path: live_set tracks 0 devices 0 parameters 1
-  object: value
-  present: -12
-  absent: 0
-
-kick:
+fabric:
   type: clip
   path: live_set tracks 1 clip_slots 0 clip
   object: active
   present: true
   absent: false
 
-vase:
+skeleton:
   type: clip
   path: live_set tracks 2 clip_slots 0 clip
   object: active
   present: true
   absent: false
 
-chaos:
-  type: track
-  path: live_set return_tracks 0
+sparring_bells:
+  type: clip
+  path: live_set tracks 3 clip_slots 0 clip
+  object: active
+  present: true
+  absent: false
+
+brine:
+  type: clip
+  path: live_set tracks 4 clip_slots 0 clip
+  object: active
+  present: true
+  absent: false
+
+wings:
+  type: clip
+  path: live_set tracks 5 clip_slots 0 clip
+  object: active
+  present: true
+  absent: false
+
+muscle:
+  type: clip
+  path: live_set tracks 6 clip_slots 0 clip
+  object: active
+  present: true
+  absent: false
+
+sinking_souls:
+  type: clip
+  path: live_set tracks 7 clip_slots 0 clip
+  object: active
+  present: true
+  absent: false
+
+single_volt:
+  type: clip
+  path: live_set tracks 8 clip_slots 0 clip
   object: active
   present: true
   absent: false
 `
 
 // Default Hydra shader template
-const DEFAULT_HYDRA_SHADER = 'osc().out()'
+const DEFAULT_HYDRA_SHADER = `voronoi(1)
+	.modulatePixelate(voronoi(100))
+	.color([0, 1].smooth().fast(0.5), [1, 0].smooth().fast(0.3))
+	.modulatePixelate(osc(3)
+		.modulateScale(src(o0))
+		.rotate())
+	.out()
+
+src(o0)
+	.hue([0, Math.PI * 2].smooth().fast(0.1))
+	.add(src(o0)
+		.repeat(3)
+		.modulateRotate(src(o0))
+		.modulateScale(src(o1)), 2)
+	.mult(noise(4, 1).brightness(0.5))
+	.out(o1)
+
+src(o2).brightness(-0.1).add(src(o1), 0.2).modulateScale(src(o1), -0.05).modulateRotate(src(o0)).out(o2)
+
+render(o2)`
 
 export type ConfigurationKey = {
   type: 'track' | 'clip' | 'device' | 'device_parameter'
