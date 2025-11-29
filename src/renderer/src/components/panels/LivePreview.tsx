@@ -82,24 +82,8 @@ export default function LivePreview({ panelId }: LivePreviewProps) {
 
     viewRef.current = view
 
-    // Add scroll listener to track scroll position
-    const scroller = view.scrollDOM
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = scroller
-      const maxScroll = scrollHeight - clientHeight
-
-      // Calculate scroll percentage (0 to 1)
-      const scrollPercentage = maxScroll > 0 ? scrollTop / maxScroll : 0
-
-      // Send scroll position to Hydra popup
-      window.api.hydra.sendScrollUpdate(scrollPercentage)
-    }
-
-    scroller.addEventListener('scroll', handleScroll)
-
     // Cleanup
     return () => {
-      scroller.removeEventListener('scroll', handleScroll)
       view.destroy()
       viewRef.current = null
     }
@@ -122,10 +106,28 @@ export default function LivePreview({ panelId }: LivePreviewProps) {
   return (
     <Panel
       title="Live preview"
-      contentClassName="flex items-center justify-center bg-stone-900"
+      contentClassName="flex items-center justify-center bg-stone-900 relative"
       panelId={panelId}
     >
-      <div ref={editorRef} className="w-full max-h-full overflow-auto  outline-none" />
+      <div
+        ref={editorRef}
+        onWheel={() => {
+          const editor = editorRef.current!
+          const { clientHeight, scrollTop } = editor
+
+          const container = editor.children[0]
+          const containerHeight = container.clientHeight
+
+          const maxScroll = containerHeight - clientHeight
+
+          // From 0 to 1
+          const scrollPercentage = scrollTop / maxScroll
+
+          // Send scroll position to Hydra popup
+          window.api.hydra.sendScrollUpdate(scrollPercentage)
+        }}
+        className="w-full max-h-full overflow-auto outline-none relative"
+      />
     </Panel>
   )
 }

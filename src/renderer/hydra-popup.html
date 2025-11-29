@@ -22,17 +22,21 @@
         height: 100vh;
         display: block;
       }
-      .text-overlay {
+      #text-overlay-container {
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
+        overflow: auto;
+        scrollbar-color: #00000000 #00000000;
+      }
+
+      #text-overlay {
         display: flex;
         align-items: center;
         justify-content: center;
-        overflow: auto;
-        scrollbar-color: #00000000 #00000000;
+        min-height: 100%;
         text-align: center;
         font-family: Monospace Xenon;
         color: #fafaf9; /* stone-100 */
@@ -47,7 +51,9 @@
   </head>
   <body>
     <canvas id="hydra-canvas"></canvas>
-    <div id="text-overlay" class="text-overlay"></div>
+    <div id="text-overlay-container">
+      <div id="text-overlay"></div>
+    </div>
     <script>
       window.global = window
     </script>
