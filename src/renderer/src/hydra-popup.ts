@@ -1,4 +1,6 @@
 import Hydra from 'hydra-synth'
+import { useConfigurationStore } from './stores/useConfigurationStore'
+import { keyRegex } from './utils/parseInput'
 
 let hydraInstance: any = null
 
@@ -60,7 +62,52 @@ window.api.hydra.onEvaluateShader((code: string) => {
 window.api.hydra.onTextUpdate((text: string) => {
   const textOverlay = document.getElementById('text-overlay')
   if (textOverlay) {
-    textOverlay.textContent = text
+    const { parsedConfig: config } = useConfigurationStore.getState()
+
+    if (!config) {
+      textOverlay.replaceChildren(text)
+      return
+    }
+
+    const keys = Object.keys(config)
+
+    const matchedKeys: {
+      key: string
+      match: string
+    }[] = []
+
+    keys.forEach((key) => {
+      console.log(key)
+      const regex = keyRegex(key)
+      const matches = text.matchAll(regex)
+      const instances = Array.from(matches)
+      console.log(instances)
+      instances.forEach((instance) => {
+        const match = instance[0]
+        matchedKeys.push({ key, match })
+      })
+    })
+
+    let processedText: (Node | string)[] = []
+    let marker = 0
+
+    for (const { key, match } of matchedKeys) {
+      let index = text.indexOf(match, marker)
+
+      const pretext = text.slice(marker, index)
+
+      const matchNode = document.createElement('span')
+      matchNode.setAttribute('id', key)
+      matchNode.setAttribute('class', 'keyword')
+      matchNode.textContent = match
+
+      processedText.push(...[pretext, matchNode])
+      marker = index + match.length
+    }
+
+    processedText.push(text.slice(marker))
+
+    textOverlay.replaceChildren(...processedText)
   }
 })
 

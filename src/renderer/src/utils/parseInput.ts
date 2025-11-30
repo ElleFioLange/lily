@@ -1,6 +1,8 @@
 import { useConfigurationStore } from '@renderer/stores/useConfigurationStore'
 import { OSCMessage } from 'src/types/osc-messages'
 
+export const keyRegex = (key) => new RegExp(`\\b${key}\\(([^\\)]*)\\)`, 'g')
+
 export default function parseInput(input: string) {
   const { parsedConfig: config } = useConfigurationStore.getState()
 
@@ -11,7 +13,7 @@ export default function parseInput(input: string) {
 
   keys.forEach(([key, params]) => {
     // The actual regex has single backslashes after escaping is done
-    const regex = new RegExp(`\\b${key}\\(([^\\)]*)\\)`, 'g')
+    const regex = keyRegex(key)
     const matches = input.matchAll(regex)
     const instances = Array.from(matches)
     const isPresent = instances.length > 0
