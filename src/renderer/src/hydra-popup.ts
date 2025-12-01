@@ -47,8 +47,6 @@ window.addEventListener('DOMContentLoaded', () => {
 window.api.hydra.onEvaluateShader((code: string) => {
   if (!hydraInstance) return
 
-  console.log(code)
-
   try {
     const synth = hydraInstance.synth
     const evalFunc = new Function(...Object.keys(synth), code)
@@ -74,27 +72,37 @@ window.api.hydra.onTextUpdate((text: string) => {
     const matchedKeys: {
       key: string
       match: string
+      position: {
+        start: number
+        end: number
+      }
     }[] = []
 
     keys.forEach((key) => {
-      console.log(key)
       const regex = keyRegex(key)
       const matches = text.matchAll(regex)
       const instances = Array.from(matches)
-      console.log(instances)
       instances.forEach((instance) => {
         const match = instance[0]
-        matchedKeys.push({ key, match })
+        const start = instance.index
+        const end = start + match.length
+        const position = { start, end }
+        matchedKeys.push({ key, match, position })
       })
     })
 
     let processedText: (Node | string)[] = []
     let marker = 0
 
-    for (const { key, match } of matchedKeys) {
-      let index = text.indexOf(match, marker)
+    // TODO need to handle cases like key1(key2())
+    matchedKeys.sort((a, b) => a.position.start - b.position.start)
 
-      const pretext = text.slice(marker, index)
+    // console.log(matchedKeys)
+
+    for (const { key, match, position } of matchedKeys) {
+      const { start, end } = position
+
+      const pretext = text.slice(marker, start)
 
       const matchNode = document.createElement('span')
       matchNode.setAttribute('id', key)
@@ -102,7 +110,7 @@ window.api.hydra.onTextUpdate((text: string) => {
       matchNode.textContent = match
 
       processedText.push(...[pretext, matchNode])
-      marker = index + match.length
+      marker = end
     }
 
     processedText.push(text.slice(marker))
@@ -118,7 +126,6 @@ window.api.hydra.onScrollUpdate((scrollPercentage: number) => {
     // Calculate the scroll position based on the percentage
     const maxScroll = textOverlay.scrollHeight - textOverlay.clientHeight
     const targetScroll = maxScroll * scrollPercentage
-    console.log(maxScroll, targetScroll, scrollPercentage)
 
     // Apply the scroll position
     textOverlay.scrollTop = targetScroll
