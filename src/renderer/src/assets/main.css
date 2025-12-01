@@ -4,6 +4,14 @@
 /* TODO */
 /* .rainbow-bracket-red: { color: } */
 
+@theme {
+  --font-argon: 'Monaspace Argon';
+  --font-krypton: 'Monaspace Krypton';
+  --font-neon: 'Monaspace Neon';
+  --font-radon: 'Monaspace Radon';
+  --font-xenon: 'Monaspace Xenon';
+}
+
 @layer base {
   body {
     @apply bg-stone-950 text-stone-100 overflow-hidden select-none;
