@@ -176,6 +176,12 @@ const api = {
     },
     onScrollUpdate: (callback: (scrollPercentage: number) => void) => {
       ipcRenderer.on('hydra:scroll-update', (_, scrollPercentage) => callback(scrollPercentage))
+    },
+    triggerAnimation: () => {
+      ipcRenderer.send('hydra:trigger-animation')
+    },
+    onTriggerAnimation: (callback: () => void) => {
+      ipcRenderer.on('hydra:trigger-animation', callback)
     }
   }
 }

@@ -474,4 +474,10 @@ function setupIPCHandlers(): void {
       hydraPopupWindowRef.webContents.send('hydra:scroll-update', scrollPercentage)
     }
   })
+
+  ipcMain.on('hydra:trigger-animation', () => {
+    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
+      hydraPopupWindowRef.webContents.send('hydra:trigger-animation')
+    }
+  })
 }

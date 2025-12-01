@@ -90,6 +90,7 @@ export function useKeyboardShortcuts(): void {
         handler: () => {
           const { input } = useInputStore.getState()
           const messages = parseInput(input)
+          window.api.hydra.triggerAnimation()
           messages.forEach(({ address, args }) => {
             window.api.osc.send(address, args)
           })

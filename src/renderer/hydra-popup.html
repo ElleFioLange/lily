@@ -9,6 +9,30 @@
     />
     <link rel="stylesheet" type="text/css" href="src/assets/main.css" />
     <style>
+      @keyframes trigger {
+        0% {
+          text-shadow:
+            1px 1px 0px var(--color-stone-50),
+            -1px 1px 0px var(--color-stone-50),
+            -1px 1px 0px var(--color-stone-50),
+            -1px -1px 0px var(--color-stone-50) !important;
+        }
+        20% {
+          text-shadow:
+            4px 4px 16px var(--color-stone-50),
+            -4px 4px 16px var(--color-stone-50),
+            -4px 4px 16px var(--color-stone-50),
+            -4px -4px 16px var(--color-stone-50) !important;
+        }
+        100% {
+          text-shadow:
+            32px 32px 16px #00000000,
+            -32px 32px 16px #00000000,
+            -32px 32px 16px #00000000,
+            -32px -32px 16px #00000000 !important;
+        }
+      }
+
       #text-overlay-container {
         scrollbar-color: #00000000 #00000000;
       }

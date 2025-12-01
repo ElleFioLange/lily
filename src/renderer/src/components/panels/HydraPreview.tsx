@@ -68,6 +68,7 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
   }
 
   const handleOpenPopup = async () => {
+    // TODO reset the hydra preview to sync the popup window
     await window.api.hydra.openPopup()
   }
 

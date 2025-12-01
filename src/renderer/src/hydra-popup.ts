@@ -59,6 +59,7 @@ window.api.hydra.onEvaluateShader((code: string) => {
 // Listen for text updates
 window.api.hydra.onTextUpdate((text: string) => {
   const textOverlay = document.getElementById('text-overlay')
+
   if (textOverlay) {
     const { parsedConfig: config } = useConfigurationStore.getState()
 
@@ -116,6 +117,16 @@ window.api.hydra.onTextUpdate((text: string) => {
     processedText.push(text.slice(marker))
 
     textOverlay.replaceChildren(...processedText)
+  }
+})
+
+window.api.hydra.onTriggerAnimation(() => {
+  console.log('trigger animation')
+  const textOverlay = document.getElementById('text-overlay')
+  if (textOverlay) {
+    textOverlay.style.animation = 'none'
+    textOverlay.offsetHeight
+    textOverlay.style.animation = '2s 0s ease-out 1 trigger'
   }
 })
 

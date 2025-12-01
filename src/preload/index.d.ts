@@ -104,6 +104,8 @@ interface LilyAPI {
     onTextUpdate: (callback: (text: string) => void) => void
     sendScrollUpdate: (scrollPercentage: number) => void
     onScrollUpdate: (callback: (scrollPercentage: number) => void) => void
+    triggerAnimation: () => void
+    onTriggerAnimation: (callback: () => void) => void
   }
 }
 
