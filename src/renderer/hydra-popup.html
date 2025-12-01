@@ -41,6 +41,32 @@
         font-family: Monaspace Krypton;
         font-weight: 600;
       }
+
+      /* Audio-reactive keyword container */
+      .keyword-container {
+        position: relative;
+        display: inline-block;
+      }
+
+      /* Keyword text (visible underneath shader) */
+      .keyword-text {
+        position: relative;
+        z-index: 1;
+        font-family: Monaspace Krypton;
+        font-weight: 600;
+      }
+
+      /* Shader canvas overlay */
+      .keyword-shader {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 2;
+        pointer-events: none;
+        /* Blend mode set dynamically per effect preset */
+      }
     </style>
   </head>
   <body>

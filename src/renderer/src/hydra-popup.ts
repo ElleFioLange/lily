@@ -1,11 +1,15 @@
 import Hydra from 'hydra-synth'
 import { useConfigurationStore } from './stores/useConfigurationStore'
 import { keyRegex } from './utils/parseInput'
+import { AudioManager } from './audio/AudioManager'
+import { KeywordShaderManager } from './webgl/KeywordShaderManager'
 
 let hydraInstance: any = null
+let audioManager: AudioManager | null = null
+let shaderManager: KeywordShaderManager | null = null
 
 // Initialize Hydra when DOM is ready
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   const canvas = document.getElementById('hydra-canvas') as HTMLCanvasElement
 
   if (!canvas) {
@@ -30,6 +34,25 @@ window.addEventListener('DOMContentLoaded', () => {
     width: window.innerWidth,
     height: window.innerHeight
   })
+
+  // Initialize audio system
+  try {
+    audioManager = new AudioManager()
+    await audioManager.initialize()
+    console.log('Audio system initialized')
+  } catch (err) {
+    console.error('Failed to initialize audio:', err)
+    console.warn('Continuing without audio - shaders will receive zero values')
+  }
+
+  // Initialize shader manager
+  if (audioManager) {
+    shaderManager = new KeywordShaderManager(audioManager)
+    shaderManager.startRenderLoop()
+    console.log('Shader manager initialized')
+  } else {
+    console.warn('Shader manager not initialized due to audio failure')
+  }
 
   // Handle window resize
   window.addEventListener('resize', () => {
@@ -105,12 +128,56 @@ window.api.hydra.onTextUpdate((text: string) => {
 
       const pretext = text.slice(marker, start)
 
-      const matchNode = document.createElement('span')
-      matchNode.setAttribute('id', key)
-      matchNode.setAttribute('class', 'keyword')
-      matchNode.textContent = match
+      const keywordConfig = config[key]
+      const audioConfig = keywordConfig.audio_reactivity
 
-      processedText.push(...[pretext, matchNode])
+      if (audioConfig && shaderManager) {
+        // Create container with canvas overlay
+        const container = document.createElement('span')
+        container.setAttribute('id', key)
+        container.setAttribute('class', 'keyword-container')
+
+        const textSpan = document.createElement('span')
+        textSpan.setAttribute('class', 'keyword-text')
+        textSpan.textContent = match
+
+        const canvas = document.createElement('canvas')
+        canvas.setAttribute('class', 'keyword-shader')
+        canvas.setAttribute('data-keyword', key)
+
+        // Initial canvas size (will be refined after DOM render)
+        canvas.width = 200
+        canvas.height = 60
+
+        container.appendChild(textSpan)
+        container.appendChild(canvas)
+
+        processedText.push(pretext, container)
+
+        // Create shader instance after DOM renders
+        setTimeout(() => {
+          const bounds = textSpan.getBoundingClientRect()
+          if (bounds.width > 0 && bounds.height > 0) {
+            // Size canvas to match text with device pixel ratio
+            const dpr = window.devicePixelRatio || 1
+            canvas.width = Math.ceil(bounds.width * dpr)
+            canvas.height = Math.ceil(bounds.height * dpr)
+            canvas.style.width = `${bounds.width}px`
+            canvas.style.height = `${bounds.height}px`
+
+            shaderManager!.createKeywordShader(key, canvas, audioConfig, match)
+          }
+        }, 0)
+      } else {
+        // No audio reactivity - render as before
+        const matchNode = document.createElement('span')
+        matchNode.setAttribute('id', key)
+        matchNode.setAttribute('class', 'keyword')
+        matchNode.textContent = match
+
+        processedText.push(pretext, matchNode)
+      }
+
       marker = end
     }
 
@@ -141,4 +208,11 @@ window.api.hydra.onScrollUpdate((scrollPercentage: number) => {
     // Apply the scroll position
     textOverlay.scrollTop = targetScroll
   }
+})
+
+// Cleanup on window close
+window.addEventListener('beforeunload', () => {
+  shaderManager?.destroy()
+  audioManager?.destroy()
+  console.log('Cleaned up audio and shader systems')
 })

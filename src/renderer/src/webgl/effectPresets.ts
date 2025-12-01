@@ -1,0 +1,286 @@
+/**
+ * GLSL Effect Presets for Audio-Reactive Keyword Shaders
+ * Each preset includes vertex shader, fragment shader, and blend mode
+ */
+
+export interface EffectPreset {
+  name: string
+  description: string
+  vertexShader: string
+  fragmentShader: string
+  blendMode: 'normal' | 'screen' | 'multiply' | 'add' | 'overlay'
+}
+
+/**
+ * Standard vertex shader (shared by all effects)
+ * Creates fullscreen quad with texture coordinates
+ */
+const STANDARD_VERTEX_SHADER = `#version 300 es
+in vec2 a_position;
+out vec2 v_texCoord;
+
+void main() {
+  gl_Position = vec4(a_position, 0.0, 1.0);
+  v_texCoord = (a_position + 1.0) * 0.5;
+}
+`
+
+/**
+ * Effect 1: Kaleidoscope
+ * Bass-driven kaleidoscope effect with variable segments
+ */
+const KALEIDOSCOPE_FRAGMENT = `#version 300 es
+precision highp float;
+
+in vec2 v_texCoord;
+out vec4 fragColor;
+
+uniform sampler2D u_textTexture;
+uniform float u_bass;
+uniform float u_time;
+uniform float u_amplitude;
+
+void main() {
+  vec2 uv = v_texCoord;
+  vec2 center = vec2(0.5);
+
+  // Kaleidoscope segments driven by bass (6-18 segments)
+  float segments = 6.0 + u_bass * 12.0;
+
+  vec2 pos = uv - center;
+  float angle = atan(pos.y, pos.x);
+  float radius = length(pos);
+
+  // Mirror angle based on segment count
+  angle = mod(angle, 6.28318 / segments) * segments;
+  vec2 newPos = center + vec2(cos(angle), sin(angle)) * radius;
+
+  // Sample text texture with kaleidoscope UV
+  vec4 textColor = texture(u_textTexture, newPos);
+
+  // Add subtle color shift based on amplitude
+  vec3 color = textColor.rgb;
+  color.r += u_amplitude * 0.2;
+  color.g += u_bass * 0.15;
+
+  fragColor = vec4(color, textColor.a);
+}
+`
+
+/**
+ * Effect 2: Chromatic Aberration
+ * Amplitude-driven RGB channel separation
+ */
+const CHROMATIC_ABERRATION_FRAGMENT = `#version 300 es
+precision highp float;
+
+in vec2 v_texCoord;
+out vec4 fragColor;
+
+uniform sampler2D u_textTexture;
+uniform float u_amplitude;
+uniform float u_time;
+
+void main() {
+  vec2 uv = v_texCoord;
+
+  // RGB split amount driven by amplitude
+  float offset = u_amplitude * 0.02;
+
+  // Slight rotation over time
+  float angle = u_time * 0.1;
+  vec2 dir = vec2(cos(angle), sin(angle));
+
+  // Sample each color channel with offset
+  float r = texture(u_textTexture, uv + dir * offset).r;
+  float g = texture(u_textTexture, uv).g;
+  float b = texture(u_textTexture, uv - dir * offset).b;
+  float a = texture(u_textTexture, uv).a;
+
+  fragColor = vec4(r, g, b, a);
+}
+`
+
+/**
+ * Effect 3: Glitch
+ * Beat-triggered glitch with horizontal line displacement
+ */
+const GLITCH_FRAGMENT = `#version 300 es
+precision highp float;
+
+in vec2 v_texCoord;
+out vec4 fragColor;
+
+uniform sampler2D u_textTexture;
+uniform float u_beat;
+uniform float u_mid;
+uniform float u_time;
+uniform float u_amplitude;
+
+// Random function
+float random(vec2 st) {
+  return fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+void main() {
+  vec2 uv = v_texCoord;
+
+  // Apply glitch when beat is detected
+  if (u_beat > 0.5) {
+    float glitchIntensity = u_mid * 0.8 + 0.2;
+
+    // Horizontal line displacement
+    float lineY = floor(uv.y * 20.0) / 20.0;
+    float lineOffset = (random(vec2(lineY, u_time)) - 0.5) * glitchIntensity * 0.15;
+    uv.x += lineOffset;
+
+    // RGB shift on glitch lines
+    float rShift = (random(vec2(lineY, u_time + 1.0)) - 0.5) * glitchIntensity * 0.03;
+    float bShift = (random(vec2(lineY, u_time + 2.0)) - 0.5) * glitchIntensity * 0.03;
+
+    float r = texture(u_textTexture, uv + vec2(rShift, 0.0)).r;
+    float g = texture(u_textTexture, uv).g;
+    float b = texture(u_textTexture, uv + vec2(bShift, 0.0)).b;
+    float a = texture(u_textTexture, uv).a;
+
+    fragColor = vec4(r, g, b, a);
+  } else {
+    // No glitch - render normally with subtle movement
+    float drift = u_amplitude * 0.005 * sin(u_time * 2.0);
+    fragColor = texture(u_textTexture, uv + vec2(drift, 0.0));
+  }
+}
+`
+
+/**
+ * Effect 4: Pixelate
+ * High-frequency driven pixelation
+ */
+const PIXELATE_FRAGMENT = `#version 300 es
+precision highp float;
+
+in vec2 v_texCoord;
+out vec4 fragColor;
+
+uniform sampler2D u_textTexture;
+uniform float u_high;
+uniform float u_amplitude;
+
+void main() {
+  // Pixel size driven by high frequencies (2-32 pixels)
+  float pixelSize = 2.0 + u_high * 30.0;
+
+  // Add subtle variation based on amplitude
+  pixelSize *= (1.0 + u_amplitude * 0.3);
+
+  // Pixelate UV coordinates
+  vec2 uv = v_texCoord;
+  vec2 pixelatedUV = floor(uv * pixelSize) / pixelSize;
+
+  fragColor = texture(u_textTexture, pixelatedUV);
+}
+`
+
+/**
+ * Effect 5: Wave Distortion
+ * Amplitude-driven sine wave distortion
+ */
+const WAVE_DISTORTION_FRAGMENT = `#version 300 es
+precision highp float;
+
+in vec2 v_texCoord;
+out vec4 fragColor;
+
+uniform sampler2D u_textTexture;
+uniform float u_amplitude;
+uniform float u_time;
+uniform float u_bass;
+
+void main() {
+  vec2 uv = v_texCoord;
+
+  // Vertical and horizontal wave distortion
+  float waveAmountX = u_amplitude * 0.05;
+  float waveAmountY = u_bass * 0.03;
+
+  // Multiple wave frequencies
+  float waveX = sin(uv.y * 10.0 + u_time * 2.0) * waveAmountX;
+  float waveY = sin(uv.x * 8.0 + u_time * 1.5) * waveAmountY;
+
+  uv.x += waveX;
+  uv.y += waveY;
+
+  fragColor = texture(u_textTexture, uv);
+}
+`
+
+/**
+ * Effect Preset Registry
+ * Maps effect names to their shader implementations
+ */
+export const EFFECT_PRESETS: Map<string, EffectPreset> = new Map([
+  [
+    'kaleidoscope',
+    {
+      name: 'kaleidoscope',
+      description: 'Kaleidoscope effect with bass-driven segment count',
+      vertexShader: STANDARD_VERTEX_SHADER,
+      fragmentShader: KALEIDOSCOPE_FRAGMENT,
+      blendMode: 'screen'
+    }
+  ],
+  [
+    'chromatic-aberration',
+    {
+      name: 'chromatic-aberration',
+      description: 'RGB channel split driven by amplitude',
+      vertexShader: STANDARD_VERTEX_SHADER,
+      fragmentShader: CHROMATIC_ABERRATION_FRAGMENT,
+      blendMode: 'normal'
+    }
+  ],
+  [
+    'glitch',
+    {
+      name: 'glitch',
+      description: 'Beat-triggered glitch effect with line displacement',
+      vertexShader: STANDARD_VERTEX_SHADER,
+      fragmentShader: GLITCH_FRAGMENT,
+      blendMode: 'add'
+    }
+  ],
+  [
+    'pixelate',
+    {
+      name: 'pixelate',
+      description: 'Pixelation effect driven by high frequencies',
+      vertexShader: STANDARD_VERTEX_SHADER,
+      fragmentShader: PIXELATE_FRAGMENT,
+      blendMode: 'normal'
+    }
+  ],
+  [
+    'wave-distortion',
+    {
+      name: 'wave-distortion',
+      description: 'Sine wave distortion driven by amplitude and bass',
+      vertexShader: STANDARD_VERTEX_SHADER,
+      fragmentShader: WAVE_DISTORTION_FRAGMENT,
+      blendMode: 'screen'
+    }
+  ]
+])
+
+/**
+ * Get list of available effect names
+ */
+export function getAvailableEffects(): string[] {
+  return Array.from(EFFECT_PRESETS.keys())
+}
+
+/**
+ * Check if an effect preset exists
+ */
+export function hasEffect(effectName: string): boolean {
+  return EFFECT_PRESETS.has(effectName)
+}

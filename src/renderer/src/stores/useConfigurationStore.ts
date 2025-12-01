@@ -9,6 +9,10 @@ const DEFAULT_CONFIG = `foundry:
   object: active
   present: true
   absent: false
+  audio_reactivity:
+    audioChannel: 0
+    visualEffect: 'kaleidoscope'
+    beatDetection: false
 
 fabric:
   type: clip
@@ -16,6 +20,9 @@ fabric:
   object: active
   present: true
   absent: false
+  audio_reactivity:
+    audioChannel: 1
+    visualEffect: 'chromatic-aberration'
 
 skeleton:
   type: clip
@@ -34,6 +41,10 @@ skeleton:
   object: active
   present: true
   absent: false
+  audio_reactivity:
+    audioChannel: 2
+    visualEffect: 'glitch'
+    beatDetection: true
 
 sparring_bells:
   type: clip
@@ -41,6 +52,9 @@ sparring_bells:
   object: active
   present: true
   absent: false
+  audio_reactivity:
+    audioChannel: 3
+    visualEffect: 'wave-distortion'
 
 brine:
   type: clip
@@ -56,6 +70,9 @@ brine:
   object: active
   present: true
   absent: false
+  audio_reactivity:
+    audioChannel: 4
+    visualEffect: 'pixelate'
 
 wings:
   type: clip
@@ -115,6 +132,12 @@ export type KeyArgument = {
   default_value: number | string | boolean
 }
 
+export type AudioReactivityConfig = {
+  audioChannel: number // 0-15 (BlackHole channel index)
+  visualEffect: string // Effect preset name (e.g., 'kaleidoscope')
+  beatDetection?: boolean // Optional: enable beat detection
+}
+
 export type ConfigurationKey = {
   type: 'track' | 'clip' | 'device' | 'device_parameter'
   path: string
@@ -122,6 +145,7 @@ export type ConfigurationKey = {
   object: 'active' | 'value'
   present: boolean | number
   absent: boolean | number
+  audio_reactivity?: AudioReactivityConfig // NEW: Optional audio-reactive shader config
 }
 
 export type ConfigurationJSON = {

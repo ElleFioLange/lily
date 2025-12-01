@@ -11,7 +11,7 @@ export function validateConfig(suspect: any) {
 
     if (key.includes(' ')) invalidProps.push('key')
 
-    const { type, path, object, present, absent } = value
+    const { type, path, object, present, absent, audio_reactivity } = value
 
     if (type !== 'track' && type !== 'clip' && type !== 'device' && type !== 'device_parameter')
       invalidProps.push('type')
@@ -23,6 +23,23 @@ export function validateConfig(suspect: any) {
     if (typeof present !== 'boolean' && typeof present !== 'number') invalidProps.push('present')
 
     if (typeof absent !== 'boolean' && typeof absent !== 'number') invalidProps.push('absent')
+
+    // Validate audio_reactivity if present
+    if (audio_reactivity) {
+      const { audioChannel, visualEffect, beatDetection } = audio_reactivity
+
+      if (typeof audioChannel !== 'number' || audioChannel < 0 || audioChannel > 15) {
+        invalidProps.push('audio_reactivity.audioChannel (must be 0-15)')
+      }
+
+      if (typeof visualEffect !== 'string' || visualEffect.length === 0) {
+        invalidProps.push('audio_reactivity.visualEffect (must be non-empty string)')
+      }
+
+      if (beatDetection !== undefined && typeof beatDetection !== 'boolean') {
+        invalidProps.push('audio_reactivity.beatDetection (must be boolean)')
+      }
+    }
 
     if (invalidProps.length > 0)
       throw new Error(
