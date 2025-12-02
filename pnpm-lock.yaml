@@ -56,6 +56,9 @@ importers:
       js-yaml:
         specifier: ^4.1.1
         version: 4.1.1
+      meyda:
+        specifier: ^5.6.3
+        version: 5.6.3(rollup@4.53.3)
       osc:
         specifier: ^2.4.5
         version: 2.4.5

@@ -10,11 +10,12 @@ export interface AudioFeatures {
 }
 
 /**
- * Per-channel audio analysis data
+ * Per-channel audio analysis data (using Meyda)
  */
 export interface AudioChannel {
-  analyser: AnalyserNode
-  dataArray: Float32Array<ArrayBuffer>
+  analyzer: any // Meyda analyzer instance
+  channelGain: GainNode
   lastBeatTime: number
   beatThreshold: number
+  energyHistory: number[] // For beat detection
 }
