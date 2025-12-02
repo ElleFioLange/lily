@@ -267,29 +267,64 @@ export class KeywordShaderManager {
 
   /**
    * Create text texture from keyword text
+   * Measures text properly and handles vertical flip for WebGL
    * @param text - Text content
    * @returns WebGL texture
    */
   private createTextTexture(text: string): WebGLTexture {
     const { gl } = this
 
-    // Render text to canvas
+    // Create temporary canvas to measure text
+    const measureCanvas = document.createElement('canvas')
+    const measureCtx = measureCanvas.getContext('2d')!
+
+    // Set font to match keyword styling (font-weight: 600, Monaspace Krypton)
+    measureCtx.font = '600 48px Monaspace Krypton, monospace'
+
+    // Measure actual text bounds
+    const metrics = measureCtx.measureText(text)
+    const textWidth = metrics.width
+    const textHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent || 48 // Fallback to font size
+
+    // Add padding for effects (20% on each side)
+    const paddingX = textWidth * 0.2
+    const paddingY = textHeight * 0.2
+
+    const canvasWidth = Math.ceil(textWidth + paddingX * 2)
+    const canvasHeight = Math.ceil(textHeight + paddingY * 2)
+
+    // Create properly sized canvas
     const canvas = document.createElement('canvas')
-    canvas.width = 512
-    canvas.height = 128
+    canvas.width = canvasWidth
+    canvas.height = canvasHeight
     const ctx = canvas.getContext('2d')!
 
+    // Clear and set font (must re-set after canvas resize)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     ctx.font = '600 48px Monaspace Krypton, monospace'
     ctx.fillStyle = 'white'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(text, 256, 64)
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
 
-    // Upload to WebGL
+    // Render text with padding
+    // Note: We render normally here; vertical flip happens in shader UVs
+    ctx.fillText(text, paddingX, paddingY)
+
+    // Create a flipped version for WebGL (flip vertically)
+    const flippedCanvas = document.createElement('canvas')
+    flippedCanvas.width = canvas.width
+    flippedCanvas.height = canvas.height
+    const flippedCtx = flippedCanvas.getContext('2d')!
+
+    // Flip vertically
+    flippedCtx.translate(0, canvas.height)
+    flippedCtx.scale(1, -1)
+    flippedCtx.drawImage(canvas, 0, 0)
+
+    // Upload flipped version to WebGL
     const texture = gl.createTexture()!
     gl.bindTexture(gl.TEXTURE_2D, texture)
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, flippedCanvas)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)

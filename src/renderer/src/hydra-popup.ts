@@ -154,20 +154,23 @@ window.api.hydra.onTextUpdate((text: string) => {
 
         processedText.push(pretext, container)
 
-        // Create shader instance after DOM renders
-        setTimeout(() => {
-          const bounds = textSpan.getBoundingClientRect()
-          if (bounds.width > 0 && bounds.height > 0) {
-            // Size canvas to match text with device pixel ratio
-            const dpr = window.devicePixelRatio || 1
-            canvas.width = Math.ceil(bounds.width * dpr)
-            canvas.height = Math.ceil(bounds.height * dpr)
-            canvas.style.width = `${bounds.width}px`
-            canvas.style.height = `${bounds.height}px`
+        // Create shader instance after fonts load and DOM renders
+        // Wait for fonts to be ready, then wait for layout to apply
+        document.fonts.ready.then(() => {
+          requestAnimationFrame(() => {
+            const bounds = textSpan.getBoundingClientRect()
+            if (bounds.width > 0 && bounds.height > 0) {
+              // Size canvas to match text with device pixel ratio
+              const dpr = window.devicePixelRatio || 1
+              canvas.width = Math.ceil(bounds.width * dpr)
+              canvas.height = Math.ceil(bounds.height * dpr)
+              canvas.style.width = `${bounds.width}px`
+              canvas.style.height = `${bounds.height}px`
 
-            shaderManager!.createKeywordShader(key, canvas, audioConfig, match)
-          }
-        }, 0)
+              shaderManager!.createKeywordShader(key, canvas, audioConfig, match)
+            }
+          })
+        })
       } else {
         // No audio reactivity - render as before
         const matchNode = document.createElement('span')
