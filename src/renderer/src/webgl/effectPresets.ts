@@ -25,6 +25,24 @@ void main() {
 }
 `
 
+const TESTING_FRAGMENT = `#version 300 es
+precision highp float;
+
+in vec2 v_texCoord;
+out vec4 fragColor;
+
+uniform sampler2D u_textTexture;
+uniform float u_time;
+uniform float u_amplitude;
+uniform float u_bass;
+uniform float u_mid;
+uniform float u_high;
+
+void main() {
+  fragColor = vec4(u_amplitude, u_amplitude, u_amplitude, 1.0);
+}
+`
+
 /**
  * Effect 1: Kaleidoscope
  * Bass-driven kaleidoscope effect with variable segments
@@ -219,6 +237,16 @@ void main() {
  * Maps effect names to their shader implementations
  */
 export const EFFECT_PRESETS: Map<string, EffectPreset> = new Map([
+  [
+    'testing',
+    {
+      name: 'testing',
+      description: 'Testing shader',
+      vertexShader: STANDARD_VERTEX_SHADER,
+      fragmentShader: TESTING_FRAGMENT,
+      blendMode: 'normal'
+    }
+  ],
   [
     'kaleidoscope',
     {

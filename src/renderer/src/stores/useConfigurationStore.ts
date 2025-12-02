@@ -9,10 +9,10 @@ const DEFAULT_CONFIG = `foundry:
   object: active
   present: true
   absent: false
-  audio_reactivity:
-    audioChannel: 0
-    visualEffect: 'kaleidoscope'
-    beatDetection: false
+  # audio_reactivity:
+  #   audioChannel: 0
+  #   visualEffect: kaleidoscope
+  #   beatDetection: false
 
 fabric:
   type: clip
@@ -20,9 +20,9 @@ fabric:
   object: active
   present: true
   absent: false
-  audio_reactivity:
-    audioChannel: 1
-    visualEffect: 'chromatic-aberration'
+  # audio_reactivity:
+  #   audioChannel: 1
+  #   visualEffect: chromatic-aberration
 
 skeleton:
   type: clip
@@ -42,9 +42,8 @@ skeleton:
   present: true
   absent: false
   audio_reactivity:
-    audioChannel: 2
-    visualEffect: 'glitch'
-    beatDetection: true
+    audioChannel: 0
+    visualEffect: testing
 
 sparring_bells:
   type: clip
@@ -52,9 +51,9 @@ sparring_bells:
   object: active
   present: true
   absent: false
-  audio_reactivity:
-    audioChannel: 3
-    visualEffect: 'wave-distortion'
+  # audio_reactivity:
+  #   audioChannel: 3
+  #   visualEffect: wave-distortion
 
 brine:
   type: clip
@@ -70,9 +69,9 @@ brine:
   object: active
   present: true
   absent: false
-  audio_reactivity:
-    audioChannel: 4
-    visualEffect: 'pixelate'
+  # audio_reactivity:
+  #   audioChannel: 4
+  #   visualEffect: pixelate
 
 wings:
   type: clip

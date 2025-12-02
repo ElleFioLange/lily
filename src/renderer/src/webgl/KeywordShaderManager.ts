@@ -151,6 +151,8 @@ export class KeywordShaderManager {
         // 2. Use shader program
         gl.useProgram(instance.program)
 
+        // TODO stop shader calculations when keyword is no longer present
+        // TODO figure out a way not to calculate shaders that are offscreen (is this already done automatically?)
         // 3. Get audio features
         const features = this.audioManager.getChannelFeatures(instance.audioChannel)
 
