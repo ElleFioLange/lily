@@ -43,7 +43,7 @@ skeleton:
   absent: false
   audio_reactivity:
     audioChannel: 0
-    visualEffect: testing
+    visualEffect: voltage
 
 sparring_bells:
   type: clip

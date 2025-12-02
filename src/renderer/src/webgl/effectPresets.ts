@@ -43,6 +43,53 @@ void main() {
 }
 `
 
+const VOLTAGE_FRAGMENT = `#version 300 es
+precision highp float;
+
+in vec2 v_texCoord;
+out vec4 fragColor;
+
+uniform sampler2D u_textTexture;
+uniform float u_time;
+uniform float u_amplitude;
+
+// ---- GLSL ES 300–compatible hash/noise ----
+float hash(float n) {
+    return fract(sin(n) * 43758.5453123);
+}
+
+float noise(float x) {
+    float i = floor(x);
+    float f = fract(x);
+    float u = f * f * (3.0 - 2.0 * f);
+    return mix(hash(i), hash(i + 1.0), u);
+}
+
+void main() {
+    vec2 uv = v_texCoord;
+
+    // Voltage-style jitter
+    float jumpFreq = 30.0;
+    float jitter = (hash(floor(u_time * jumpFreq)) - 0.5)
+                   * u_amplitude * 0.02;
+
+    float ripple = (noise(uv.y * 20.0 + u_time * 5.0) - 0.5)
+                    * u_amplitude * 0.03;
+
+    uv.x += jitter + ripple;
+
+    // ---- Sample text ----
+    vec4 textColor = texture(u_textTexture, uv);
+
+    // Optional glow pulse
+    float glow = smoothstep(0.2, 0.8, textColor.a)
+                 * (0.5 + 0.5 * sin(u_time * 50.0))
+                 * u_amplitude * 0.1;
+
+    fragColor = vec4(textColor.rgb + vec3(glow, glow * 0.5, glow),
+                     textColor.a);
+}`
+
 /**
  * Effect 1: Kaleidoscope
  * Bass-driven kaleidoscope effect with variable segments
@@ -244,6 +291,16 @@ export const EFFECT_PRESETS: Map<string, EffectPreset> = new Map([
       description: 'Testing shader',
       vertexShader: STANDARD_VERTEX_SHADER,
       fragmentShader: TESTING_FRAGMENT,
+      blendMode: 'normal'
+    }
+  ],
+  [
+    'voltage',
+    {
+      name: 'voltage',
+      description: 'Voltage shader driven by amplitude',
+      vertexShader: STANDARD_VERTEX_SHADER,
+      fragmentShader: VOLTAGE_FRAGMENT,
       blendMode: 'normal'
     }
   ],
