@@ -106,8 +106,9 @@ export default function LivePreview({ panelId }: LivePreviewProps) {
   return (
     <Panel
       title="Live preview"
-      contentClassName="flex items-center justify-center bg-stone-900 relative"
+      contentClassName="flex items-center justify-center bg-stone-900 relative cursor-text"
       panelId={panelId}
+      onClick={() => viewRef.current?.focus()}
     >
       <div
         ref={editorRef}

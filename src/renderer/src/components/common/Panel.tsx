@@ -1,7 +1,7 @@
-import { ReactNode, useState } from 'react'
+import { HTMLProps, ReactNode, useState } from 'react'
 import { useFocusStore, type PanelId } from '../../stores/useFocusStore'
 
-interface PanelProps {
+interface PanelProps extends HTMLProps<HTMLDivElement> {
   title?: string
   collapsible?: boolean
   defaultCollapsed?: boolean
@@ -20,7 +20,8 @@ export default function Panel({
   children,
   className = '',
   contentClassName = '',
-  panelId
+  panelId,
+  onClick
 }: PanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
 
@@ -42,6 +43,7 @@ export default function Panel({
       tabIndex={panelId ? 0 : undefined}
       onFocus={handleFocus}
       onBlur={handleBlur}
+      onClick={onClick}
     >
       {/* Header - only show if title or collapsible or headerActions exist */}
       {(title || collapsible || headerActions) && (
