@@ -29,3 +29,7 @@ example:
 brine(sin(t)) sends a sin(time) control signal to the value corresponding to the brine action
 brine(sin(wings())) follows the value of the wings() operator and performs a sin() transform on the value
 brine(brine(brine())) modulation feedback ꉂ(˵˃ ᗜ ˂˵)
+
+brine().smooth()
+
+extendEnvelope(brine())
