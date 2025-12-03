@@ -70,21 +70,18 @@ void main() {
 
     // Voltage-style jitter
     float jumpFreq = 30.0;
-    float jitter = (hash(floor(u_time * jumpFreq)) - 0.5)
-                   * u_amplitude * 0.02;
+    float jitter = (hash(floor(u_time * jumpFreq)) - 0.5) * u_amplitude;
 
-    float ripple = (noise(uv.y * 20.0 + u_time * 5.0) - 0.5)
-                    * u_amplitude * 0.03;
+    float ripple = (noise(uv.y * 20.0 + u_time * 5.0) - 0.5) * u_amplitude;
 
-    uv.x += jitter + ripple;
+    uv += vec2(jitter + ripple);
 
     // ---- Sample text ----
     vec4 textColor = texture(u_textTexture, uv);
 
     // Optional glow pulse
     float glow = smoothstep(0.2, 0.8, textColor.a)
-                 * (0.5 + 0.5 * sin(u_time * 50.0))
-                 * u_amplitude * 0.1;
+                 * (0.5 + 0.5 * sin(u_time * 50.0)) * u_amplitude;
 
     fragColor = vec4(textColor.rgb + vec3(glow, glow * 0.5, glow),
                      textColor.a);

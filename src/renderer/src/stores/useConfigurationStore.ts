@@ -20,9 +20,9 @@ fabric:
   object: active
   present: true
   absent: false
-  # audio_reactivity:
-  #   audioChannel: 1
-  #   visualEffect: chromatic-aberration
+  audio_reactivity:
+    audioChannel: 1
+    visualEffect: voltage
 
 skeleton:
   type: clip
@@ -86,6 +86,9 @@ muscle:
   object: active
   present: true
   absent: false
+  audio_reactivity:
+    audioChannel: 1
+    visualEffect: voltage
 
 sinking_souls:
   type: clip

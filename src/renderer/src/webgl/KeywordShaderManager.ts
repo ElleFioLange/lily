@@ -287,8 +287,10 @@ export class KeywordShaderManager {
     const textHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent || 48 // Fallback to font size
 
     // Add padding for effects (20% on each side)
-    const paddingX = textWidth * 0.2
-    const paddingY = textHeight * 0.2
+    const paddingX = 0
+    // textWidth * 0.2
+    const paddingY = 0
+    textHeight * 0.2
 
     const canvasWidth = Math.ceil(textWidth + paddingX * 2)
     const canvasHeight = Math.ceil(textHeight + paddingY * 2)
