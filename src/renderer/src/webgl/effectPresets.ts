@@ -3,6 +3,9 @@
  * Each preset includes vertex shader, fragment shader, and blend mode
  */
 
+//
+const glsl = (x) => x // for glsl highlighting with vscode extension glsl-literal https://marketplace.visualstudio.com/items?itemName=boyswan.glsl-literal
+
 export interface EffectPreset {
   name: string
   description: string
@@ -15,7 +18,7 @@ export interface EffectPreset {
  * Standard vertex shader (shared by all effects)
  * Creates fullscreen quad with texture coordinates
  */
-const STANDARD_VERTEX_SHADER = `#version 300 es
+const STANDARD_VERTEX_SHADER = glsl`#version 300 es
 in vec2 a_position;
 out vec2 v_texCoord;
 
@@ -25,7 +28,7 @@ void main() {
 }
 `
 
-const TESTING_FRAGMENT = `#version 300 es
+const TESTING_FRAGMENT = glsl`#version 300 es
 precision highp float;
 
 in vec2 v_texCoord;
@@ -43,7 +46,7 @@ void main() {
 }
 `
 
-const VOLTAGE_FRAGMENT = `#version 300 es
+const VOLTAGE_FRAGMENT = glsl`#version 300 es
 precision highp float;
 
 in vec2 v_texCoord;
@@ -87,7 +90,7 @@ void main() {
                      textColor.a);
 }`
 
-const WAVEFORM_FRAGMENT = `#version 300 es
+const WAVEFORM_FRAGMENT = glsl`#version 300 es
 precision highp float;
 
 in vec2 v_texCoord;
@@ -145,7 +148,7 @@ void main() {
  * Effect 1: Kaleidoscope
  * Bass-driven kaleidoscope effect with variable segments
  */
-const KALEIDOSCOPE_FRAGMENT = `#version 300 es
+const KALEIDOSCOPE_FRAGMENT = glsl`#version 300 es
 precision highp float;
 
 in vec2 v_texCoord;
@@ -187,7 +190,7 @@ void main() {
  * Effect 2: Chromatic Aberration
  * Amplitude-driven RGB channel separation
  */
-const CHROMATIC_ABERRATION_FRAGMENT = `#version 300 es
+const CHROMATIC_ABERRATION_FRAGMENT = glsl`#version 300 es
 precision highp float;
 
 in vec2 v_texCoord;
@@ -221,7 +224,7 @@ void main() {
  * Effect 3: Glitch
  * Beat-triggered glitch with horizontal line displacement
  */
-const GLITCH_FRAGMENT = `#version 300 es
+const GLITCH_FRAGMENT = glsl`#version 300 es
 precision highp float;
 
 in vec2 v_texCoord;
@@ -272,7 +275,7 @@ void main() {
  * Effect 4: Pixelate
  * High-frequency driven pixelation
  */
-const PIXELATE_FRAGMENT = `#version 300 es
+const PIXELATE_FRAGMENT = glsl`#version 300 es
 precision highp float;
 
 in vec2 v_texCoord;
@@ -301,7 +304,7 @@ void main() {
  * Effect 5: Wave Distortion
  * Amplitude-driven sine wave distortion
  */
-const WAVE_DISTORTION_FRAGMENT = `#version 300 es
+const WAVE_DISTORTION_FRAGMENT = glsl`#version 300 es
 precision highp float;
 
 in vec2 v_texCoord;
