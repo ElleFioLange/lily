@@ -3,6 +3,7 @@ import type { AudioReactivityConfig } from '../stores/useConfigurationStore'
 import type { KeywordShaderInstance } from './types'
 import { ShaderCompiler } from './ShaderCompiler'
 import { EFFECT_PRESETS } from './effectPresets'
+import { AudioFeatures } from '@renderer/audio/types'
 
 /**
  * Manages WebGL shader instances for keywords with audio reactivity
@@ -181,7 +182,7 @@ export class KeywordShaderManager {
    */
   private bindUniforms(
     program: WebGLProgram,
-    features: { amplitude: number; bass: number; mid: number; high: number; beat: boolean },
+    features: AudioFeatures,
     textTexture: WebGLTexture
   ): void {
     const { gl } = this
@@ -193,6 +194,11 @@ export class KeywordShaderManager {
     }
 
     // Audio features
+    const loc_signal = gl.getUniformLocation(program, 'u_signal')
+    if (loc_signal) {
+      gl.uniform1fv(loc_signal, features.signal)
+    }
+
     const loc_amplitude = gl.getUniformLocation(program, 'u_amplitude')
     if (loc_amplitude) {
       gl.uniform1f(loc_amplitude, features.amplitude)
@@ -216,6 +222,11 @@ export class KeywordShaderManager {
     const loc_beat = gl.getUniformLocation(program, 'u_beat')
     if (loc_beat) {
       gl.uniform1f(loc_beat, features.beat ? 1.0 : 0.0)
+    }
+
+    const loc_mfcc = gl.getUniformLocation(program, 'u_mfcc')
+    if (loc_mfcc) {
+      gl.uniform1fv(loc_mfcc, features.mfcc)
     }
 
     // Text texture
@@ -411,6 +422,13 @@ export class KeywordShaderManager {
     if (loseContext) {
       loseContext.loseContext()
     }
+
+    // // Enables using Float32Arrays
+    // var ext = this.gl.getExtension('OES_texture_float')
+    // if (!ext) {
+    //   alert('sorry, no floating point textures')
+    //   return
+    // }
 
     console.log('KeywordShaderManager destroyed')
   }

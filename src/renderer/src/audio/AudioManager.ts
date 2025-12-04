@@ -74,7 +74,8 @@ export class AudioManager {
           audioContext: this.context,
           source: channelGain,
           bufferSize: 512,
-          featureExtractors: ['rms', 'energy', 'spectralCentroid', 'spectralFlatness'],
+          featureExtractors: ['rms', 'energy', 'spectralCentroid', 'spectralFlatness', 'mfcc'],
+          windowingFunction: 'blackman',
           callback: null // We'll use .get() instead of callbacks
         })
 
@@ -102,17 +103,33 @@ export class AudioManager {
   getChannelFeatures(channelIndex: number): AudioFeatures {
     if (channelIndex < 0 || channelIndex >= this.channels.length) {
       console.warn(`Invalid channel index: ${channelIndex}`)
-      return { amplitude: 0, bass: 0, mid: 0, high: 0, beat: false }
+      return {
+        signal: new Float32Array(),
+        amplitude: 0,
+        bass: 0,
+        mid: 0,
+        high: 0,
+        beat: false,
+        mfcc: new Float32Array()
+      }
     }
 
     const channel = this.channels[channelIndex]
     const { analyzer } = channel
 
     // Get Meyda features
-    const features = analyzer.get(['rms', 'energy', 'spectralCentroid', 'spectralFlatness'])
+    const features = analyzer.get(['rms', 'energy', 'spectralCentroid', 'spectralFlatness', 'mfcc'])
 
     if (!features) {
-      return { amplitude: 0, bass: 0, mid: 0, high: 0, beat: false }
+      return {
+        signal: new Float32Array(),
+        amplitude: 0,
+        bass: 0,
+        mid: 0,
+        high: 0,
+        beat: false,
+        mfcc: new Float32Array()
+      }
     }
 
     // Map Meyda features to our interface
@@ -140,11 +157,13 @@ export class AudioManager {
     const beat = this.detectBeatFromEnergy(channel, energy)
 
     return {
+      signal: analyzer._m.signal,
       amplitude: Math.min(amplitude, 1.0),
       bass: Math.min(bass, 1.0),
       mid: Math.min(mid, 1.0),
       high: Math.min(high, 1.0),
-      beat
+      beat,
+      mfcc: features.mfcc
     }
   }
 
