@@ -1,6 +1,7 @@
 import Panel from '../common/Panel'
 import { useLiveStore } from '@renderer/stores/useLiveStore'
 import type { PanelId } from '../../stores/useFocusStore'
+import { CameraControls } from '../camera/CameraControls'
 
 interface AbletonMonitorProps {
   panelId?: PanelId
@@ -54,6 +55,13 @@ export default function AbletonMonitor({ panelId }: AbletonMonitorProps) {
       <pre className="w-60 h-20 overflow-scroll bg-stone-800 text-xs">
         {JSON.stringify(liveProject)}
       </pre>
+
+      {/* Camera Streaming Controls */}
+      <div className="mt-6 w-full max-w-md">
+        <h3 className="text-sm font-medium text-stone-100 mb-3">Camera Streaming</h3>
+        <CameraControls />
+      </div>
+
       {/* Future: Display Ableton Live state and metrics */}
     </Panel>
   )

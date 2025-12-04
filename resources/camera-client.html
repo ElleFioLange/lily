@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Lily Camera Stream</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #1c1917;
+        color: #e7e5e4;
+        padding: 1rem;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        text-align: center;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .video-container {
+        position: relative;
+        width: 100%;
+        background: #000;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+      }
+
+      #preview {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      .status {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+
+      .status.disconnected {
+        background: #7f1d1d;
+        color: #fecaca;
+      }
+
+      .status.connecting {
+        background: #713f12;
+        color: #fef3c7;
+      }
+
+      .status.connected {
+        background: #14532d;
+        color: #bbf7d0;
+      }
+
+      .status.disconnected .status-dot {
+        background: #f87171;
+      }
+
+      .status.connecting .status-dot {
+        background: #fbbf24;
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+
+      .status.connected .status-dot {
+        background: #4ade80;
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      label {
+        font-size: 0.875rem;
+        color: #a8a29e;
+      }
+
+      input[type='text'],
+      input[type='number'],
+      select {
+        width: 100%;
+        padding: 0.75rem;
+        background: #292524;
+        border: 1px solid #44403c;
+        border-radius: 6px;
+        color: #e7e5e4;
+        font-size: 1rem;
+      }
+
+      input[type='range'] {
+        width: 100%;
+      }
+
+      .range-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.875rem;
+      }
+
+      button {
+        width: 100%;
+        padding: 0.875rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .btn-primary {
+        background: #57534e;
+        color: #e7e5e4;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: #44403c;
+      }
+
+      .btn-success {
+        background: #15803d;
+        color: #fff;
+      }
+
+      .btn-success:hover:not(:disabled) {
+        background: #166534;
+      }
+
+      .btn-danger {
+        background: #b91c1c;
+        color: #fff;
+      }
+
+      .btn-danger:hover:not(:disabled) {
+        background: #991b1b;
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .stats {
+        background: #292524;
+        padding: 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        margin-top: 1rem;
+      }
+
+      .stats-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+      }
+
+      .stats-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .stats-label {
+        color: #a8a29e;
+      }
+
+      .stats-value {
+        color: #e7e5e4;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📹 Lily Camera Stream</h1>
+
+      <div class="video-container">
+        <video id="preview" autoplay playsinline muted></video>
+        <div id="status" class="status disconnected">
+          <span class="status-dot"></span>
+          <span id="statusText">Disconnected</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <!-- Server Connection -->
+        <div class="control-group">
+          <label for="serverUrl">Server URL</label>
+          <input
+            type="text"
+            id="serverUrl"
+            placeholder="ws://192.168.1.100:8765"
+            value="ws://192.168.1.100:8765"
+          />
+        </div>
+
+        <!-- Camera Selection -->
+        <div class="control-group">
+          <label for="cameraSelect">Camera</label>
+          <select id="cameraSelect">
+            <option value="user">Front Camera</option>
+            <option value="environment">Back Camera</option>
+          </select>
+        </div>
+
+        <!-- Quality Control -->
+        <div class="control-group">
+          <div class="range-label">
+            <label>Quality</label>
+            <span id="qualityValue">0.7</span>
+          </div>
+          <input type="range" id="quality" min="0.1" max="1.0" step="0.1" value="0.7" />
+        </div>
+
+        <!-- Frame Rate Control -->
+        <div class="control-group">
+          <div class="range-label">
+            <label>Frame Rate</label>
+            <span id="fpsValue">30 FPS</span>
+          </div>
+          <input type="range" id="fps" min="10" max="60" step="5" value="30" />
+        </div>
+
+        <!-- Buttons -->
+        <button id="startCamera" class="btn-primary">Start Camera</button>
+        <button id="connect" class="btn-success" disabled>Connect to Server</button>
+        <button id="stopAll" class="btn-danger" disabled>Stop Streaming</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats">
+        <div class="stats-row">
+          <span class="stats-label">Frames Sent:</span>
+          <span class="stats-value" id="frameCount">0</span>
+        </div>
+        <div class="stats-row">
+          <span class="stats-label">Current FPS:</span>
+          <span class="stats-value" id="currentFps">0</span>
+        </div>
+        <div class="stats-row">
+          <span class="stats-label">Avg Frame Size:</span>
+          <span class="stats-value" id="avgFrameSize">0 KB</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const video = document.getElementById('preview')
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      const statusEl = document.getElementById('status')
+      const statusText = document.getElementById('statusText')
+      const serverUrlInput = document.getElementById('serverUrl')
+      const cameraSelect = document.getElementById('cameraSelect')
+      const qualityInput = document.getElementById('quality')
+      const qualityValue = document.getElementById('qualityValue')
+      const fpsInput = document.getElementById('fps')
+      const fpsValue = document.getElementById('fpsValue')
+      const startCameraBtn = document.getElementById('startCamera')
+      const connectBtn = document.getElementById('connect')
+      const stopAllBtn = document.getElementById('stopAll')
+      const frameCountEl = document.getElementById('frameCount')
+      const currentFpsEl = document.getElementById('currentFps')
+      const avgFrameSizeEl = document.getElementById('avgFrameSize')
+
+      let ws = null
+      let stream = null
+      let streamInterval = null
+      let frameCount = 0
+      let totalFrameSize = 0
+      let lastFpsTime = Date.now()
+      let lastFpsFrameCount = 0
+
+      // Update quality display
+      qualityInput.addEventListener('input', (e) => {
+        qualityValue.textContent = e.target.value
+      })
+
+      // Update FPS display
+      fpsInput.addEventListener('input', (e) => {
+        fpsValue.textContent = `${e.target.value} FPS`
+        if (streamInterval) {
+          stopStreaming()
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            startStreaming()
+          }
+        }
+      })
+
+      // Start camera
+      startCameraBtn.addEventListener('click', async () => {
+        try {
+          const constraints = {
+            video: {
+              facingMode: cameraSelect.value,
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
+          }
+
+          stream = await navigator.mediaDevices.getUserMedia(constraints)
+          video.srcObject = stream
+          startCameraBtn.disabled = true
+          connectBtn.disabled = false
+          cameraSelect.disabled = true
+        } catch (error) {
+          alert('Failed to access camera: ' + error.message)
+        }
+      })
+
+      // Connect to server
+      connectBtn.addEventListener('click', () => {
+        const url = serverUrlInput.value.trim()
+        if (!url) {
+          alert('Please enter server URL')
+          return
+        }
+
+        setStatus('connecting', 'Connecting...')
+        ws = new WebSocket(url)
+
+        ws.onopen = () => {
+          setStatus('connected', 'Connected')
+          connectBtn.disabled = true
+          serverUrlInput.disabled = true
+          stopAllBtn.disabled = false
+          startStreaming()
+        }
+
+        ws.onclose = () => {
+          setStatus('disconnected', 'Disconnected')
+          stopStreaming()
+          connectBtn.disabled = false
+          serverUrlInput.disabled = false
+          stopAllBtn.disabled = true
+        }
+
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error)
+          setStatus('disconnected', 'Connection Error')
+        }
+      })
+
+      // Stop all
+      stopAllBtn.addEventListener('click', () => {
+        stopStreaming()
+        if (ws) {
+          ws.close()
+          ws = null
+        }
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop())
+          stream = null
+          video.srcObject = null
+        }
+        startCameraBtn.disabled = false
+        connectBtn.disabled = true
+        stopAllBtn.disabled = true
+        cameraSelect.disabled = false
+        serverUrlInput.disabled = false
+        frameCount = 0
+        totalFrameSize = 0
+        updateStats()
+      })
+
+      function startStreaming() {
+        const fps = parseInt(fpsInput.value)
+        const interval = 1000 / fps
+
+        streamInterval = setInterval(() => {
+          if (!stream || !ws || ws.readyState !== WebSocket.OPEN) return
+
+          canvas.width = video.videoWidth
+          canvas.height = video.videoHeight
+          ctx.drawImage(video, 0, 0)
+
+          canvas.toBlob(
+            (blob) => {
+              if (blob && ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(blob)
+                frameCount++
+                totalFrameSize += blob.size
+                updateStats()
+              }
+            },
+            'image/jpeg',
+            parseFloat(qualityInput.value)
+          )
+        }, interval)
+      }
+
+      function stopStreaming() {
+        if (streamInterval) {
+          clearInterval(streamInterval)
+          streamInterval = null
+        }
+      }
+
+      function setStatus(state, text) {
+        statusEl.className = `status ${state}`
+        statusText.textContent = text
+      }
+
+      function updateStats() {
+        frameCountEl.textContent = frameCount
+
+        // Calculate FPS
+        const now = Date.now()
+        const timeDiff = now - lastFpsTime
+        if (timeDiff >= 1000) {
+          const fps = (((frameCount - lastFpsFrameCount) / timeDiff) * 1000).toFixed(1)
+          currentFpsEl.textContent = fps
+          lastFpsTime = now
+          lastFpsFrameCount = frameCount
+        }
+
+        // Calculate average frame size
+        if (frameCount > 0) {
+          const avgSize = (totalFrameSize / frameCount / 1024).toFixed(1)
+          avgFrameSizeEl.textContent = `${avgSize} KB`
+        }
+      }
+
+      // Try to parse URL from query string (for QR code support)
+      const urlParams = new URLSearchParams(window.location.search)
+      const serverUrl = urlParams.get('url')
+      if (serverUrl) {
+        serverUrlInput.value = serverUrl
+      }
+
+      // Auto-fill with ws protocol if in http context
+      if (window.location.hostname !== '') {
+        const wsUrl = `ws://${window.location.hostname}:8765`
+        serverUrlInput.value = wsUrl
+      }
+    </script>
+  </body>
+</html>

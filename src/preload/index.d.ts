@@ -2,6 +2,7 @@ import { ElectronAPI } from '@electron-toolkit/preload'
 import type { OSCMessage } from '../types/osc-messages'
 import type { LayoutType } from '../types/layouts'
 import type { ExportResult } from '../main/maxdevice/export'
+import type { CameraServerStatus, StartServerResult, StopServerResult } from '../types/camera'
 
 /**
  * Minimal OSC API Type Definitions
@@ -106,6 +107,21 @@ interface LilyAPI {
     onScrollUpdate: (callback: (scrollPercentage: number) => void) => void
     triggerAnimation: () => void
     onTriggerAnimation: (callback: () => void) => void
+  }
+
+  /**
+   * Camera WebSocket Streaming API
+   *
+   * Methods for managing camera streaming from mobile devices
+   */
+  camera: {
+    start: (port?: number) => Promise<StartServerResult>
+    stop: () => Promise<StopServerResult>
+    getStatus: () => Promise<CameraServerStatus>
+    onFrame: (callback: (buffer: ArrayBuffer) => void) => void
+    offFrame: (callback: (buffer: ArrayBuffer) => void) => void
+    onClientConnected: (callback: (clientCount: number) => void) => void
+    onClientDisconnected: (callback: (clientCount: number) => void) => void
   }
 }
 

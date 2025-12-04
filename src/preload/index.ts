@@ -183,6 +183,27 @@ const api = {
     onTriggerAnimation: (callback: () => void) => {
       ipcRenderer.on('hydra:trigger-animation', callback)
     }
+  },
+
+  // ============================================================================
+  // Camera WebSocket Streaming API
+  // ============================================================================
+  camera: {
+    start: (port: number = 8765) => ipcRenderer.invoke('camera:start', port),
+    stop: () => ipcRenderer.invoke('camera:stop'),
+    getStatus: () => ipcRenderer.invoke('camera:get-status'),
+    onFrame: (callback: (buffer: ArrayBuffer) => void) => {
+      ipcRenderer.on('camera:frame', (_, buffer) => callback(buffer))
+    },
+    offFrame: (callback: (buffer: ArrayBuffer) => void) => {
+      ipcRenderer.removeListener('camera:frame', (_, buffer) => callback(buffer))
+    },
+    onClientConnected: (callback: (clientCount: number) => void) => {
+      ipcRenderer.on('camera:client-connected', (_, count) => callback(count))
+    },
+    onClientDisconnected: (callback: (clientCount: number) => void) => {
+      ipcRenderer.on('camera:client-disconnected', (_, count) => callback(count))
+    }
   }
 }
 

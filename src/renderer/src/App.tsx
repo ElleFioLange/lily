@@ -7,6 +7,7 @@ import HydraConfigurationLayout from './components/HydraConfigurationLayout'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { initializeConfigStore, useConfigurationStore } from './stores/useConfigurationStore'
 import { useInputStore } from './stores/useInputStore'
+import { setupCameraListeners } from './stores/useCameraStore'
 
 function App(): React.JSX.Element {
   const currentLayout = useLayoutStore((state) => state.currentLayout)
@@ -21,6 +22,9 @@ function App(): React.JSX.Element {
 
     // Setup layout switching listeners
     setupLayoutListeners()
+
+    // Setup camera streaming listeners
+    setupCameraListeners()
 
     // Initialize configuration store
     initializeConfigStore()

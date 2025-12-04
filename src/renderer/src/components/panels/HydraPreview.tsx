@@ -1,9 +1,10 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import Hydra from 'hydra-synth'
 import Panel from '../common/Panel'
 import type { PanelId } from '../../stores/useFocusStore'
 import { useHydraStore } from '../../stores/useHydraStore'
 import { useConfigurationStore } from '../../stores/useConfigurationStore'
+import { CameraStreamManager } from '../camera/CameraStreamManager'
 
 interface HydraPreviewProps {
   panelId?: PanelId
@@ -13,6 +14,7 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hydraRef = useRef<any>(null)
+  const [cameraVideo, setCameraVideo] = useState<HTMLVideoElement | HTMLImageElement | null>(null)
   const evaluationVersion = useHydraStore((state) => state.evaluationVersion)
   const lastError = useHydraStore((state) => state.lastError)
   const setError = useHydraStore((state) => state.setError)
@@ -50,6 +52,19 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluationVersion])
+
+  // Initialize camera as Hydra source (s0) when ready
+  useEffect(() => {
+    if (hydraRef.current && cameraVideo) {
+      try {
+        // Make camera available as s0 source in Hydra
+        hydraRef.current.synth.s0.init({ src: cameraVideo })
+        console.log('Camera initialized as Hydra source s0')
+      } catch (err) {
+        console.error('Failed to initialize camera as Hydra source:', err)
+      }
+    }
+  }, [cameraVideo])
 
   const evaluateShader = (code: string) => {
     if (!hydraRef.current) return
@@ -97,6 +112,9 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
         </>
       }
     >
+      {/* Camera Stream Manager (hidden, provides video element to Hydra) */}
+      <CameraStreamManager onVideoReady={setCameraVideo} visible={false} />
+
       {/* Error Display */}
       {lastError && (
         <div className="absolute top-0 left-0 right-0 bg-red-900/80 text-red-100 text-xs p-2 z-10">

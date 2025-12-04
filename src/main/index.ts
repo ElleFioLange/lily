@@ -6,13 +6,38 @@ import { getOSCServer } from './osc/server'
 import { getOSCClient } from './osc/client'
 import { exportMaxDevice, quickInstallMaxDevice, checkMaxDeviceExists } from './maxdevice/export'
 import { promises as fs } from 'fs'
+import { getCameraWebSocketServer } from './camera/websocket-server'
+import { networkInterfaces } from 'os'
+import type { StartServerResult, StopServerResult } from '../types/camera'
 
 // Initialize OSC server and client
 const oscServer = getOSCServer({ port: 5460 })
 const oscClient = getOSCClient({ port: 5459 })
 
+// Initialize camera WebSocket server
+const cameraServer = getCameraWebSocketServer()
+
 let mainWindowRef: BrowserWindow | null = null
 let hydraPopupWindowRef: BrowserWindow | null = null
+
+/**
+ * Get local IP address for camera streaming
+ */
+function getLocalIPAddress(): string {
+  const nets = networkInterfaces()
+  for (const name of Object.keys(nets)) {
+    const netGroup = nets[name]
+    if (!netGroup) continue
+
+    for (const net of netGroup) {
+      // Skip internal (loopback) and non-IPv4 addresses
+      if (net.family === 'IPv4' && !net.internal) {
+        return net.address
+      }
+    }
+  }
+  return 'localhost'
+}
 
 function createMenu(): void {
   const isMac = process.platform === 'darwin'
@@ -220,6 +245,9 @@ app.whenReady().then(() => {
   // Initialize OSC communication
   initializeOSC()
 
+  // Initialize camera WebSocket forwarding
+  initializeCameraStreaming()
+
   // Setup IPC handlers
   setupIPCHandlers()
 
@@ -245,6 +273,7 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   oscServer.stop()
   oscClient.close()
+  cameraServer.stop()
 })
 
 // Initialize OSC communication
@@ -288,6 +317,28 @@ async function initializeOSC(): Promise<void> {
   } catch (err) {
     console.error('Failed to initialize OSC:', err)
   }
+}
+
+/**
+ * Initialize camera WebSocket streaming
+ * Forwards camera frames from WebSocket clients to renderer process
+ */
+function initializeCameraStreaming(): void {
+  // Forward camera frames to renderer
+  cameraServer.on('frame', (frameBuffer: Buffer) => {
+    mainWindowRef?.webContents.send('camera:frame', frameBuffer)
+  })
+
+  // Forward connection status updates
+  cameraServer.on('clientConnected', ({ clientCount }) => {
+    mainWindowRef?.webContents.send('camera:client-connected', clientCount)
+  })
+
+  cameraServer.on('clientDisconnected', ({ clientCount }) => {
+    mainWindowRef?.webContents.send('camera:client-disconnected', clientCount)
+  })
+
+  console.log('Camera streaming initialized')
 }
 
 /**
@@ -479,5 +530,38 @@ function setupIPCHandlers(): void {
     if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
       hydraPopupWindowRef.webContents.send('hydra:trigger-animation')
     }
+  })
+
+  // ============================================================================
+  // Camera WebSocket Streaming Handlers
+  // ============================================================================
+  ipcMain.handle('camera:start', async (_, port: number = 8765): Promise<StartServerResult> => {
+    try {
+      cameraServer.start(port)
+      const localIP = getLocalIPAddress()
+      return { success: true, ip: localIP, port }
+    } catch (error) {
+      return {
+        success: false,
+        ip: '',
+        port,
+        error: error instanceof Error ? error.message : 'Failed to start camera server'
+      }
+    }
+  })
+
+  ipcMain.handle('camera:stop', async (): Promise<StopServerResult> => {
+    try {
+      cameraServer.stop()
+      return { success: true }
+    } catch (error) {
+      return { success: false }
+    }
+  })
+
+  ipcMain.handle('camera:get-status', async () => {
+    const status = cameraServer.getStatus()
+    status.ip = getLocalIPAddress()
+    return status
   })
 }
