@@ -386,6 +386,7 @@
 
         ws.onerror = (error) => {
           console.error('WebSocket error:', error)
+          alert(JSON.stringify(error))
           setStatus('disconnected', 'Connection Error')
         }
       })

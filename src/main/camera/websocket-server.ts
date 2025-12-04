@@ -69,7 +69,7 @@ export class CameraWebSocketServer extends EventEmitter {
             // Inject WebSocket URL into the HTML (use wss:// for secure WebSocket)
             const modifiedHtml = html.replace(
               'value="ws://192.168.1.100:8765"',
-              `value="wss://${req.headers.host?.split(':')[0] || 'localhost'}:${this.wsPort}"`
+              `value="wss://${req.headers.host?.split(':')[0] || 'localhost'}:${this.httpPort}"`
             )
 
             res.writeHead(200, { 'Content-Type': 'text/html' })

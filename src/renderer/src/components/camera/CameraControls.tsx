@@ -80,10 +80,11 @@ export function CameraControls() {
               <li>Ensure phone is on same WiFi network</li>
               <li>Scan QR code or enter URL in Safari</li>
               <li className="text-amber-400">
-                Accept certificate warning (tap "Continue" or "Show Details" → "visit this website")
+                Accept certificate warning (tap &quot;Continue&quot; or &quot;Show Details&quot; →
+                website&quot;)
               </li>
               <li>Grant camera permission when prompted</li>
-              <li>Click "Start Camera" then "Connect to Server"</li>
+              <li>Click &quot;Start Camera&quot; then &quot;Connect to Server&quot;</li>
             </ol>
             <p className="mt-2 text-xs text-amber-400">
               ⚠️ Certificate warning is normal - using self-signed HTTPS (required for iOS camera
