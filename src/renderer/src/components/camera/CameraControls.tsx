@@ -10,7 +10,7 @@ export function CameraControls() {
   const { isServerRunning, serverIP, httpPort, clientCount, startServer, stopServer } =
     useCameraStore()
 
-  const connectionURL = `http://${serverIP}:${httpPort}`
+  const connectionURL = `https://${serverIP}:${httpPort}`
 
   const handleToggleServer = async () => {
     if (isServerRunning) {
@@ -75,12 +75,20 @@ export function CameraControls() {
 
           {/* Instructions */}
           <div className="text-xs text-stone-400 pt-2 border-t border-stone-700">
-            <p className="mb-1">To connect:</p>
+            <p className="mb-1 font-medium text-stone-300">To connect from iPhone:</p>
             <ol className="list-decimal list-inside space-y-1 text-stone-500">
               <li>Ensure phone is on same WiFi network</li>
-              <li>Open camera-client.html in phone browser</li>
-              <li>Scan QR code or enter URL manually</li>
+              <li>Scan QR code or enter URL in Safari</li>
+              <li className="text-amber-400">
+                Accept certificate warning (tap "Continue" or "Show Details" → "visit this website")
+              </li>
+              <li>Grant camera permission when prompted</li>
+              <li>Click "Start Camera" then "Connect to Server"</li>
             </ol>
+            <p className="mt-2 text-xs text-amber-400">
+              ⚠️ Certificate warning is normal - using self-signed HTTPS (required for iOS camera
+              access)
+            </p>
           </div>
         </div>
       )}
