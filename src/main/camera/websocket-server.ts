@@ -4,37 +4,24 @@ import { createServer as createHTTPSServer, Server as HTTPSServer } from 'https'
 import { IncomingMessage, ServerResponse } from 'http'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
-import { generateKeyPairSync } from 'crypto'
+import selfsigned from 'selfsigned'
 import type { CameraServerStatus } from '../../types/camera'
 
 /**
  * Generate a self-signed certificate for HTTPS
  * Required for iOS Safari to access camera via getUserMedia
  */
-function generateSelfSignedCert(): { key: string; cert: string } {
-  // Generate RSA key pair
-  const { privateKey } = generateKeyPairSync('rsa', {
-    modulusLength: 2048,
-    publicKeyEncoding: { type: 'spki', format: 'pem' },
-    privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
-  })
+async function generateSelfSignedCert(): Promise<{ key: string; cert: string }> {
+  const attrs = [{ name: 'commonName', value: 'localhost' }]
+  const options = {
+    keySize: 2048
+  }
+  const pems = await selfsigned.generate(attrs, options)
 
-  // Create a simple self-signed certificate
-  // Note: This is a minimal implementation. For production, use a proper certificate.
-  const cert = `-----BEGIN CERTIFICATE-----
-MIICpDCCAYwCCQDU7T8J9zJZ3jANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAls
-b2NhbGhvc3QwHhcNMjQwMTAxMDAwMDAwWhcNMjUwMTAxMDAwMDAwWjAUMRIwEAYD
-VQQDDAlsb2NhbGhvc3QwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC7
-VJTUt9Us8cKjMzEfYyjiWA4R4/M2bS1+fWIcPm15A8vYk75uWc14iVcdPTf0k6cC
-w/q2bBRbGBVJ/yq7xqOGdXgLMJ/+PQ9S3nF1T4/kJA6L8O5xzV2lLVWaEMDMd3Z8
-K0yPAYbGLdWrP2T3H8O6jQMZKGLv7D+KBrI6fHhpMT3LJbHpZJP6i0YFlLLqLjMO
-P3aO5Q7aYBZKfPrBQGGM0pPH5p1VjHWNQOcAGwJ1fOKAKLjF8V0KBJ5hG8FKJfvr
-xMx0G2f8bKZjN5H+5DHJN2y0sO5mJ5dO6P5q7mWQKNP0OjF6qWNTJ7qP5c0YQPQG
-M0pPH5p1VjHWNQOcAGwJAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAJQV7bPj8i0z
-xLGpKqZL8KZLqHhKlKMYQN7MK0iXqF5VJLvE6FLqF9qYKZL8N7MK0iXqF5VJLvE=
------END CERTIFICATE-----`
-
-  return { key: privateKey, cert }
+  return {
+    key: pems.private,
+    cert: pems.cert
+  }
 }
 
 /**
@@ -58,7 +45,7 @@ export class CameraWebSocketServer extends EventEmitter {
    * @param wsPort - WebSocket port (default: 8765)
    * @param httpPort - HTTPS port (default: 8766)
    */
-  start(wsPort: number = 8765, httpPort: number = 8766): void {
+  async start(wsPort: number = 8765, httpPort: number = 8766): Promise<void> {
     if (this.isRunning) {
       console.warn('Camera server is already running')
       return
@@ -69,7 +56,7 @@ export class CameraWebSocketServer extends EventEmitter {
 
     try {
       // Generate self-signed certificate for HTTPS (required for iOS camera access)
-      const { key, cert } = generateSelfSignedCert()
+      const { key, cert } = await generateSelfSignedCert()
 
       // Request handler for both HTTP and HTTPS
       const requestHandler = async (req: IncomingMessage, res: ServerResponse) => {

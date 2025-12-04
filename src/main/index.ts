@@ -538,7 +538,7 @@ function setupIPCHandlers(): void {
   ipcMain.handle('camera:start', async (_, wsPort: number = 8765): Promise<StartServerResult> => {
     try {
       const httpPort = wsPort + 1 // HTTP server on WS port + 1
-      cameraServer.start(wsPort, httpPort)
+      await cameraServer.start(wsPort, httpPort)
       const localIP = getLocalIPAddress()
       return { success: true, ip: localIP, httpPort, wsPort }
     } catch (error) {
