@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useCameraStore } from '../../stores/useCameraStore'
 
 interface CameraStreamManagerProps {
@@ -13,6 +13,7 @@ interface CameraStreamManagerProps {
  */
 export function CameraStreamManager({ onVideoReady, visible = false }: CameraStreamManagerProps) {
   const imgRef = useRef<HTMLImageElement>(null)
+  const [isImageReady, setIsImageReady] = useState(false)
   const latestFrameURL = useCameraStore((state) => state.latestFrameURL)
 
   // Update image source when new frame arrives
@@ -22,12 +23,38 @@ export function CameraStreamManager({ onVideoReady, visible = false }: CameraStr
     }
   }, [latestFrameURL])
 
-  // Call the callback when video element is ready
+  // Wait for the first image to load before notifying Hydra
   useEffect(() => {
-    if (imgRef.current && onVideoReady) {
+    const img = imgRef.current
+    if (!img) return
+
+    const handleLoad = () => {
+      // Only set ready once we have a valid image with dimensions
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        console.log(`Image loaded: ${img.naturalWidth}x${img.naturalHeight}`)
+        setIsImageReady(true)
+      }
+    }
+
+    img.addEventListener('load', handleLoad)
+
+    // Check if image is already loaded
+    if (img.complete && img.naturalWidth > 0) {
+      handleLoad()
+    }
+
+    return () => {
+      img.removeEventListener('load', handleLoad)
+    }
+  }, [])
+
+  // Call the callback when image is ready with valid dimensions
+  useEffect(() => {
+    if (imgRef.current && isImageReady && onVideoReady) {
+      console.log('Notifying Hydra that camera source is ready')
       onVideoReady(imgRef.current as unknown as HTMLVideoElement)
     }
-  }, [onVideoReady])
+  }, [isImageReady, onVideoReady])
 
   // Cleanup: video element will be automatically cleaned up by React
   // Blob URLs are revoked in the store when stopServer is called
@@ -37,8 +64,7 @@ export function CameraStreamManager({ onVideoReady, visible = false }: CameraStr
       ref={imgRef}
       style={{
         display: visible ? 'block' : 'none',
-        width: visible ? 'auto' : '1px',
-        height: visible ? 'auto' : '1px',
+        // Keep natural dimensions even when hidden to avoid texture errors
         objectFit: 'contain'
       }}
       alt="Camera stream"
