@@ -286,19 +286,10 @@ export class KeywordShaderManager {
     const textWidth = metrics.width
     const textHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent || 48 // Fallback to font size
 
-    // Add padding for effects (20% on each side)
-    const paddingX = 0
-    // textWidth * 0.2
-    const paddingY = 0
-    textHeight * 0.2
-
-    const canvasWidth = Math.ceil(textWidth + paddingX * 2)
-    const canvasHeight = Math.ceil(textHeight + paddingY * 2)
-
     // Create properly sized canvas
     const canvas = document.createElement('canvas')
-    canvas.width = canvasWidth
-    canvas.height = canvasHeight
+    canvas.width = textWidth
+    canvas.height = textHeight
     const ctx = canvas.getContext('2d')!
 
     // Clear and set font (must re-set after canvas resize)
@@ -310,7 +301,7 @@ export class KeywordShaderManager {
 
     // Render text with padding
     // Note: We render normally here; vertical flip happens in shader UVs
-    ctx.fillText(text, paddingX, paddingY)
+    ctx.fillText(text, 0, 0)
 
     // Create a flipped version for WebGL (flip vertically)
     const flippedCanvas = document.createElement('canvas')
