@@ -82,11 +82,16 @@ void main() {
     // ---- Sample text ----
     vec4 textColor = texture(u_textTexture, uv);
 
+    // Highlight color (cyan)
+    vec4 highlightColor = vec4(0.0, 1.0, 1.0, 1.0);
+
+    vec4 color = mix(textColor, highlightColor, u_amplitude * 10.0);
+
     // Optional glow pulse
     float glow = smoothstep(0.2, 0.8, textColor.a)
                  * (0.5 + 0.5 * sin(u_time * 50.0)) * u_amplitude;
 
-    fragColor = vec4(textColor.rgb + vec3(glow, glow * 0.5, glow),
+    fragColor = vec4(color.rgb + vec3(glow, glow * 0.5, glow),
                      textColor.a);
 }`
 
