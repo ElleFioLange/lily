@@ -321,21 +321,31 @@ async function initializeOSC(): Promise<void> {
 
 /**
  * Initialize camera WebSocket streaming
- * Forwards camera frames from WebSocket clients to renderer process
+ * Forwards camera frames from WebSocket clients to renderer processes (main window + popup)
  */
 function initializeCameraStreaming(): void {
-  // Forward camera frames to renderer
+  // Forward camera frames to renderer (both main and popup windows)
   cameraServer.on('frame', (frameBuffer: Buffer) => {
     mainWindowRef?.webContents.send('camera:frame', frameBuffer)
+    // Also forward to popup window if open
+    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
+      hydraPopupWindowRef.webContents.send('camera:frame', frameBuffer)
+    }
   })
 
   // Forward connection status updates
   cameraServer.on('clientConnected', ({ clientCount }) => {
     mainWindowRef?.webContents.send('camera:client-connected', clientCount)
+    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
+      hydraPopupWindowRef.webContents.send('camera:client-connected', clientCount)
+    }
   })
 
   cameraServer.on('clientDisconnected', ({ clientCount }) => {
     mainWindowRef?.webContents.send('camera:client-disconnected', clientCount)
+    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
+      hydraPopupWindowRef.webContents.send('camera:client-disconnected', clientCount)
+    }
   })
 
   console.log('Camera streaming initialized')

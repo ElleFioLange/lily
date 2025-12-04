@@ -7,6 +7,9 @@ import { KeywordShaderManager } from './webgl/KeywordShaderManager'
 let hydraInstance: any = null
 let audioManager: AudioManager | null = null
 let shaderManager: KeywordShaderManager | null = null
+let cameraImageElement: HTMLImageElement | null = null
+let latestFrameURL: string | null = null
+let isCameraInitialized = false
 
 // Initialize Hydra when DOM is ready
 window.addEventListener('DOMContentLoaded', async () => {
@@ -54,6 +57,16 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.warn('Shader manager not initialized due to audio failure')
   }
 
+  // Create hidden image element for camera stream
+  cameraImageElement = document.createElement('img')
+  cameraImageElement.style.display = 'none'
+  document.body.appendChild(cameraImageElement)
+
+  // Setup camera frame listener
+  window.api.camera.onFrame((buffer: ArrayBuffer) => {
+    updateCameraFrame(buffer)
+  })
+
   // Handle window resize
   window.addEventListener('resize', () => {
     setCanvasSize()
@@ -65,6 +78,43 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Request initial shader code from main window
   window.api.hydra.requestShader()
 })
+
+/**
+ * Update camera frame and initialize as Hydra source if needed
+ */
+function updateCameraFrame(buffer: ArrayBuffer): void {
+  if (!cameraImageElement || !hydraInstance) return
+
+  // Create blob URL from frame buffer
+  const blob = new Blob([buffer], { type: 'image/jpeg' })
+  const url = URL.createObjectURL(blob)
+
+  // Revoke old URL to prevent memory leak
+  if (latestFrameURL) {
+    URL.revokeObjectURL(latestFrameURL)
+  }
+  latestFrameURL = url
+
+  // Update image source
+  cameraImageElement.src = url
+
+  // Initialize camera as s0 source on first frame
+  if (!isCameraInitialized) {
+    cameraImageElement.onload = () => {
+      if (cameraImageElement && cameraImageElement.naturalWidth > 0 && hydraInstance) {
+        try {
+          hydraInstance.synth.s0.init({ src: cameraImageElement })
+          console.log(
+            `Camera initialized as Hydra source s0 (${cameraImageElement.naturalWidth}x${cameraImageElement.naturalHeight})`
+          )
+          isCameraInitialized = true
+        } catch (err) {
+          console.error('Failed to initialize camera as Hydra source:', err)
+        }
+      }
+    }
+  }
+}
 
 // Listen for shader evaluation commands
 window.api.hydra.onEvaluateShader((code: string) => {
@@ -217,5 +267,9 @@ window.api.hydra.onScrollUpdate((scrollPercentage: number) => {
 window.addEventListener('beforeunload', () => {
   shaderManager?.destroy()
   audioManager?.destroy()
-  console.log('Cleaned up audio and shader systems')
+  // Revoke camera blob URL to prevent memory leak
+  if (latestFrameURL) {
+    URL.revokeObjectURL(latestFrameURL)
+  }
+  console.log('Cleaned up audio, shader, and camera systems')
 })
