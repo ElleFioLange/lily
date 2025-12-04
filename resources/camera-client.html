@@ -238,8 +238,8 @@
           <input
             type="text"
             id="serverUrl"
-            placeholder="ws://192.168.1.100:8765"
-            value="ws://192.168.1.100:8765"
+            placeholder="wss://192.168.1.100:8765"
+            value="wss://192.168.1.100:8765"
           />
         </div>
 
@@ -370,6 +370,7 @@
 
         ws.onopen = () => {
           setStatus('connected', 'Connected')
+          console.log('on open')
           connectBtn.disabled = true
           serverUrlInput.disabled = true
           stopAllBtn.disabled = false
@@ -386,7 +387,6 @@
 
         ws.onerror = (error) => {
           console.error('WebSocket error:', error)
-          alert(JSON.stringify(error))
           setStatus('disconnected', 'Connection Error')
         }
       })
@@ -475,6 +475,7 @@
       const urlParams = new URLSearchParams(window.location.search)
       const serverUrl = urlParams.get('url')
       if (serverUrl) {
+        console.log('updating serverUrl from url params')
         serverUrlInput.value = serverUrl
       }
 

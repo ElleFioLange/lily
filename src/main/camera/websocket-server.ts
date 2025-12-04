@@ -32,6 +32,7 @@ async function generateSelfSignedCert(): Promise<{ key: string; cert: string }> 
  */
 export class CameraWebSocketServer extends EventEmitter {
   private httpServer: HTTPSServer | null = null
+  private wsHttpsServer: HTTPSServer | null = null
   private wss: WebSocketServer | null = null
   private clients: Set<WebSocket> = new Set()
   private httpPort: number = 8766
@@ -66,14 +67,8 @@ export class CameraWebSocketServer extends EventEmitter {
             const htmlPath = join(__dirname, '../../resources/camera-client.html')
             const html = await readFile(htmlPath, 'utf-8')
 
-            // Inject WebSocket URL into the HTML (use wss:// for secure WebSocket)
-            const modifiedHtml = html.replace(
-              'value="ws://192.168.1.100:8765"',
-              `value="wss://${req.headers.host?.split(':')[0] || 'localhost'}:${this.httpPort}"`
-            )
-
             res.writeHead(200, { 'Content-Type': 'text/html' })
-            res.end(modifiedHtml)
+            res.end(html)
           } catch (error) {
             console.error('Error serving camera client:', error)
             res.writeHead(500, { 'Content-Type': 'text/plain' })
@@ -94,8 +89,10 @@ export class CameraWebSocketServer extends EventEmitter {
         console.log(`⚠️  Note: You may need to accept the self-signed certificate in your browser`)
       })
 
+      this.wsHttpsServer = createHTTPSServer({ key, cert })
+
       // Create secure WebSocket server (WSS) on the same HTTPS server
-      this.wss = new WebSocketServer({ server: this.httpServer })
+      this.wss = new WebSocketServer({ server: this.wsHttpsServer })
 
       this.wss.on('listening', () => {
         console.log(`Camera WebSocket server listening on port ${this.wsPort}`)
@@ -126,11 +123,17 @@ export class CameraWebSocketServer extends EventEmitter {
           console.error('Camera client error:', error)
           this.clients.delete(ws)
         })
+
+        ws.send('Connected to WSS server!')
       })
 
       this.wss.on('error', (error) => {
         console.error('Camera WebSocket server error:', error)
         this.emit('error', error)
+      })
+
+      this.wsHttpsServer.listen(this.wsPort, () => {
+        console.log(`WSS server running on wss://localhost:${wsPort}`)
       })
     } catch (error) {
       console.error('Failed to start camera servers:', error)
