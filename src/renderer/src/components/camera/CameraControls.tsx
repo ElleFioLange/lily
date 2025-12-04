@@ -7,10 +7,10 @@ import { useCameraStore } from '../../stores/useCameraStore'
  * displaying connection status, and showing QR code for phone connection
  */
 export function CameraControls() {
-  const { isServerRunning, serverIP, serverPort, clientCount, startServer, stopServer } =
+  const { isServerRunning, serverIP, httpPort, clientCount, startServer, stopServer } =
     useCameraStore()
 
-  const connectionURL = `http://${serverIP}:${serverPort}`
+  const connectionURL = `http://${serverIP}:${httpPort}`
 
   const handleToggleServer = async () => {
     if (isServerRunning) {
@@ -52,7 +52,7 @@ export function CameraControls() {
           </div>
 
           <div className="text-xs text-stone-400">
-            Port: <span className="text-stone-100">{serverPort}</span>
+            HTTP Port: <span className="text-stone-100">{httpPort}</span>
           </div>
 
           {/* Client Count */}

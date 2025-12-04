@@ -4,7 +4,8 @@ import type { CameraServerStatus } from '../../../types/camera'
 interface CameraStoreInterface {
   // Server state
   isServerRunning: boolean
-  serverPort: number
+  httpPort: number
+  wsPort: number
   serverIP: string
   clientCount: number
 
@@ -23,23 +24,27 @@ interface CameraStoreInterface {
 export const useCameraStore = create<CameraStoreInterface>((set, get) => ({
   // Initial state
   isServerRunning: false,
-  serverPort: 8765,
+  httpPort: 8766,
+  wsPort: 8765,
   serverIP: '',
   clientCount: 0,
   latestFrameURL: null,
   frameCount: 0,
 
-  // Start WebSocket server
-  startServer: async (port = 8765) => {
+  // Start camera servers (HTTP + WebSocket)
+  startServer: async (wsPort = 8765) => {
     try {
-      const result = await window.api.camera.start(port)
+      const result = await window.api.camera.start(wsPort)
       if (result.success) {
         set({
           isServerRunning: true,
           serverIP: result.ip,
-          serverPort: result.port
+          httpPort: result.httpPort,
+          wsPort: result.wsPort
         })
-        console.log(`Camera server started on ${result.ip}:${result.port}`)
+        console.log(
+          `Camera servers started - HTTP: ${result.ip}:${result.httpPort}, WS: ${result.ip}:${result.wsPort}`
+        )
       } else {
         console.error('Failed to start camera server:', result.error)
       }
@@ -76,7 +81,8 @@ export const useCameraStore = create<CameraStoreInterface>((set, get) => ({
   updateStatus: (status: CameraServerStatus) => {
     set({
       isServerRunning: status.isRunning,
-      serverPort: status.port,
+      httpPort: status.httpPort,
+      wsPort: status.wsPort,
       serverIP: status.ip,
       clientCount: status.clientCount
     })

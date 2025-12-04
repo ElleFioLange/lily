@@ -4,7 +4,8 @@
 
 export interface CameraServerStatus {
   isRunning: boolean
-  port: number
+  httpPort: number
+  wsPort: number
   ip: string
   clientCount: number
 }
@@ -12,7 +13,8 @@ export interface CameraServerStatus {
 export interface StartServerResult {
   success: boolean
   ip: string
-  port: number
+  httpPort: number
+  wsPort: number
   error?: string
 }
 

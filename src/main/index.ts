@@ -535,16 +535,18 @@ function setupIPCHandlers(): void {
   // ============================================================================
   // Camera WebSocket Streaming Handlers
   // ============================================================================
-  ipcMain.handle('camera:start', async (_, port: number = 8765): Promise<StartServerResult> => {
+  ipcMain.handle('camera:start', async (_, wsPort: number = 8765): Promise<StartServerResult> => {
     try {
-      cameraServer.start(port)
+      const httpPort = wsPort + 1 // HTTP server on WS port + 1
+      cameraServer.start(wsPort, httpPort)
       const localIP = getLocalIPAddress()
-      return { success: true, ip: localIP, port }
+      return { success: true, ip: localIP, httpPort, wsPort }
     } catch (error) {
       return {
         success: false,
         ip: '',
-        port,
+        httpPort: wsPort + 1,
+        wsPort,
         error: error instanceof Error ? error.message : 'Failed to start camera server'
       }
     }
