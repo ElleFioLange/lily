@@ -87,6 +87,60 @@ void main() {
                      textColor.a);
 }`
 
+const WAVEFORM_FRAGMENT = `#version 300 es
+precision highp float;
+
+in vec2 v_texCoord;
+out vec4 fragColor;
+
+uniform sampler2D u_textTexture;
+uniform float u_time;
+uniform float u_signal[512];   // Raw signal input
+uniform float u_amplitude;
+
+// ---- MFCC continuous curve ----
+float signalWave(float x) {
+    // Map x ∈ [0,1] → index ∈ [0,511]
+    float fx = x * 511.0;
+    float i0 = floor(fx);
+    float i1 = min(i0 + 1.0, 511.0);
+    float t = fract(fx);
+
+    float v0 = u_signal[int(i0)];
+    float v1 = u_signal[int(i1)];
+
+    return mix(v0, v1, t);
+}
+
+void main() {
+    vec2 uv = v_texCoord;
+
+    // Normalize MFCC waveform height
+    // Assuming average range 0 - 13
+    float wave = signalWave(uv.x) * 10.0 + 0.4;
+
+    // Signed distance from the pixel to the line
+    float dist = abs(uv.y - wave);
+
+    // Sample text
+    vec4 textColor = texture(u_textTexture, uv);
+
+    vec4 waveColor = vec4(0.0, 1.0, 1.0, 1.0);
+    vec4 backgroundColor = mix(vec4(u_amplitude), waveColor, abs(wave - 0.4));
+
+    vec4 color = (textColor.a <= 0.01) ? backgroundColor : textColor;
+
+    // Anti-aliased line thickness
+    float thickness = 0.06;
+    float lineMask = smoothstep(thickness, 0.0, dist);
+
+    // Waveform color (cyan line)
+
+    // Composite waveform on top of shaded text
+    fragColor = mix(color, waveColor, lineMask);
+}
+`
+
 /**
  * Effect 1: Kaleidoscope
  * Bass-driven kaleidoscope effect with variable segments
@@ -298,6 +352,16 @@ export const EFFECT_PRESETS: Map<string, EffectPreset> = new Map([
       description: 'Voltage shader driven by amplitude',
       vertexShader: STANDARD_VERTEX_SHADER,
       fragmentShader: VOLTAGE_FRAGMENT,
+      blendMode: 'normal'
+    }
+  ],
+  [
+    'waveform',
+    {
+      name: 'waveform',
+      description: 'Waveform visualizer masked to text',
+      vertexShader: STANDARD_VERTEX_SHADER,
+      fragmentShader: WAVEFORM_FRAGMENT,
       blendMode: 'normal'
     }
   ],

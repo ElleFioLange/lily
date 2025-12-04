@@ -20,9 +20,9 @@ fabric:
   object: active
   present: true
   absent: false
-  audio_reactivity:
-    audioChannel: 1
-    visualEffect: voltage
+  # audio_reactivity:
+  #   audioChannel: 1
+  #   visualEffect: voltage
 
 skeleton:
   type: clip
@@ -43,7 +43,7 @@ skeleton:
   absent: false
   audio_reactivity:
     audioChannel: 0
-    visualEffect: voltage
+    visualEffect: waveform
 
 sparring_bells:
   type: clip
