@@ -4,7 +4,7 @@ import { useConfigurationStore } from './useConfigurationStore'
 interface HydraState {
   evaluationVersion: number
   lastError: string | null
-  evaluateShader: () => Promise<void>
+  evaluateShader: (override?: string) => Promise<void>
   setError: (error: string | null) => void
 }
 
@@ -13,9 +13,9 @@ export const useHydraStore = create<HydraState>((set) => ({
   lastError: null,
 
   // TODO fix bug with arrow functions not updating smoothly and instead being evaluated statically
-  evaluateShader: async () => {
+  evaluateShader: async (override?: string) => {
     // Get current shader code from configuration store
-    const code = useConfigurationStore.getState().hydraShader
+    const code = override ? override : useConfigurationStore.getState().hydraShader
 
     // Increment version to trigger re-evaluation in components
     set((state) => ({ evaluationVersion: state.evaluationVersion + 1 }))

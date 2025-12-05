@@ -5,6 +5,7 @@ import type { LayoutType } from 'src/types/layouts'
 import { useInputStore } from '@renderer/stores/useInputStore'
 import { useHydraStore } from '@renderer/stores/useHydraStore'
 import parseInput, { ParseAbletonResult, ParseHydraResult } from '@renderer/utils/parseInput'
+import { useConfigurationStore } from '@renderer/stores/useConfigurationStore'
 
 type ModifierKey = 'ctrl' | 'shift' | 'alt' | 'meta'
 
@@ -53,6 +54,28 @@ function matchesShortcut(event: KeyboardEvent, shortcut: ShortcutConfig): boolea
   return true
 }
 
+function handleHydra() {
+  const { input } = useInputStore.getState()
+  const hydraParams = parseInput(input, 'hydra') as any as ParseHydraResult
+  const paramPrefix = hydraParams.reduce(
+    (prev, { name, value }) => prev + `let ${name} = ${value}\n`,
+    ''
+  )
+  let { hydraShader } = useConfigurationStore.getState()
+  console.log(hydraShader, paramPrefix)
+  useHydraStore.getState().evaluateShader(paramPrefix + hydraShader)
+}
+
+function handleInput() {
+  handleHydra()
+  const { input } = useInputStore.getState()
+  const messages = parseInput(input, 'ableton') as any as ParseAbletonResult
+  window.api.hydra.triggerAnimation()
+  messages.forEach(({ address, args }) => {
+    window.api.osc.send(address, args)
+  })
+}
+
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
     const shortcuts: ShortcutConfig[] = [
@@ -87,14 +110,7 @@ export function useKeyboardShortcuts(): void {
         panelId: 'live-preview',
         key: 'Enter',
         modifiers: ['ctrl', 'shift'],
-        handler: () => {
-          const { input } = useInputStore.getState()
-          const messages = parseInput(input, 'ableton') as any as ParseAbletonResult
-          window.api.hydra.triggerAnimation()
-          messages.forEach(({ address, args }) => {
-            window.api.osc.send(address, args)
-          })
-        },
+        handler: handleInput,
         bypassTextInputs: true,
         description: 'Evaluate input and send control messages'
       },
@@ -114,9 +130,7 @@ export function useKeyboardShortcuts(): void {
         requiredTab: 'hydra',
         key: 'Enter',
         modifiers: ['ctrl', 'shift'],
-        handler: () => {
-          useHydraStore.getState().evaluateShader()
-        },
+        handler: handleHydra,
         bypassTextInputs: true,
         description: 'Evaluate Hydra shader code'
       }
