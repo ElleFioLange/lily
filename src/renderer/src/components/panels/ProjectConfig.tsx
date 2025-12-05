@@ -4,7 +4,7 @@ import type { PanelId } from '../../stores/useFocusStore'
 import { useFocusStore } from '../../stores/useFocusStore'
 import YAMLEditor, { type YAMLEditorRef } from '../YAMLEditor'
 import JavaScriptEditor from '../JavaScriptEditor'
-import JSONNavigation from '../JSONNavigation'
+import YAMLNavigation from '../YAMLNavigation'
 import { useConfigurationStore } from '../../stores/useConfigurationStore'
 
 interface ProjectConfigProps {
@@ -152,7 +152,7 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
               onChange={setRawConfig}
               onTopLevelKeysChange={setTopLevelKeys}
             />
-            <JSONNavigation keys={topLevelKeys} onKeyClick={handleKeyClick} />
+            <YAMLNavigation keys={topLevelKeys} onKeyClick={handleKeyClick} />
           </>
         ) : (
           <JavaScriptEditor value={hydraShader} onChange={setHydraShader} />

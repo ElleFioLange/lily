@@ -1,11 +1,11 @@
 import { useState } from 'react'
 
-interface JSONNavigationProps {
+interface YAMLNavigationProps {
   keys: string[]
   onKeyClick: (key: string) => void
 }
 
-export default function JSONNavigation({ keys, onKeyClick }: JSONNavigationProps) {
+export default function YAMLNavigation({ keys, onKeyClick }: YAMLNavigationProps) {
   const [isCollapsed, setIsCollapsed] = useState(true)
 
   if (keys.length === 0) {
