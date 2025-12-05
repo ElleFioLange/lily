@@ -4,7 +4,7 @@ import { useLayoutStore } from '../stores/useLayoutStore'
 import type { LayoutType } from 'src/types/layouts'
 import { useInputStore } from '@renderer/stores/useInputStore'
 import { useHydraStore } from '@renderer/stores/useHydraStore'
-import parseInput from '@renderer/utils/parseInput'
+import parseInput, { ParseAbletonResult } from '@renderer/utils/parseInput'
 
 type ModifierKey = 'ctrl' | 'shift' | 'alt' | 'meta'
 
@@ -89,7 +89,8 @@ export function useKeyboardShortcuts(): void {
         modifiers: ['ctrl', 'shift'],
         handler: () => {
           const { input } = useInputStore.getState()
-          const messages = parseInput(input)
+          const messages = parseInput(input, 'ableton') as any as ParseAbletonResult
+          console.log('messages', messages)
           window.api.hydra.triggerAnimation()
           messages.forEach(({ address, args }) => {
             window.api.osc.send(address, args)

@@ -11,18 +11,73 @@ export function validateConfig(suspect: any) {
 
     if (key.includes(' ')) invalidProps.push('key')
 
-    const { type, path, object, present, absent, audio_reactivity } = value
+    const { ableton, hydra, audio_reactivity, args } = value
 
-    if (type !== 'track' && type !== 'clip' && type !== 'device' && type !== 'device_parameter')
-      invalidProps.push('type')
+    if (ableton === undefined && hydra === undefined) invalidProps.push('missing_surface')
 
-    if (typeof path !== 'string') invalidProps.push('path')
+    if (ableton !== undefined) {
+      const { type, path, object, present, absent } = ableton
 
-    if (object !== 'active' && object !== 'value') invalidProps.push('object')
+      switch (type) {
+        case 'track':
+        case 'clip':
+        case 'device':
+        case 'device_parameter':
+          break
+        default:
+          invalidProps.push('ableton-type')
+      }
 
-    if (typeof present !== 'boolean' && typeof present !== 'number') invalidProps.push('present')
+      if (typeof path !== 'string') invalidProps.push('ableton-path')
 
-    if (typeof absent !== 'boolean' && typeof absent !== 'number') invalidProps.push('absent')
+      switch (object) {
+        case 'active':
+        case 'value':
+          break
+        default:
+          invalidProps.push('ableton-object')
+      }
+
+      switch (typeof present) {
+        case 'boolean':
+        case 'number':
+          break
+        default:
+          invalidProps.push('ableton-present')
+      }
+
+      switch (typeof absent) {
+        case 'boolean':
+        case 'number':
+          break
+        default:
+          invalidProps.push('ableton-absent')
+      }
+    }
+
+    if (hydra) {
+      const { name, present, absent } = hydra
+
+      if (typeof name !== 'string') invalidProps.push('hydra-name')
+
+      switch (typeof present) {
+        case 'boolean':
+        case 'number':
+        case 'string':
+          break
+        default:
+          invalidProps.push('ableton-present')
+      }
+
+      switch (typeof absent) {
+        case 'boolean':
+        case 'number':
+        case 'string':
+          break
+        default:
+          invalidProps.push('ableton-absent')
+      }
+    }
 
     // Validate audio_reactivity if present
     if (audio_reactivity) {
@@ -39,6 +94,53 @@ export function validateConfig(suspect: any) {
       if (beatDetection !== undefined && typeof beatDetection !== 'boolean') {
         invalidProps.push('audio_reactivity.beatDetection (must be boolean)')
       }
+    }
+
+    if (args !== undefined) {
+      Object.entries(args).forEach(([arg, { ableton, presets }]) => {
+        if (ableton !== undefined) {
+          const { acts_on, type } = ableton
+
+          if (acts_on !== 'path') invalidProps.push(`args-${arg}-ableton-acts_on`)
+
+          switch (typeof type) {
+            case 'string':
+            case 'number':
+            case 'boolean':
+              break
+            default:
+              invalidProps.push(`args-${arg}-ableton-type`)
+          }
+        }
+
+        if (presets !== undefined) {
+          Object.entries(presets).forEach(([preset, { ableton, hydra }]) => {
+            if (ableton === undefined && hydra === undefined)
+              invalidProps.push(`args-${arg}-presets-${preset}-missing_surface`)
+
+            if (ableton !== undefined) {
+              switch (typeof ableton) {
+                case 'number':
+                case 'boolean':
+                  break
+                default:
+                  invalidProps.push(`args-${arg}-presets-${preset}-ableton`)
+              }
+            }
+
+            if (hydra !== undefined) {
+              switch (typeof hydra) {
+                case 'string':
+                case 'number':
+                case 'boolean':
+                  break
+                default:
+                  invalidProps.push(`args-${arg}-presets-${preset}-hydra`)
+              }
+            }
+          })
+        }
+      })
     }
 
     if (invalidProps.length > 0)

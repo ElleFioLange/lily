@@ -4,105 +4,122 @@ import parseConfig from '@renderer/utils/parseConfig'
 
 // Default configuration template
 const DEFAULT_CONFIG = `foundry:
-  type: clip
-  path: live_set tracks 0 clip_slots 0 clip
-  object: active
-  present: true
-  absent: false
-  # audio_reactivity:
-  #   audioChannel: 0
-  #   visualEffect: kaleidoscope
-  #   beatDetection: false
+  ableton:
+    type: clip
+    path: live_set tracks 0 clip_slots 0 clip
+    object: active
+    present: true
+    absent: false
 
 fabric:
-  type: clip
-  path: live_set tracks 1 clip_slots 0 clip
-  object: active
-  present: true
-  absent: false
-  # audio_reactivity:
-  #   audioChannel: 1
-  #   visualEffect: voltage
+  ableton:
+    type: clip
+    path: live_set tracks 1 clip_slots 0 clip
+    object: active
+    present: true
+    absent: false
 
 skeleton:
-  type: clip
-  path: live_set tracks 2 clip_slots _clip clip
-  args:
-    clip:
-      acts_on: path
-      type: number
-      default_value: 0
-      presets:
-        sparse: 0
-        slight: 1
-        some: 2
-        dense: 3
-        packed: 4
-  object: active
-  present: true
-  absent: false
+  ableton:
+    type: clip
+    path: live_set tracks 2 clip_slots _density clip
+    object: active
+    present: true
+    absent: false
+  hydra:
+    name: density
+    present: 1
+    absent: 0
   audio_reactivity:
     audioChannel: 0
     visualEffect: waveform
+  args:
+    density:
+      ableton:
+        acts_on: path
+        type: number
+      default_value:
+        ableton: 0
+        hydra: 0
+      presets:
+        sparse:
+          ableton: 0
+          hydra: 0
+        slight:
+          ableton: 1
+          hydra: 1
+        some:
+          ableton: 2
+          hydra: 2
+        dense:
+          ableton: 3
+          hydra: 3
+        packed:
+          ableton: 4
+          hydra: 4
 
 sparring_bells:
-  type: clip
-  path: live_set tracks 3 clip_slots 0 clip
-  object: active
-  present: true
-  absent: false
-  # audio_reactivity:
-  #   audioChannel: 3
-  #   visualEffect: wave-distortion
+  ableton:
+    type: clip
+    path: live_set tracks 3 clip_slots 0 clip
+    object: active
+    present: true
+    absent: false
 
 brine:
-  type: clip
-  path: live_set tracks 4 clip_slots _clip clip
+  ableton:
+    type: clip
+    path: live_set tracks 4 clip_slots _rhythm clip
+    object: active
+    present: true
+    absent: false
   args:
-    clip:
-      acts_on: path
-      type: number
-      default_value: 0
+    rhythm:
+      default_value:
+        ableton: 0
+        hydra: salty
       presets:
-        salty: 0
-        foamy: 1
-  object: active
-  present: true
-  absent: false
-  # audio_reactivity:
-  #   audioChannel: 4
-  #   visualEffect: pixelate
+        salty:
+          ableton: 0
+          hydra: salty
+        foamy:
+          ableton: 1
+          hydra: foamy
 
 wings:
-  type: clip
-  path: live_set tracks 5 clip_slots 0 clip
-  object: active
-  present: true
-  absent: false
+  ableton:
+    type: clip
+    path: live_set tracks 5 clip_slots 0 clip
+    object: active
+    present: true
+    absent: false
 
 muscle:
-  type: clip
-  path: live_set tracks 6 clip_slots 0 clip
-  object: active
-  present: true
-  absent: false
+  ableton:
+    type: clip
+    path: live_set tracks 6 clip_slots 0 clip
+    object: active
+    present: true
+    absent: false
   audio_reactivity:
     audioChannel: 1
     visualEffect: voltage
 
 sinking_souls:
-  type: clip
-  path: live_set tracks 7 clip_slots 0 clip
-  object: active
-  present: true
-  absent: false
+  ableton:
+    type: clip
+    path: live_set tracks 7 clip_slots 0 clip
+    object: active
+    present: true
+    absent: false
 
 single_volt:
-  type: clip
-  path: live_set tracks 8 clip_slots 0 clip
-  object: active
-  present: true
-  absent: false
+  ableton:
+    type: clip
+    path: live_set tracks 8 clip_slots 0 clip
+    object: active
+    present: true
+    absent: false
 `
 
 // Default Hydra shader template
@@ -127,11 +144,32 @@ src(o2).brightness(-0.1).add(src(o1), 0.2).modulateScale(src(o1), -0.05).modulat
 
 render(o2)`
 
+export type ArgPreset = {
+  ableton?: number | boolean
+  hydra?: number | string | boolean
+}
+
 export type KeyArgument = {
-  acts_on: 'path'
-  type: 'number' | 'string' | 'boolean'
-  presets?: { [preset: string]: number | string | boolean }
-  default_value: number | string | boolean
+  ableton?: {
+    acts_on: 'path'
+    type: 'number' | 'string' | 'boolean'
+  }
+  default_value: ArgPreset
+  presets?: { [preset: string]: ArgPreset }
+}
+
+export type AbletonConfigurationKey = {
+  type: 'track' | 'clip' | 'device' | 'device_parameter'
+  path: string
+  object: 'active' | 'value'
+  present: boolean | number
+  absent: boolean | number
+}
+
+export type HydraConfigurationKey = {
+  name: string
+  present: number | string | boolean
+  absent: number | string | boolean
 }
 
 export type AudioReactivityConfig = {
@@ -141,12 +179,9 @@ export type AudioReactivityConfig = {
 }
 
 export type ConfigurationKey = {
-  type: 'track' | 'clip' | 'device' | 'device_parameter'
-  path: string
+  ableton?: AbletonConfigurationKey
+  hydra?: HydraConfigurationKey
   args?: { [arg: string]: KeyArgument }
-  object: 'active' | 'value'
-  present: boolean | number
-  absent: boolean | number
   audio_reactivity?: AudioReactivityConfig // NEW: Optional audio-reactive shader config
 }
 
