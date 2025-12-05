@@ -69,12 +69,9 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
   const evaluateShader = (code: string) => {
     if (!hydraRef.current) return
 
-    console.log(code)
-
     try {
       const synth = hydraRef.current.synth
       const evalFunc = new Function(...Object.keys(synth), code)
-      console.log(synth)
       evalFunc(...Object.values(synth))
       setError(null)
     } catch (err) {

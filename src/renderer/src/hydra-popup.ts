@@ -171,8 +171,6 @@ window.api.hydra.onTextUpdate((text: string) => {
     // TODO need to handle cases like key1(key2())
     matchedKeys.sort((a, b) => a.position.start - b.position.start)
 
-    // console.log(matchedKeys)
-
     for (const { key, match, position } of matchedKeys) {
       const { start, end } = position
 
@@ -241,7 +239,6 @@ window.api.hydra.onTextUpdate((text: string) => {
 })
 
 window.api.hydra.onTriggerAnimation(() => {
-  console.log('trigger animation')
   const textOverlay = document.getElementById('text-overlay')
   if (textOverlay) {
     textOverlay.style.animation = 'none'

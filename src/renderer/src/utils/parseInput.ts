@@ -63,7 +63,6 @@ function parseAbleton(input: string) {
     if (!ableton) return
 
     const { type, path: rawPath, object, present, absent } = ableton
-    console.log(present, absent)
     let value = isPresent ? present : absent
 
     if (type === 'clip' || type === 'track') {
@@ -82,7 +81,6 @@ function parseAbleton(input: string) {
                 if (argPreset.ableton) value = argPreset.ableton
               }
             }
-            console.log(path)
             const indexOfArg = path.indexOf('_' + arg)
             path = path.slice(0, indexOfArg) + value + path.slice(indexOfArg + arg.length + 1)
           }
