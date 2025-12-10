@@ -1,0 +1,117 @@
+foundry:
+  ableton:
+    type: track
+    path: live_set tracks 0 clip_slots 0 clip
+    object: active
+    present: true
+    absent: false
+
+fabric:
+  ableton:
+    type: clip
+    path: live_set tracks 1 clip_slots 0 clip
+    object: active
+    present: true
+    absent: false
+
+skeleton:
+  ableton:
+    type: clip
+    path: live_set tracks 2 clip_slots _density clip
+    object: active
+    present: true
+    absent: false
+  hydra:
+    name: density
+    present: 1
+    absent: 0
+  audio_reactivity:
+    audioChannel: 0
+    visualEffect: waveform
+  args:
+    density:
+      ableton:
+        acts_on: path
+        type: number
+      default_value:
+        ableton: 0
+        hydra: 0
+      presets:
+        sparse:
+          ableton: 0
+          hydra: 0
+        slight:
+          ableton: 1
+          hydra: 1
+        some:
+          ableton: 2
+          hydra: 2
+        dense:
+          ableton: 3
+          hydra: 3
+        packed:
+          ableton: 4
+          hydra: 4
+
+sparring_bells:
+  ableton:
+    type: clip
+    path: live_set tracks 3 clip_slots 0 clip
+    object: active
+    present: true
+    absent: false
+
+brine:
+  ableton:
+    type: clip
+    path: live_set tracks 4 clip_slots _rhythm clip
+    object: active
+    present: true
+    absent: false
+  args:
+    rhythm:
+      default_value:
+        ableton: 0
+        hydra: salty
+      presets:
+        salty:
+          ableton: 0
+          hydra: salty
+        foamy:
+          ableton: 1
+          hydra: foamy
+
+wings:
+  ableton:
+    type: clip
+    path: live_set tracks 5 clip_slots 0 clip
+    object: active
+    present: true
+    absent: false
+
+muscle:
+  ableton:
+    type: clip
+    path: live_set tracks 6 clip_slots 0 clip
+    object: active
+    present: true
+    absent: false
+  audio_reactivity:
+    audioChannel: 1
+    visualEffect: voltage
+
+sinking_souls:
+  ableton:
+    type: clip
+    path: live_set tracks 7 clip_slots 0 clip
+    object: active
+    present: true
+    absent: false
+
+single_volt:
+  ableton:
+    type: clip
+    path: live_set tracks 8 clip_slots 0 clip
+    object: active
+    present: true
+    absent: false

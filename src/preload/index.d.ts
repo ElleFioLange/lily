@@ -82,11 +82,12 @@ interface LilyAPI {
    * Methods for loading, saving, and managing configuration files
    */
   config: {
-    load: () => Promise<{ success: boolean; content?: string; path?: string; error?: string }>
-    save: (content: string) => Promise<{ success: boolean; path?: string; error?: string }>
-    getPath: () => Promise<string>
+    save: (
+      content: string,
+      path: string
+    ) => Promise<{ success: boolean; path?: string; error?: string }>
     openFile: () => Promise<{ success: boolean; content?: string; path?: string; error?: string }>
-    saveFileAs: (content: string) => Promise<{ success: boolean; path?: string; error?: string }>
+    saveAs: (content: string) => Promise<{ success: boolean; path?: string; error?: string }>
   }
 
   /**

@@ -193,17 +193,19 @@ interface ConfigurationState {
   rawConfig: string
   parsedConfig: ConfigurationJSON | null
   configPath: string | null
+  configFileName: string | null
   isValid: boolean
   error: string | null
+  // TODO should be moved to the hydra store
   hydraShader: string
   setRawConfig: (rawConfig: string) => void
   setParsedConfig: (parsedConfig: ConfigurationJSON) => void
-  loadRawConfig: () => Promise<void>
   saveRawConfig: () => Promise<void>
   openConfigFile: () => Promise<void>
   saveConfigFileAs: () => Promise<void>
   resetRawConfig: () => void
   setRawConfigPath: (path: string | null) => void
+  setConfigFileName: (name: string | null) => void
   setHydraShader: (shader: string) => void
   resetHydraShader: () => void
 }
@@ -211,7 +213,8 @@ interface ConfigurationState {
 export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
   rawConfig: DEFAULT_CONFIG,
   parsedConfig: parseConfig(DEFAULT_CONFIG).parsedConfig,
-  configPath: null,
+  configPath: 'assets/templates/configs/default.yaml',
+  configFileName: 'default',
   isValid: true,
   error: null,
   hydraShader: DEFAULT_HYDRA_SHADER,
@@ -237,31 +240,6 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     set({ parsedConfig })
   },
 
-  loadRawConfig: async () => {
-    try {
-      const result = await window.api.config.load()
-      if (result.success && result.content) {
-        // Parse and validate loaded content
-        const { parsedConfig, err } = parseConfig(result.content)
-        if (err) throw err
-        set({
-          rawConfig: result.content,
-          parsedConfig,
-          configPath: result.path || null,
-          isValid: true,
-          error: null
-        })
-      } else if (result.error) {
-        set({ error: result.error, isValid: false })
-      }
-    } catch (err) {
-      set({
-        error: err instanceof Error ? err.message : 'Failed to load configuration',
-        isValid: false
-      })
-    }
-  },
-
   saveRawConfig: async () => {
     const state = get()
     if (!state.isValid) {
@@ -269,10 +247,16 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
       return
     }
 
+    if (state.configPath === null) {
+      set({ error: 'Cannot save with null file path' })
+      return
+    }
+
     try {
-      const result = await window.api.config.save(state.rawConfig)
+      const result = await window.api.config.save(state.rawConfig, state.configPath)
       if (result.success) {
         set({ configPath: result.path || null, error: null })
+        console.log(result.path)
       } else if (result.error) {
         set({ error: result.error })
       }
@@ -284,14 +268,21 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
   openConfigFile: async () => {
     try {
       const result = await window.api.config.openFile()
-      if (result.success && result.content) {
+      if (result.success && result.content && result.path) {
         // Parse and validate loaded content
         const { parsedConfig, err } = parseConfig(result.content)
+        // TODO double check if this works on windows? maybe need backslashes?
+        const configPath = result.path
+        const configPathArr = configPath.split('/')
+        const configFile = configPathArr[configPathArr.length - 1]
+        const configFileName = configFile.slice(0, configFile.length - 5) // strip .yaml
+
         if (err) throw err
         set({
           rawConfig: result.content,
           parsedConfig,
-          configPath: result.path || null,
+          configPath,
+          configFileName,
           isValid: true,
           error: null
         })
@@ -317,7 +308,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     }
 
     try {
-      const result = await window.api.config.saveFileAs(state.rawConfig)
+      const result = await window.api.config.saveAs(state.rawConfig)
       if (result.success) {
         set({ configPath: result.path || null, error: null })
       } else if (result.error) {
@@ -342,6 +333,8 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
 
   setRawConfigPath: (path) => set({ configPath: path }),
 
+  setConfigFileName: (name) => set({ configFileName: name }),
+
   setHydraShader: (shader: string) => {
     set({ hydraShader: shader })
   },
@@ -352,11 +345,11 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
 }))
 
 // Initialize config path on app start
-export async function initializeConfigStore(): Promise<void> {
-  try {
-    const path = await window.api.config.getPath()
-    useConfigurationStore.getState().setRawConfigPath(path)
-  } catch (err) {
-    console.error('Failed to initialize config path:', err)
-  }
-}
+// export async function initializeConfigStore(): Promise<void> {
+//   try {
+//     const path = await window.api.config.
+//     useConfigurationStore.getState().setRawConfigPath(path)
+//   } catch (err) {
+//     console.error('Failed to initialize config path:', err)
+//   }
+// }

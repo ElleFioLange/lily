@@ -5,7 +5,7 @@ import { setupOSCListeners } from './stores/useOSCStore'
 import { useLayoutStore, setupLayoutListeners } from './stores/useLayoutStore'
 import HydraConfigurationLayout from './components/layouts/HydraConfigurationLayout'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
-import { initializeConfigStore, useConfigurationStore } from './stores/useConfigurationStore'
+import { useConfigurationStore } from './stores/useConfigurationStore'
 import { useInputStore } from './stores/useInputStore'
 import { setupCameraListeners } from './stores/useCameraStore'
 
@@ -27,7 +27,7 @@ function App(): React.JSX.Element {
     setupCameraListeners()
 
     // Initialize configuration store
-    initializeConfigStore()
+    // initializeConfigStore()
 
     // Setup Hydra shader request handler for popup window
     window.api.hydra.onRequestShader(() => {

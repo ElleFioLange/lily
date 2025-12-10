@@ -20,12 +20,13 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
   const {
     rawConfig,
     setRawConfig,
-    loadRawConfig,
     saveRawConfig,
     openConfigFile,
     saveConfigFileAs,
     resetRawConfig,
-    configPath,
+    // TODO add tooltip that shows path on hover
+    // configPath,
+    configFileName,
     isValid,
     error,
     hydraShader,
@@ -33,11 +34,7 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
     resetHydraShader
   } = useConfigurationStore()
 
-  const handleLoad = useCallback(async () => {
-    await loadRawConfig()
-  }, [loadRawConfig])
-
-  const handleSave = useCallback(async () => {
+  const handleSaveFile = useCallback(async () => {
     await saveRawConfig()
   }, [saveRawConfig])
 
@@ -45,7 +42,7 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
     await openConfigFile()
   }, [openConfigFile])
 
-  const handleSaveFileAs = useCallback(async () => {
+  const handleSaveAs = useCallback(async () => {
     await saveConfigFileAs()
   }, [saveConfigFileAs])
 
@@ -88,51 +85,36 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
       </div>
 
       {/* Controls Bar */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-stone-800 bg-stone-900 shrink-0">
-        {activeTab === 'config' && (
-          <>
-            <button
-              onClick={handleOpenFile}
-              className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
-            >
-              Open...
-            </button>
-            <button
-              onClick={handleSaveFileAs}
-              disabled={!isValid}
-              className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Save As...
-            </button>
-            <div className="w-px h-6 bg-stone-700" />
-            <button
-              onClick={handleLoad}
-              className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
-              title="Load from default location"
-            >
-              Load Default
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={!isValid}
-              className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Save to default location"
-            >
-              Save Default
-            </button>
-          </>
-        )}
-        <button
-          onClick={handleReset}
-          className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
-        >
-          Reset
-        </button>
-        {activeTab === 'config' && configPath && (
-          <span className="ml-auto text-xs text-stone-400 truncate max-w-xs" title={configPath}>
-            {configPath}
-          </span>
-        )}
+      <div className="flex items-around py-2 border-b border-stone-800 bg-stone-900 shrink-0 w-full">
+        <span className="grow px-4">{configFileName}</span>
+        <div className="flex gap-2 overflow-x-auto shrink no-scrollbar pr-4">
+          <button
+            onClick={handleOpenFile}
+            className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
+          >
+            Open
+          </button>
+          <button
+            onClick={handleSaveFile}
+            disabled={!isValid}
+            className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Save
+          </button>
+          <button
+            onClick={handleSaveAs}
+            disabled={!isValid}
+            className="px-3 py-1 text-nowrap text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Save As
+          </button>
+          <button
+            onClick={handleReset}
+            className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
+          >
+            Reset
+          </button>
+        </div>
       </div>
 
       {/* Error Display */}

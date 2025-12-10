@@ -408,17 +408,11 @@ function setupIPCHandlers(): void {
   // ============================================================================
   // Configuration File Handlers
   // ============================================================================
-  const getConfigPath = () => join(app.getPath('userData'), 'lily.config.yaml')
 
-  ipcMain.handle('config:getPath', async () => {
-    return getConfigPath()
-  })
-
-  ipcMain.handle('config:load', async () => {
-    const configPath = getConfigPath()
+  ipcMain.handle('config:load', async (_, path: string) => {
     try {
-      const content = await fs.readFile(configPath, 'utf-8')
-      return { success: true, content, path: configPath }
+      const content = await fs.readFile(path, 'utf-8')
+      return { success: true, content, path }
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
         return { success: false, error: 'Configuration file not found' }
@@ -430,11 +424,10 @@ function setupIPCHandlers(): void {
     }
   })
 
-  ipcMain.handle('config:save', async (_, content: string) => {
-    const configPath = getConfigPath()
+  ipcMain.handle('config:save', async (_, content: string, path: string) => {
     try {
-      await fs.writeFile(configPath, content, 'utf-8')
-      return { success: true, path: configPath }
+      await fs.writeFile(path, content, 'utf-8')
+      return { success: true, path }
     } catch (err) {
       return {
         success: false,
@@ -469,11 +462,11 @@ function setupIPCHandlers(): void {
     }
   })
 
-  ipcMain.handle('config:saveFileAs', async (_, content: string) => {
+  ipcMain.handle('config:saveAs', async (_, content: string) => {
     try {
       const result = await dialog.showSaveDialog(mainWindowRef!, {
         title: 'Save Configuration File',
-        defaultPath: 'lily.config.yaml',
+        defaultPath: 'new-config.yaml',
         filters: [
           { name: 'YAML Files', extensions: ['yaml', 'yml'] },
           { name: 'All Files', extensions: ['*'] }

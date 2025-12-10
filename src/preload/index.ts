@@ -135,15 +135,15 @@ const api = {
   // Configuration File API
   // ============================================================================
   config: {
-    load: (): Promise<{ success: boolean; content?: string; path?: string; error?: string }> =>
-      ipcRenderer.invoke('config:load'),
-    save: (content: string): Promise<{ success: boolean; path?: string; error?: string }> =>
-      ipcRenderer.invoke('config:save', content),
-    getPath: (): Promise<string> => ipcRenderer.invoke('config:getPath'),
+    save: (
+      content: string,
+      path: string
+    ): Promise<{ success: boolean; path?: string; error?: string }> =>
+      ipcRenderer.invoke('config:save', content, path),
+    saveAs: (content: string): Promise<{ success: boolean; path?: string; error?: string }> =>
+      ipcRenderer.invoke('config:saveAs', content),
     openFile: (): Promise<{ success: boolean; content?: string; path?: string; error?: string }> =>
-      ipcRenderer.invoke('config:openFile'),
-    saveFileAs: (content: string): Promise<{ success: boolean; path?: string; error?: string }> =>
-      ipcRenderer.invoke('config:saveFileAs', content)
+      ipcRenderer.invoke('config:openFile')
   },
 
   // ============================================================================

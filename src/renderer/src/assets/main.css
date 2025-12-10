@@ -22,3 +22,14 @@
     @apply w-screen h-screen overflow-hidden;
   }
 }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    @apply hidden;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+  }
+}
