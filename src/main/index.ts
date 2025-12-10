@@ -409,21 +409,6 @@ function setupIPCHandlers(): void {
   // Configuration File Handlers
   // ============================================================================
 
-  ipcMain.handle('config:load', async (_, path: string) => {
-    try {
-      const content = await fs.readFile(path, 'utf-8')
-      return { success: true, content, path }
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-        return { success: false, error: 'Configuration file not found' }
-      }
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : 'Failed to load configuration'
-      }
-    }
-  })
-
   ipcMain.handle('config:save', async (_, content: string, path: string) => {
     try {
       await fs.writeFile(path, content, 'utf-8')
@@ -436,7 +421,7 @@ function setupIPCHandlers(): void {
     }
   })
 
-  ipcMain.handle('config:openFile', async () => {
+  ipcMain.handle('config:open', async () => {
     try {
       const result = await dialog.showOpenDialog(mainWindowRef!, {
         title: 'Open Configuration File',

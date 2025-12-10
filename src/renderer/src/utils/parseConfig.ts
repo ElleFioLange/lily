@@ -151,12 +151,12 @@ export function validateConfig(suspect: any) {
   console.log('Config is valid')
 }
 
-export default function parseConfig(rawConfig: string): {
+export default function parseConfig(config: string): {
   parsedConfig: ConfigurationJSON
   err?: Error
 } {
   try {
-    const parsedConfig = jsyaml.load(rawConfig)
+    const parsedConfig = jsyaml.load(config)
 
     validateConfig(parsedConfig)
 

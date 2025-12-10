@@ -18,15 +18,15 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
   const [topLevelKeys, setTopLevelKeys] = useState<string[]>([])
 
   const {
-    rawConfig,
-    setRawConfig,
-    saveRawConfig,
-    openConfigFile,
-    saveConfigFileAs,
-    resetRawConfig,
+    config,
+    setConfig,
+    saveConfig,
+    openConfig,
+    saveConfigAs,
+    newConfig,
     // TODO add tooltip that shows path on hover
-    // configPath,
-    configFileName,
+    configPath,
+    configName,
     isValid,
     error,
     hydraShader,
@@ -34,25 +34,26 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
     resetHydraShader
   } = useConfigurationStore()
 
-  const handleSaveFile = useCallback(async () => {
-    await saveRawConfig()
-  }, [saveRawConfig])
+  const handleSave = useCallback(async () => {
+    if (configPath !== null) await saveConfig()
+    else await saveConfigAs()
+  }, [configPath, saveConfig, saveConfigAs])
 
-  const handleOpenFile = useCallback(async () => {
-    await openConfigFile()
-  }, [openConfigFile])
+  const handleOpen = useCallback(async () => {
+    await openConfig()
+  }, [openConfig])
 
   const handleSaveAs = useCallback(async () => {
-    await saveConfigFileAs()
-  }, [saveConfigFileAs])
+    await saveConfigAs()
+  }, [saveConfigAs])
 
-  const handleReset = useCallback(() => {
+  const handleNew = useCallback(() => {
     if (activeTab === 'config') {
-      resetRawConfig()
+      newConfig()
     } else {
       resetHydraShader()
     }
-  }, [activeTab, resetRawConfig, resetHydraShader])
+  }, [activeTab, newConfig, resetHydraShader])
 
   const handleKeyClick = useCallback((key: string) => {
     editorRef.current?.scrollToKey(key)
@@ -86,16 +87,22 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
 
       {/* Controls Bar */}
       <div className="flex items-around py-2 border-b border-stone-800 bg-stone-900 shrink-0 w-full">
-        <span className="grow px-4">{configFileName}</span>
+        <span className="grow px-4">{configName}</span>
         <div className="flex gap-2 overflow-x-auto shrink no-scrollbar pr-4">
           <button
-            onClick={handleOpenFile}
+            onClick={handleNew}
+            className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
+          >
+            New
+          </button>
+          <button
+            onClick={handleOpen}
             className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
           >
             Open
           </button>
           <button
-            onClick={handleSaveFile}
+            onClick={handleSave}
             disabled={!isValid}
             className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -107,12 +114,6 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
             className="px-3 py-1 text-nowrap text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Save As
-          </button>
-          <button
-            onClick={handleReset}
-            className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
-          >
-            Reset
           </button>
         </div>
       </div>
@@ -130,8 +131,8 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
           <>
             <YAMLEditor
               ref={editorRef}
-              value={rawConfig}
-              onChange={setRawConfig}
+              value={config}
+              onChange={setConfig}
               onTopLevelKeysChange={setTopLevelKeys}
             />
             <YAMLNavigation keys={topLevelKeys} onKeyClick={handleKeyClick} />

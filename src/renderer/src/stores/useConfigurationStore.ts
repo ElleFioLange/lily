@@ -2,126 +2,6 @@ import { create } from 'zustand'
 import * as jsyaml from 'js-yaml'
 import parseConfig from '@renderer/utils/parseConfig'
 
-// Default configuration template
-const DEFAULT_CONFIG = `foundry:
-  ableton:
-    type: clip
-    path: live_set tracks 0 clip_slots 0 clip
-    object: active
-    present: true
-    absent: false
-
-fabric:
-  ableton:
-    type: clip
-    path: live_set tracks 1 clip_slots 0 clip
-    object: active
-    present: true
-    absent: false
-
-skeleton:
-  ableton:
-    type: clip
-    path: live_set tracks 2 clip_slots _density clip
-    object: active
-    present: true
-    absent: false
-  hydra:
-    name: density
-    present: 1
-    absent: 0
-  audio_reactivity:
-    audioChannel: 0
-    visualEffect: waveform
-  args:
-    density:
-      ableton:
-        acts_on: path
-        type: number
-      default_value:
-        ableton: 0
-        hydra: 0
-      presets:
-        sparse:
-          ableton: 0
-          hydra: 0
-        slight:
-          ableton: 1
-          hydra: 1
-        some:
-          ableton: 2
-          hydra: 2
-        dense:
-          ableton: 3
-          hydra: 3
-        packed:
-          ableton: 4
-          hydra: 4
-
-sparring_bells:
-  ableton:
-    type: clip
-    path: live_set tracks 3 clip_slots 0 clip
-    object: active
-    present: true
-    absent: false
-
-brine:
-  ableton:
-    type: clip
-    path: live_set tracks 4 clip_slots _rhythm clip
-    object: active
-    present: true
-    absent: false
-  args:
-    rhythm:
-      default_value:
-        ableton: 0
-        hydra: salty
-      presets:
-        salty:
-          ableton: 0
-          hydra: salty
-        foamy:
-          ableton: 1
-          hydra: foamy
-
-wings:
-  ableton:
-    type: clip
-    path: live_set tracks 5 clip_slots 0 clip
-    object: active
-    present: true
-    absent: false
-
-muscle:
-  ableton:
-    type: clip
-    path: live_set tracks 6 clip_slots 0 clip
-    object: active
-    present: true
-    absent: false
-  audio_reactivity:
-    audioChannel: 1
-    visualEffect: voltage
-
-sinking_souls:
-  ableton:
-    type: clip
-    path: live_set tracks 7 clip_slots 0 clip
-    object: active
-    present: true
-    absent: false
-
-single_volt:
-  ableton:
-    type: clip
-    path: live_set tracks 8 clip_slots 0 clip
-    object: active
-    present: true
-    absent: false
-`
-
 // Default Hydra shader template
 const DEFAULT_HYDRA_SHADER = `voronoi(1)
 	.modulatePixelate(voronoi(100))
@@ -190,45 +70,45 @@ export type ConfigurationJSON = {
 } | null
 
 interface ConfigurationState {
-  rawConfig: string
+  config: string
   parsedConfig: ConfigurationJSON | null
   configPath: string | null
-  configFileName: string | null
+  configName: string | null
   isValid: boolean
   error: string | null
   // TODO should be moved to the hydra store
   hydraShader: string
-  setRawConfig: (rawConfig: string) => void
+  setConfig: (rawConfig: string) => void
   setParsedConfig: (parsedConfig: ConfigurationJSON) => void
-  saveRawConfig: () => Promise<void>
-  openConfigFile: () => Promise<void>
-  saveConfigFileAs: () => Promise<void>
-  resetRawConfig: () => void
-  setRawConfigPath: (path: string | null) => void
-  setConfigFileName: (name: string | null) => void
+  saveConfig: () => Promise<void>
+  openConfig: () => Promise<void>
+  saveConfigAs: () => Promise<void>
+  newConfig: () => void
+  setConfigPath: (path: string | null) => void
+  setConfigName: (name: string | null) => void
   setHydraShader: (shader: string) => void
   resetHydraShader: () => void
 }
 
 export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
-  rawConfig: DEFAULT_CONFIG,
-  parsedConfig: parseConfig(DEFAULT_CONFIG).parsedConfig,
-  configPath: 'assets/templates/configs/default.yaml',
-  configFileName: 'default',
+  config: '',
+  parsedConfig: null,
+  configPath: null,
+  configName: 'new-config',
   isValid: true,
   error: null,
   hydraShader: DEFAULT_HYDRA_SHADER,
 
-  setRawConfig: (rawConfig: string) => {
+  setConfig: (config: string) => {
     // Validate YAML
     try {
-      jsyaml.load(rawConfig)
-      const { parsedConfig, err } = parseConfig(rawConfig)
+      jsyaml.load(config)
+      const { parsedConfig, err } = parseConfig(config)
       if (err) throw err
-      set({ rawConfig, parsedConfig, isValid: true, error: null })
+      set({ config, parsedConfig, isValid: true, error: null })
     } catch (err) {
       set({
-        rawConfig,
+        config,
         parsedConfig: null,
         isValid: false,
         error: err instanceof Error ? err.message : 'Invalid YAML'
@@ -240,7 +120,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     set({ parsedConfig })
   },
 
-  saveRawConfig: async () => {
+  saveConfig: async () => {
     const state = get()
     if (!state.isValid) {
       set({ error: 'Cannot save invalid YAML' })
@@ -253,7 +133,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     }
 
     try {
-      const result = await window.api.config.save(state.rawConfig, state.configPath)
+      const result = await window.api.config.save(state.config, state.configPath)
       if (result.success) {
         set({ configPath: result.path || null, error: null })
         console.log(result.path)
@@ -265,9 +145,9 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     }
   },
 
-  openConfigFile: async () => {
+  openConfig: async () => {
     try {
-      const result = await window.api.config.openFile()
+      const result = await window.api.config.open()
       if (result.success && result.content && result.path) {
         // Parse and validate loaded content
         const { parsedConfig, err } = parseConfig(result.content)
@@ -275,14 +155,14 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
         const configPath = result.path
         const configPathArr = configPath.split('/')
         const configFile = configPathArr[configPathArr.length - 1]
-        const configFileName = configFile.slice(0, configFile.length - 5) // strip .yaml
+        const configName = configFile.slice(0, configFile.length - 5) // strip .yaml
 
         if (err) throw err
         set({
-          rawConfig: result.content,
+          config: result.content,
           parsedConfig,
           configPath,
-          configFileName,
+          configName,
           isValid: true,
           error: null
         })
@@ -300,7 +180,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     }
   },
 
-  saveConfigFileAs: async () => {
+  saveConfigAs: async () => {
     const state = get()
     if (!state.isValid) {
       set({ error: 'Cannot save invalid YAML' })
@@ -308,7 +188,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     }
 
     try {
-      const result = await window.api.config.saveAs(state.rawConfig)
+      const result = await window.api.config.saveAs(state.config)
       if (result.success) {
         set({ configPath: result.path || null, error: null })
       } else if (result.error) {
@@ -322,18 +202,20 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     }
   },
 
-  resetRawConfig: () => {
+  newConfig: () => {
     set({
-      rawConfig: DEFAULT_CONFIG,
-      parsedConfig: parseConfig(DEFAULT_CONFIG).parsedConfig,
+      config: '',
+      parsedConfig: {},
+      configPath: null,
+      configName: 'new-config',
       isValid: true,
       error: null
     })
   },
 
-  setRawConfigPath: (path) => set({ configPath: path }),
+  setConfigPath: (configPath) => set({ configPath }),
 
-  setConfigFileName: (name) => set({ configFileName: name }),
+  setConfigName: (configName) => set({ configName }),
 
   setHydraShader: (shader: string) => {
     set({ hydraShader: shader })

@@ -7,6 +7,8 @@ import { useHydraStore } from '@renderer/stores/useHydraStore'
 import parseInput, { ParseAbletonResult, ParseHydraResult } from '@renderer/utils/parseInput'
 import { useConfigurationStore } from '@renderer/stores/useConfigurationStore'
 
+// TODO refactor this so keyboard shortcuts are able to be defined within layout components too
+
 type ModifierKey = 'ctrl' | 'shift' | 'alt' | 'meta'
 
 interface ShortcutConfig {

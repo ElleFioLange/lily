@@ -86,7 +86,7 @@ interface LilyAPI {
       content: string,
       path: string
     ) => Promise<{ success: boolean; path?: string; error?: string }>
-    openFile: () => Promise<{ success: boolean; content?: string; path?: string; error?: string }>
+    open: () => Promise<{ success: boolean; content?: string; path?: string; error?: string }>
     saveAs: (content: string) => Promise<{ success: boolean; path?: string; error?: string }>
   }
 

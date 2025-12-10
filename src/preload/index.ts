@@ -142,8 +142,8 @@ const api = {
       ipcRenderer.invoke('config:save', content, path),
     saveAs: (content: string): Promise<{ success: boolean; path?: string; error?: string }> =>
       ipcRenderer.invoke('config:saveAs', content),
-    openFile: (): Promise<{ success: boolean; content?: string; path?: string; error?: string }> =>
-      ipcRenderer.invoke('config:openFile')
+    open: (): Promise<{ success: boolean; content?: string; path?: string; error?: string }> =>
+      ipcRenderer.invoke('config:open')
   },
 
   // ============================================================================
