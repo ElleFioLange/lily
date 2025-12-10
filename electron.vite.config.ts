@@ -18,6 +18,15 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve(__dirname, 'src/renderer/index.html'),
+          'hydra-popup': resolve(__dirname, 'src/renderer/hydra-popup.html'),
+          settings: resolve(__dirname, 'src/renderer/settings.html')
+        }
+      }
+    },
     plugins: [react()]
   }
 })

@@ -3,6 +3,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import type { OSCMessage } from '../types/osc-messages'
 import type { LayoutType } from '../types/layouts'
 import type { ExportResult } from '../main/maxdevice/export'
+import type { Settings } from '../types/settings'
 
 /**
  * Preload Script - Minimal OSC API Bridge
@@ -204,6 +205,24 @@ const api = {
     onClientDisconnected: (callback: (clientCount: number) => void) => {
       ipcRenderer.on('camera:client-disconnected', (_, count) => callback(count))
     }
+  },
+
+  // ============================================================================
+  // Settings API
+  // ============================================================================
+  settings: {
+    /**
+     * Get current application settings
+     * @returns Promise resolving to current settings
+     */
+    get: (): Promise<Settings> => ipcRenderer.invoke('settings:get'),
+
+    /**
+     * Save application settings
+     * @param settings - Settings to save
+     * @returns Promise resolving when settings are saved
+     */
+    save: (settings: Settings): Promise<void> => ipcRenderer.invoke('settings:save', settings)
   }
 }
 

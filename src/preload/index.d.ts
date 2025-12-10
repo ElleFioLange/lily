@@ -3,6 +3,7 @@ import type { OSCMessage } from '../types/osc-messages'
 import type { LayoutType } from '../types/layouts'
 import type { ExportResult } from '../main/maxdevice/export'
 import type { CameraServerStatus, StartServerResult, StopServerResult } from '../types/camera'
+import type { Settings } from '../types/settings'
 
 /**
  * Minimal OSC API Type Definitions
@@ -123,6 +124,16 @@ interface LilyAPI {
     offFrame: (callback: (buffer: ArrayBuffer) => void) => void
     onClientConnected: (callback: (clientCount: number) => void) => void
     onClientDisconnected: (callback: (clientCount: number) => void) => void
+  }
+
+  /**
+   * Settings API
+   *
+   * Methods for managing application settings
+   */
+  settings: {
+    get: () => Promise<Settings>
+    save: (settings: Settings) => Promise<void>
   }
 }
 

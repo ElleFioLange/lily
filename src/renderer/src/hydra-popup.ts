@@ -40,8 +40,12 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Initialize audio system
   try {
+    // Load settings to get selected audio device
+    const settings = await window.api.settings.get()
+    const deviceId = settings.audio.autoDetect ? undefined : settings.audio.deviceId || undefined
+
     audioManager = new AudioManager()
-    await audioManager.initialize()
+    await audioManager.initialize(deviceId)
     console.log('Audio system initialized')
   } catch (err) {
     console.error('Failed to initialize audio:', err)

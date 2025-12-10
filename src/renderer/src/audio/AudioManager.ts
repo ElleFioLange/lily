@@ -14,10 +14,10 @@ export class AudioManager {
   private stream: MediaStream | null = null
 
   /**
-   * Initialize audio system and capture from BlackHole 16ch
-   * Auto-detects BlackHole device or falls back to system default
+   * Initialize audio system and capture from specified device
+   * @param deviceId - Optional device ID to use. If not provided, auto-detects BlackHole or uses system default
    */
-  async initialize(): Promise<void> {
+  async initialize(deviceId?: string): Promise<void> {
     try {
       // Enumerate audio devices
       const devices = await navigator.mediaDevices.enumerateDevices()
@@ -28,21 +28,35 @@ export class AudioManager {
         audioInputs.map((d) => d.label)
       )
 
-      // Try to find BlackHole 16ch
-      const blackHole = audioInputs.find(
-        (d) => d.label.includes('BlackHole 16ch') || d.label.includes('BlackHole16ch')
-      )
+      let selectedDevice: MediaDeviceInfo | undefined
 
-      if (blackHole) {
-        console.log('Found BlackHole 16ch:', blackHole.label)
-      } else {
-        console.warn('BlackHole 16ch not found, using system default audio input')
+      // Priority: specified deviceId → BlackHole → system default
+      if (deviceId) {
+        // Try to find specified device
+        selectedDevice = audioInputs.find((d) => d.deviceId === deviceId)
+        if (selectedDevice) {
+          console.log('Using specified audio device:', selectedDevice.label)
+        } else {
+          console.warn(`Specified device ID not found: ${deviceId}, falling back to auto-detect`)
+        }
+      }
+
+      // Fallback to BlackHole if no device specified or specified device not found
+      if (!selectedDevice) {
+        selectedDevice = audioInputs.find(
+          (d) => d.label.includes('BlackHole 16ch') || d.label.includes('BlackHole16ch')
+        )
+        if (selectedDevice) {
+          console.log('Auto-detected BlackHole 16ch:', selectedDevice.label)
+        } else {
+          console.warn('BlackHole 16ch not found, using system default audio input')
+        }
       }
 
       // Request user media with 16 channels
       this.stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          deviceId: blackHole ? { exact: blackHole.deviceId } : undefined,
+          deviceId: selectedDevice ? { exact: selectedDevice.deviceId } : undefined,
           channelCount: 16,
           sampleRate: 48000,
           echoCancellation: false,

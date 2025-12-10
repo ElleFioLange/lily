@@ -9,6 +9,8 @@ import { promises as fs } from 'fs'
 import { getCameraWebSocketServer } from './camera/websocket-server'
 import { networkInterfaces } from 'os'
 import type { StartServerResult, StopServerResult } from '../types/camera'
+import { getSettingsManager } from './settings/manager'
+import type { Settings } from '../types/settings'
 
 // Initialize OSC server and client
 const oscServer = getOSCServer({ port: 5460 })
@@ -17,8 +19,12 @@ const oscClient = getOSCClient({ port: 5459 })
 // Initialize camera WebSocket server
 const cameraServer = getCameraWebSocketServer()
 
+// Initialize settings manager
+const settingsManager = getSettingsManager()
+
 let mainWindowRef: BrowserWindow | null = null
 let hydraPopupWindowRef: BrowserWindow | null = null
+let settingsWindowRef: BrowserWindow | null = null
 
 /**
  * Get local IP address for camera streaming
@@ -51,6 +57,12 @@ function createMenu(): void {
             submenu: [
               { role: 'about' as const },
               { type: 'separator' as const },
+              {
+                label: 'Settings...',
+                accelerator: 'CmdOrCtrl+,',
+                click: () => createSettingsWindow()
+              },
+              { type: 'separator' as const },
               { role: 'services' as const },
               { type: 'separator' as const },
               { role: 'hide' as const },
@@ -82,7 +94,13 @@ function createMenu(): void {
           : [
               { role: 'delete' as const },
               { type: 'separator' as const },
-              { role: 'selectAll' as const }
+              { role: 'selectAll' as const },
+              { type: 'separator' as const },
+              {
+                label: 'Settings...',
+                accelerator: 'CmdOrCtrl+,',
+                click: () => createSettingsWindow()
+              }
             ])
       ]
     },
@@ -225,10 +243,43 @@ function createHydraPopup(): void {
   })
 }
 
+function createSettingsWindow(): void {
+  // Don't create duplicate windows
+  if (settingsWindowRef && !settingsWindowRef.isDestroyed()) {
+    settingsWindowRef.focus()
+    return
+  }
+
+  const settingsWindow = new BrowserWindow({
+    width: 600,
+    height: 400,
+    title: 'Settings',
+    resizable: false,
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+
+  settingsWindowRef = settingsWindow
+
+  // Load settings HTML
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    settingsWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/settings.html`)
+  } else {
+    settingsWindow.loadFile(join(__dirname, '../renderer/settings.html'))
+  }
+
+  // Cleanup on close
+  settingsWindow.on('closed', () => {
+    settingsWindowRef = null
+  })
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
@@ -241,6 +292,9 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  // Load settings
+  await settingsManager.load()
 
   // Initialize OSC communication
   initializeOSC()
@@ -553,5 +607,16 @@ function setupIPCHandlers(): void {
     const status = cameraServer.getStatus()
     status.ip = getLocalIPAddress()
     return status
+  })
+
+  // ============================================================================
+  // Settings Handlers
+  // ============================================================================
+  ipcMain.handle('settings:get', async (): Promise<Settings> => {
+    return settingsManager.get()
+  })
+
+  ipcMain.handle('settings:save', async (_, settings: Settings): Promise<void> => {
+    await settingsManager.set(settings)
   })
 }
