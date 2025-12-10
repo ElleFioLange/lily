@@ -1,10 +1,10 @@
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
-import LivePreview from './panels/LivePreview'
-import HydraPreview from './panels/HydraPreview'
-import AbletonMonitor from './panels/AbletonMonitor'
-import HydraPatches from './panels/HydraPatches'
-import ProjectConfig from './panels/ProjectConfig'
-import VideoControls from './panels/VideoControls'
+import LivePreview from '../panels/LivePreview'
+import HydraPreview from '../panels/HydraPreview'
+import AbletonMonitor from '../panels/AbletonMonitor'
+import HydraPatches from '../panels/HydraPatches'
+import ProjectConfig from '../panels/ProjectConfig'
+import VideoControls from '../panels/VideoControls'
 
 export default function Layout() {
   return (
