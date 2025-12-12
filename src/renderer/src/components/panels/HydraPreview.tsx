@@ -3,22 +3,23 @@ import Hydra from 'hydra-synth'
 import Panel from '../common/Panel'
 import type { PanelId } from '../../stores/useFocusStore'
 import { useHydraStore } from '../../stores/useHydraStore'
-import { useConfigurationStore } from '../../stores/useConfigurationStore'
 import { CameraStreamManager } from '../camera/CameraStreamManager'
 
 interface HydraPreviewProps {
   panelId?: PanelId
 }
 
+// TODO investigate weird flicker bug that happens sometimes
+
 export default function HydraPreview({ panelId }: HydraPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hydraRef = useRef<any>(null)
   const [cameraVideo, setCameraVideo] = useState<HTMLVideoElement | HTMLImageElement | null>(null)
-  const evaluationVersion = useHydraStore((state) => state.evaluationVersion)
-  const lastError = useHydraStore((state) => state.lastError)
-  const setError = useHydraStore((state) => state.setError)
-  const hydraShader = useConfigurationStore((state) => state.hydraShader)
+  const evaluationVersion = useHydraStore(({ evaluationVersion }) => evaluationVersion)
+  const lastError = useHydraStore(({ lastError }) => lastError)
+  const setError = useHydraStore(({ setError }) => setError)
+  const shader = useHydraStore(({ shader }) => shader)
 
   // Initialize Hydra on mount
   useEffect(() => {
@@ -34,7 +35,7 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
     hydraRef.current = hydra
 
     // Initial evaluation
-    evaluateShader(hydraShader)
+    evaluateShader(shader)
 
     return () => {
       if (hydraRef.current) {
@@ -48,7 +49,7 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
   // Re-evaluate when evaluationVersion changes
   useEffect(() => {
     if (hydraRef.current && evaluationVersion > 0) {
-      evaluateShader(hydraShader)
+      evaluateShader(shader)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluationVersion])

@@ -1,0 +1,17 @@
+test:
+  hydra:
+    name: density
+    present: 10
+    absent: 20
+  args:
+    density:
+      default_value: 10
+      presets:
+        smooth:
+          hydra: 40
+        chewy:
+          hydra: 5
+  audio_reactivity:
+    audioChannel: 0
+    visualEffect: waveform
+  

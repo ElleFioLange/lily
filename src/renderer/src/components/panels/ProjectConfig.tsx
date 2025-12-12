@@ -6,6 +6,7 @@ import YAMLEditor, { type YAMLEditorRef } from '../YAMLEditor'
 import JavaScriptEditor from '../JavaScriptEditor'
 import YAMLNavigation from '../YAMLNavigation'
 import { useConfigurationStore } from '../../stores/useConfigurationStore'
+import { useHydraStore } from '@renderer/stores/useHydraStore'
 
 interface ProjectConfigProps {
   panelId?: PanelId
@@ -28,11 +29,10 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
     configPath,
     configName,
     isValid,
-    error,
-    hydraShader,
-    setHydraShader,
-    resetHydraShader
+    error
   } = useConfigurationStore()
+
+  const { rawShader, setRawShader } = useHydraStore()
 
   const handleSave = useCallback(async () => {
     if (configPath !== null) await saveConfig()
@@ -51,9 +51,9 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
     if (activeTab === 'config') {
       newConfig()
     } else {
-      resetHydraShader()
+      // resetHydraShader()
     }
-  }, [activeTab, newConfig, resetHydraShader])
+  }, [activeTab, newConfig])
 
   const handleKeyClick = useCallback((key: string) => {
     editorRef.current?.scrollToKey(key)
@@ -138,7 +138,7 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
             <YAMLNavigation keys={topLevelKeys} onKeyClick={handleKeyClick} />
           </>
         ) : (
-          <JavaScriptEditor value={hydraShader} onChange={setHydraShader} />
+          <JavaScriptEditor value={rawShader} onChange={setRawShader} />
         )}
       </div>
     </Panel>

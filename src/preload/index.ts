@@ -4,6 +4,7 @@ import type { OSCMessage } from '../types/osc-messages'
 import type { LayoutType } from '../types/layouts'
 import type { ExportResult } from '../main/maxdevice/export'
 import type { Settings } from '../types/settings'
+import { ConfigurationJSON } from '../types/config'
 
 /**
  * Preload Script - Minimal OSC API Bridge
@@ -171,6 +172,12 @@ const api = {
     },
     onTextUpdate: (callback: (text: string) => void) => {
       ipcRenderer.on('hydra:text-update', (_, text) => callback(text))
+    },
+    sendConfigUpdate: () => {
+      ipcRenderer.send('hydra:config-update')
+    },
+    onConfigUpdate: (callback: (config: ConfigurationJSON) => void) => {
+      ipcRenderer.on('hydra:config-update', (_, config) => callback(config))
     },
     sendScrollUpdate: (scrollPercentage: number) => {
       ipcRenderer.send('hydra:scroll-update', scrollPercentage)

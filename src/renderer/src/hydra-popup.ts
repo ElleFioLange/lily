@@ -242,6 +242,8 @@ window.api.hydra.onTextUpdate((text: string) => {
   }
 })
 
+// window.api.hydra.onConfigUpdate(() => {})
+
 window.api.hydra.onTriggerAnimation(() => {
   const textOverlay = document.getElementById('text-overlay')
   if (textOverlay) {
