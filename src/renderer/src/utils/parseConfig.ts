@@ -1,5 +1,5 @@
-import { ConfigurationJSON, ConfigurationKey } from '@renderer/stores/useConfigurationStore'
 import * as jsyaml from 'js-yaml'
+import { ConfigurationJSON, ConfigurationKey } from 'src/types/config'
 
 export function validateConfig(suspect: any) {
   const entries = Object.entries(suspect)

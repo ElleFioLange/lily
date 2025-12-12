@@ -1,1 +1,5 @@
 TODO address this bug 37988:1130/175454.534076:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:496] SharedImageManager::ProduceOverlay: Trying to Produce a Overlay representation from a non-existent mailbox.
+
+TODO add stylistic flare that displays some of the technical processes happening behind the scenes to maintain the intereset of the 'coding aesthetic'
+
+TODO rewrite the ableton max device controller to do everything through javascript api

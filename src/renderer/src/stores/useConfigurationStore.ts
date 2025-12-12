@@ -1,73 +1,7 @@
 import { create } from 'zustand'
 import * as jsyaml from 'js-yaml'
 import parseConfig from '@renderer/utils/parseConfig'
-
-// Default Hydra shader template
-const DEFAULT_HYDRA_SHADER = `voronoi(1)
-	.modulatePixelate(voronoi(100))
-	.color([0, 1].smooth().fast(0.5), [1, 0].smooth().fast(0.3))
-	.modulatePixelate(osc(3)
-		.modulateScale(src(o0))
-		.rotate())
-	.out()
-
-src(o0)
-	.hue([0, Math.PI * 2].smooth().fast(0.1))
-	.add(src(o0)
-		.repeat(3)
-		.modulateRotate(src(o0))
-		.modulateScale(src(o1)), 2)
-	.mult(noise(4, 1).brightness(0.5))
-	.out(o1)
-
-src(o2).brightness(-0.1).add(src(o1), 0.2).modulateScale(src(o1), -0.05).modulateRotate(src(o0)).out(o2)
-
-render(o2)`
-
-export type ArgPreset = {
-  ableton?: number | boolean
-  hydra?: number | string | boolean
-}
-
-export type KeyArgument = {
-  ableton?: {
-    acts_on: 'path'
-    type: 'number' | 'string' | 'boolean'
-  }
-  default_value: ArgPreset
-  presets?: { [preset: string]: ArgPreset }
-}
-
-export type AbletonConfigurationKey = {
-  type: 'track' | 'clip' | 'device' | 'device_parameter'
-  path: string
-  object: 'active' | 'value'
-  present: boolean | number
-  absent: boolean | number
-}
-
-export type HydraConfigurationKey = {
-  name: string
-  present: number | string | boolean
-  absent: number | string | boolean
-}
-
-export type AudioReactivityConfig = {
-  audioChannel: number // 0-15 (BlackHole channel index)
-  visualEffect: string // Effect preset name (e.g., 'kaleidoscope')
-  beatDetection?: boolean // Optional: enable beat detection
-}
-
-export type ConfigurationKey = {
-  ableton?: AbletonConfigurationKey
-  hydra?: HydraConfigurationKey
-  args?: { [arg: string]: KeyArgument }
-  audio_reactivity?: AudioReactivityConfig // NEW: Optional audio-reactive shader config
-}
-
-export type ConfigurationJSON = {
-  [keyword: string]: ConfigurationKey
-} | null
+import { ConfigurationJSON } from 'src/types/config'
 
 interface ConfigurationState {
   config: string
@@ -77,7 +11,6 @@ interface ConfigurationState {
   isValid: boolean
   error: string | null
   // TODO should be moved to the hydra store
-  hydraShader: string
   setConfig: (rawConfig: string) => void
   setParsedConfig: (parsedConfig: ConfigurationJSON) => void
   saveConfig: () => Promise<void>
@@ -86,8 +19,6 @@ interface ConfigurationState {
   newConfig: () => void
   setConfigPath: (path: string | null) => void
   setConfigName: (name: string | null) => void
-  setHydraShader: (shader: string) => void
-  resetHydraShader: () => void
 }
 
 export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
@@ -97,7 +28,6 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
   configName: 'new-config',
   isValid: true,
   error: null,
-  hydraShader: DEFAULT_HYDRA_SHADER,
 
   setConfig: (config: string) => {
     // Validate YAML
@@ -136,7 +66,6 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
       const result = await window.api.config.save(state.config, state.configPath)
       if (result.success) {
         set({ configPath: result.path || null, error: null })
-        console.log(result.path)
       } else if (result.error) {
         set({ error: result.error })
       }
@@ -215,15 +144,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
 
   setConfigPath: (configPath) => set({ configPath }),
 
-  setConfigName: (configName) => set({ configName }),
-
-  setHydraShader: (shader: string) => {
-    set({ hydraShader: shader })
-  },
-
-  resetHydraShader: () => {
-    set({ hydraShader: DEFAULT_HYDRA_SHADER })
-  }
+  setConfigName: (configName) => set({ configName })
 }))
 
 // Initialize config path on app start

@@ -5,9 +5,9 @@ import { setupOSCListeners } from './stores/useOSCStore'
 import { useLayoutStore, setupLayoutListeners } from './stores/useLayoutStore'
 import HydraConfigurationLayout from './components/layouts/HydraConfigurationLayout'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
-import { useConfigurationStore } from './stores/useConfigurationStore'
 import { useInputStore } from './stores/useInputStore'
 import { setupCameraListeners } from './stores/useCameraStore'
+import { useHydraStore } from './stores/useHydraStore'
 
 function App(): React.JSX.Element {
   const currentLayout = useLayoutStore((state) => state.currentLayout)
@@ -31,7 +31,7 @@ function App(): React.JSX.Element {
 
     // Setup Hydra shader request handler for popup window
     window.api.hydra.onRequestShader(() => {
-      const shader = useConfigurationStore.getState().hydraShader
+      const { shader } = useHydraStore.getState()
       window.api.hydra.sendShaderResponse(shader)
     })
 
