@@ -47,7 +47,6 @@ export const useHydraStore = create<HydraState>((set, get) => ({
 
   setError: (error) => set({ lastError: error }),
 
-  // TODO fix bug with arrow functions not updating smoothly and instead being evaluated statically
   evaluateShader: async () => {
     const { input } = useInputStore.getState()
     const hydraParams = parseInput(input, 'hydra') as any as ParseHydraResult
@@ -58,7 +57,10 @@ export const useHydraStore = create<HydraState>((set, get) => ({
 
     const { rawShader } = get()
 
-    const processedShader = paramPrefix + rawShader
+    // TODO this is pretty fragile, look into more robust regex
+    const timedShader = rawShader.replaceAll('time', 'synth.time')
+
+    const processedShader = paramPrefix + timedShader
 
     set((state) => ({ shader: processedShader, evaluationVersion: state.evaluationVersion + 1 }))
 

@@ -27,7 +27,7 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
 
     const hydra = new Hydra({
       canvas: canvasRef.current,
-      detectAudio: false, // Don't request microphone
+      // detectAudio: false, // Don't request microphone
       makeGlobal: false, // Keep functions namespaced
       autoLoop: true // Auto-render via requestAnimationFrame
     })
@@ -72,8 +72,9 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
 
     try {
       const synth = hydraRef.current.synth
-      const evalFunc = new Function(...Object.keys(synth), code)
-      evalFunc(...Object.values(synth))
+
+      const evalFunc = new Function(...Object.keys(synth), 'synth', code)
+      evalFunc(...Object.values(synth), synth)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Evaluation failed')

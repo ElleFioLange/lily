@@ -33,7 +33,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Initialize Hydra with explicit dimensions
   hydraInstance = new Hydra({
     canvas,
-    detectAudio: false,
+    // detectAudio: false,
     makeGlobal: false,
     autoLoop: true,
     width: window.innerWidth,
@@ -128,8 +128,8 @@ window.api.hydra.onEvaluateShader((code: string) => {
 
   try {
     const synth = hydraInstance.synth
-    const evalFunc = new Function(...Object.keys(synth), code)
-    evalFunc(...Object.values(synth))
+    const evalFunc = new Function(...Object.keys(synth), 'synth', code)
+    evalFunc(...Object.values(synth), synth)
   } catch (err) {
     console.error('Hydra evaluation error:', err)
   }

@@ -10,7 +10,6 @@ interface ConfigurationState {
   configName: string | null
   isValid: boolean
   error: string | null
-  // TODO should be moved to the hydra store
   setConfig: (rawConfig: string) => void
   setParsedConfig: (parsedConfig: ConfigurationJSON) => void
   saveConfig: () => Promise<void>
