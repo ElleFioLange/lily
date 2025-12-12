@@ -12,6 +12,8 @@ interface ProjectConfigProps {
   panelId?: PanelId
 }
 
+// TODO make the file system more forgiving for saving with errors
+
 export default function ProjectConfig({ panelId }: ProjectConfigProps) {
   const activeTab = useFocusStore((state) => state.activeProjectConfigTab)
   const setActiveTab = useFocusStore((state) => state.setActiveProjectConfigTab)

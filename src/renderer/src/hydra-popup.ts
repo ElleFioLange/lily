@@ -11,6 +11,8 @@ let cameraImageElement: HTMLImageElement | null = null
 let latestFrameURL: string | null = null
 let isCameraInitialized = false
 
+// TODO handle rendering text input when the popup opens
+
 // Initialize Hydra when DOM is ready
 window.addEventListener('DOMContentLoaded', async () => {
   const canvas = document.getElementById('hydra-canvas') as HTMLCanvasElement
