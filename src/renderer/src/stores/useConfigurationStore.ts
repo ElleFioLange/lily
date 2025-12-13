@@ -22,7 +22,7 @@ interface ConfigurationState {
 
 export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
   config: '',
-  parsedConfig: null,
+  parsedConfig: {},
   configPath: null,
   configName: 'new-config',
   isValid: true,
