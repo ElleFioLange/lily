@@ -12,6 +12,7 @@ let latestFrameURL: string | null = null
 let isCameraInitialized = false
 
 // TODO handle rendering text input when the popup opens
+// TODO refresh config when its updated for keyboard rendering
 
 // Initialize Hydra when DOM is ready
 window.addEventListener('DOMContentLoaded', async () => {
@@ -141,6 +142,7 @@ window.api.hydra.onTextUpdate((text: string) => {
 
   if (textOverlay) {
     const { parsedConfig: config } = useConfigurationStore.getState()
+    console.log(config)
 
     if (!config) {
       textOverlay.replaceChildren(text)

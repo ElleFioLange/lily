@@ -1,11 +1,9 @@
 import { useEffect } from 'react'
 import { useFocusStore, type PanelId, type ProjectConfigTab } from '../stores/useFocusStore'
-import { useLayoutStore } from '../stores/useLayoutStore'
-import type { LayoutType } from 'src/types/layouts'
 import { useInputStore } from '@renderer/stores/useInputStore'
 import { useHydraStore } from '@renderer/stores/useHydraStore'
 
-// TODO refactor this so keyboard shortcuts are able to be defined within layout components too
+// TODO refactor this so keyboard shortcuts are able to be defined within panel components too
 
 type ModifierKey = 'ctrl' | 'shift' | 'alt' | 'meta'
 
@@ -57,32 +55,6 @@ function matchesShortcut(event: KeyboardEvent, shortcut: ShortcutConfig): boolea
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
     const shortcuts: ShortcutConfig[] = [
-      // Global shortcuts - Layout switching
-      {
-        key: '1',
-        modifiers: ['ctrl'],
-        handler: () => {
-          useLayoutStore.getState().setLayout('performance' as LayoutType)
-        },
-        description: 'Switch to Performance layout'
-      },
-      {
-        key: '2',
-        modifiers: ['ctrl'],
-        handler: () => {
-          useLayoutStore.getState().setLayout('ableton-configuration' as LayoutType)
-        },
-        description: 'Switch to Ableton Configuration layout'
-      },
-      {
-        key: '3',
-        modifiers: ['ctrl'],
-        handler: () => {
-          useLayoutStore.getState().setLayout('hydra-configuration' as LayoutType)
-        },
-        description: 'Switch to Hydra Configuration layout'
-      },
-
       // Panel-specific shortcuts - Examples
       {
         panelId: 'live-preview',

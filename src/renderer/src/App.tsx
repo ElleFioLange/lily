@@ -1,16 +1,12 @@
 import { useEffect } from 'react'
-import PerformanceLayout from './components/layouts/PerformanceLayout'
-import AbletonConfigurationLayout from './components/layouts/AbletonConfigurationLayout'
+import Layout from './components/Layout'
 import { setupOSCListeners } from './stores/useOSCStore'
-import { useLayoutStore, setupLayoutListeners } from './stores/useLayoutStore'
-import HydraConfigurationLayout from './components/layouts/HydraConfigurationLayout'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useInputStore } from './stores/useInputStore'
 import { setupCameraListeners } from './stores/useCameraStore'
 import { useHydraStore } from './stores/useHydraStore'
 
 function App(): React.JSX.Element {
-  const currentLayout = useLayoutStore((state) => state.currentLayout)
   const input = useInputStore((state) => state.input)
 
   // Initialize keyboard shortcuts
@@ -19,9 +15,6 @@ function App(): React.JSX.Element {
   useEffect(() => {
     // Setup OSC event listeners when component mounts
     setupOSCListeners()
-
-    // Setup layout switching listeners
-    setupLayoutListeners()
 
     // Setup camera streaming listeners
     setupCameraListeners()
@@ -43,17 +36,7 @@ function App(): React.JSX.Element {
     window.api.hydra.sendTextUpdate(input)
   }, [input])
 
-  switch (currentLayout) {
-    case 'performance': {
-      return <PerformanceLayout />
-    }
-    case 'ableton-configuration': {
-      return <AbletonConfigurationLayout />
-    }
-    case 'hydra-configuration': {
-      return <HydraConfigurationLayout />
-    }
-  }
+  return <Layout />
 }
 
 export default App

@@ -118,35 +118,7 @@ function createMenu(): void {
         { role: 'zoomOut' as const },
         { type: 'separator' as const },
         { role: 'togglefullscreen' as const },
-        { type: 'separator' as const },
-        // Layout switching options
-        {
-          label: 'Layout',
-          submenu: [
-            {
-              label: 'Performance',
-              type: 'radio',
-              checked: true,
-              click: () => {
-                mainWindowRef?.webContents.send('layout:change', 'performance')
-              }
-            },
-            {
-              label: 'Ableton Configuration',
-              type: 'radio',
-              click: () => {
-                mainWindowRef?.webContents.send('layout:change', 'ableton-configuration')
-              }
-            },
-            {
-              label: 'Hydra Configuration',
-              type: 'radio',
-              click: () => {
-                mainWindowRef?.webContents.send('layout:change', 'hydra-configuration')
-              }
-            }
-          ]
-        }
+        { type: 'separator' as const }
       ]
     },
 
@@ -450,13 +422,6 @@ function setupIPCHandlers(): void {
 
   ipcMain.handle('max-device:check-exists', async () => {
     return await checkMaxDeviceExists()
-  })
-
-  // ============================================================================
-  // Layout Switching Handler
-  // ============================================================================
-  ipcMain.handle('layout:set', async (_, layout: 'performance' | 'ableton-configuration') => {
-    mainWindowRef?.webContents.send('layout:change', layout)
   })
 
   // ============================================================================

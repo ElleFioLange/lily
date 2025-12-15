@@ -1,16 +1,16 @@
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
-import LivePreview from '../panels/LivePreview'
-import HydraPreview from '../panels/HydraPreview'
-import AbletonMonitor from '../panels/AbletonMonitor'
-import HydraPatches from '../panels/HydraPatches'
-import ProjectConfig from '../panels/ProjectConfig'
-import VideoControls from '../panels/VideoControls'
+import LivePreview from './panels/LivePreview'
+import HydraPreview from './panels/HydraPreview'
+import AbletonMonitor from './panels/AbletonMonitor'
+import HydraPatches from './panels/HydraPatches'
+import ProjectConfig from './panels/ProjectConfig'
+import VideoControls from './panels/VideoControls'
 
-export default function AbletonConfigurationLayout() {
+export default function Layout() {
   return (
     <PanelGroup direction="horizontal" className="w-full h-full">
       {/* Main Content Area - Left Side */}
-      <Panel defaultSize={85} minSize={50}>
+      <Panel defaultSize={70} minSize={50}>
         <PanelGroup direction="horizontal">
           {/* Left Section - Live Preview & Ableton Monitor */}
           <Panel defaultSize={70} minSize={40}>
@@ -60,7 +60,7 @@ export default function AbletonConfigurationLayout() {
       <PanelResizeHandle className="w-px bg-stone-800 cursor-col-resize flex items-center justify-center" />
 
       {/* Editor - Right Sidebar */}
-      <Panel defaultSize={15} minSize={10} maxSize={30} collapsible>
+      <Panel defaultSize={30} minSize={10} maxSize={30} collapsible>
         <ProjectConfig panelId="project-config" />
       </Panel>
     </PanelGroup>

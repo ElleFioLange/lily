@@ -33,3 +33,13 @@ brine(brine(brine())) modulation feedback ꉂ(˵˃ ᗜ ˂˵)
 brine().smooth()
 
 extendEnvelope(brine())
+
+Lily Project Structure
+
+- hydra patches
+  - active patch
+- lily inputs
+  = active input
+  = ableton project
+
+Browsers highlight the project specific structures (like configs, patches, or inputs). Users can also export a structure from a project into their library to be accessible in any other project.

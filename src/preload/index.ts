@@ -1,7 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type { OSCMessage } from '../types/osc-messages'
-import type { LayoutType } from '../types/layouts'
 import type { ExportResult } from '../main/maxdevice/export'
 import type { Settings } from '../types/settings'
 import { ConfigurationJSON } from '../types/config'
@@ -121,16 +120,6 @@ const api = {
     export: (): Promise<ExportResult> => ipcRenderer.invoke('max-device:export'),
     quickInstall: (): Promise<ExportResult> => ipcRenderer.invoke('max-device:quick-install'),
     checkExists: (): Promise<boolean> => ipcRenderer.invoke('max-device:check-exists')
-  },
-
-  // ============================================================================
-  // Layout Switching API
-  // ============================================================================
-  layout: {
-    setLayout: (layout: LayoutType) => ipcRenderer.invoke('layout:set', layout),
-    onLayoutChange: (callback: (layout: LayoutType) => void) => {
-      ipcRenderer.on('layout:change', (_, layout) => callback(layout))
-    }
   },
 
   // ============================================================================
