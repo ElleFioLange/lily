@@ -10,6 +10,7 @@ interface HydraPreviewProps {
 }
 
 // TODO investigate weird flicker bug that happens sometimes
+// TODO bugfix: "render()" only shows o0 in the upper left corner
 
 export default function HydraPreview({ panelId }: HydraPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
