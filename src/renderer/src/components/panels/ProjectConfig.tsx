@@ -16,6 +16,8 @@ interface ProjectConfigProps {
 
 // TODO fix undo redo functionality
 
+// TODO hydra file system
+
 export default function ProjectConfig({ panelId }: ProjectConfigProps) {
   const activeTab = useFocusStore((state) => state.activeProjectConfigTab)
   const setActiveTab = useFocusStore((state) => state.setActiveProjectConfigTab)
