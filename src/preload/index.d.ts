@@ -4,6 +4,7 @@ import type { LayoutType } from '../types/layouts'
 import type { ExportResult } from '../main/maxdevice/export'
 import type { CameraServerStatus, StartServerResult, StopServerResult } from '../types/camera'
 import type { Settings } from '../types/settings'
+import type { AudioDevice, AudioCaptureStatus, AudioBufferData } from '../types/audio'
 
 /**
  * Minimal OSC API Type Definitions
@@ -124,6 +125,23 @@ interface LilyAPI {
     offFrame: (callback: (buffer: ArrayBuffer) => void) => void
     onClientConnected: (callback: (clientCount: number) => void) => void
     onClientDisconnected: (callback: (clientCount: number) => void) => void
+  }
+
+  /**
+   * Audio Capture API
+   *
+   * Methods for managing multi-channel audio capture from audio devices
+   */
+  audio: {
+    listDevices: () => Promise<AudioDevice[]>
+    start: (deviceId?: string) => Promise<{ success: boolean; error?: string }>
+    stop: () => Promise<{ success: boolean }>
+    getStatus: () => Promise<AudioCaptureStatus>
+    onBuffer: (callback: (data: AudioBufferData) => void) => void
+    offBuffer: (callback: (data: AudioBufferData) => void) => void
+    onError: (callback: (error: string) => void) => void
+    onStarted: (callback: () => void) => void
+    onStopped: (callback: () => void) => void
   }
 
   /**

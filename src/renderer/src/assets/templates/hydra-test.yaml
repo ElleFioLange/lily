@@ -14,4 +14,3 @@ test:
   audio_reactivity:
     audioChannel: 0
     visualEffect: waveform
-  

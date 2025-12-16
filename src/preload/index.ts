@@ -4,6 +4,7 @@ import type { OSCMessage } from '../types/osc-messages'
 import type { ExportResult } from '../main/maxdevice/export'
 import type { Settings } from '../types/settings'
 import { ConfigurationJSON } from '../types/config'
+import type { AudioDevice, AudioCaptureStatus, AudioBufferData } from '../types/audio'
 
 /**
  * Preload Script - Minimal OSC API Bridge
@@ -200,6 +201,77 @@ const api = {
     },
     onClientDisconnected: (callback: (clientCount: number) => void) => {
       ipcRenderer.on('camera:client-disconnected', (_, count) => callback(count))
+    }
+  },
+
+  // ============================================================================
+  // Audio Capture API
+  // ============================================================================
+  audio: {
+    /**
+     * List available audio input devices
+     * @returns Promise resolving to array of audio devices
+     */
+    listDevices: (): Promise<AudioDevice[]> => ipcRenderer.invoke('audio:list-devices'),
+
+    /**
+     * Start audio capture from specified device
+     * @param deviceId - Optional device ID. If not provided, auto-detects BlackHole 16ch
+     * @returns Promise resolving to result with success/error
+     */
+    start: (deviceId?: string): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke('audio:start', deviceId),
+
+    /**
+     * Stop audio capture
+     * @returns Promise resolving to success status
+     */
+    stop: (): Promise<{ success: boolean }> => ipcRenderer.invoke('audio:stop'),
+
+    /**
+     * Get current audio capture status
+     * @returns Promise resolving to capture status
+     */
+    getStatus: (): Promise<AudioCaptureStatus> => ipcRenderer.invoke('audio:get-status'),
+
+    /**
+     * Register callback for incoming audio buffers
+     * @param callback - Function called with audio buffer data
+     */
+    onBuffer: (callback: (data: AudioBufferData) => void) => {
+      ipcRenderer.on('audio:buffer', (_, data) => callback(data))
+    },
+
+    /**
+     * Remove audio buffer listener
+     * @param callback - The callback function to remove
+     */
+    offBuffer: (callback: (data: AudioBufferData) => void) => {
+      ipcRenderer.removeListener('audio:buffer', (_, data) => callback(data))
+    },
+
+    /**
+     * Register callback for audio capture errors
+     * @param callback - Function called with error message
+     */
+    onError: (callback: (error: string) => void) => {
+      ipcRenderer.on('audio:error', (_, error) => callback(error))
+    },
+
+    /**
+     * Register callback for capture started event
+     * @param callback - Function called when capture starts
+     */
+    onStarted: (callback: () => void) => {
+      ipcRenderer.on('audio:started', callback)
+    },
+
+    /**
+     * Register callback for capture stopped event
+     * @param callback - Function called when capture stops
+     */
+    onStopped: (callback: () => void) => {
+      ipcRenderer.on('audio:stopped', callback)
     }
   },
 

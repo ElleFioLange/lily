@@ -1,5 +1,7 @@
 import Meyda from 'meyda'
 import type { AudioFeatures, AudioChannel } from './types'
+import { registerAudioBufferProcessor } from './worklet/register-worklet'
+import type { AudioDevice, AudioBufferData } from '../../../types/audio'
 
 /**
  * AudioManager handles multi-channel audio capture and feature extraction
@@ -10,8 +12,8 @@ import type { AudioFeatures, AudioChannel } from './types'
 export class AudioManager {
   private context: AudioContext | null = null
   private channels: AudioChannel[] = []
-  private source: MediaStreamAudioSourceNode | null = null
-  private stream: MediaStream | null = null
+  private workletNode: AudioWorkletNode | null = null
+  private audioBufferCallback: ((data: AudioBufferData) => void) | null = null
 
   /**
    * Initialize audio system and capture from specified device
@@ -19,63 +21,60 @@ export class AudioManager {
    */
   async initialize(deviceId?: string): Promise<void> {
     try {
-      // Enumerate audio devices
-      const devices = await navigator.mediaDevices.enumerateDevices()
-      const audioInputs = devices.filter((d) => d.kind === 'audioinput')
-
+      // List audio devices from main process
+      const devices = await window.api.audio.listDevices()
       console.log(
         'Available audio devices:',
-        audioInputs.map((d) => d.label)
+        devices.map((d) => d.name)
       )
 
-      let selectedDevice: MediaDeviceInfo | undefined
+      let selectedDevice: AudioDevice | undefined
 
-      // Priority: specified deviceId → BlackHole → system default
+      // Priority: specified deviceId → BlackHole 16ch → error
       if (deviceId) {
-        // Try to find specified device
-        selectedDevice = audioInputs.find((d) => d.deviceId === deviceId)
+        selectedDevice = devices.find((d) => d.id === deviceId)
         if (selectedDevice) {
-          console.log('Using specified audio device:', selectedDevice.label)
+          console.log('Using specified audio device:', selectedDevice.name)
         } else {
-          console.warn(`Specified device ID not found: ${deviceId}, falling back to auto-detect`)
+          console.warn(`Device not found: ${deviceId}, falling back to auto-detect`)
         }
       }
 
-      // Fallback to BlackHole if no device specified or specified device not found
+      // Fallback to BlackHole if no device specified
       if (!selectedDevice) {
-        selectedDevice = audioInputs.find(
-          (d) => d.label.includes('BlackHole 16ch') || d.label.includes('BlackHole16ch')
+        selectedDevice = devices.find(
+          (d) => d.name.includes('BlackHole 16ch') || d.name.includes('BlackHole16ch')
         )
         if (selectedDevice) {
-          console.log('Auto-detected BlackHole 16ch:', selectedDevice.label)
+          console.log('Auto-detected BlackHole 16ch:', selectedDevice.name)
         } else {
-          console.warn('BlackHole 16ch not found, using system default audio input')
+          throw new Error(
+            'BlackHole 16ch not found. Please install BlackHole from existential.audio.'
+          )
         }
       }
 
-      // Request user media with 16 channels
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          deviceId: selectedDevice ? { exact: selectedDevice.deviceId } : undefined,
-          channelCount: 16,
-          sampleRate: 48000,
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false
-        }
-      })
+      // Verify channel count
+      if (selectedDevice.channelCount < 16) {
+        console.warn(
+          `Device ${selectedDevice.name} has only ${selectedDevice.channelCount} channels (expected 16)`
+        )
+      }
 
       // Create audio context
       this.context = new AudioContext({ sampleRate: 48000 })
-      this.source = this.context.createMediaStreamSource(this.stream)
 
-      // Check actual channel count
-      const actualChannels = this.source.channelCount
-      console.log(`Audio source has ${actualChannels} channel(s)`)
+      // Register and create AudioWorklet
+      await registerAudioBufferProcessor(this.context)
+      this.workletNode = new AudioWorkletNode(this.context, 'audio-buffer-processor', {
+        numberOfInputs: 0,
+        numberOfOutputs: 1,
+        outputChannelCount: [16]
+      })
 
-      // Split into individual channels
+      // Create channel splitter
       const splitter = this.context.createChannelSplitter(16)
-      this.source.connect(splitter)
+      this.workletNode.connect(splitter)
 
       // Create Meyda analyzer for each channel
       for (let i = 0; i < 16; i++) {
@@ -102,7 +101,24 @@ export class AudioManager {
         })
       }
 
-      console.log(`AudioManager initialized with ${this.channels.length} channels using Meyda`)
+      // Setup IPC listener for audio buffers
+      this.audioBufferCallback = (data: AudioBufferData) => {
+        if (this.workletNode) {
+          this.workletNode.port.postMessage({
+            type: 'audio-buffer',
+            buffer: data.buffer
+          })
+        }
+      }
+      window.api.audio.onBuffer(this.audioBufferCallback)
+
+      // Start audio capture in main process
+      const result = await window.api.audio.start(selectedDevice.id)
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to start audio capture')
+      }
+
+      console.log(`AudioManager initialized with ${this.channels.length} channels using audify`)
     } catch (err) {
       console.error('Failed to initialize audio:', err)
       throw err
@@ -244,13 +260,20 @@ export class AudioManager {
       }
     })
 
-    // Stop all tracks
-    if (this.stream) {
-      this.stream.getTracks().forEach((track) => track.stop())
+    // Disconnect worklet
+    if (this.workletNode) {
+      this.workletNode.disconnect()
+      this.workletNode = null
     }
 
-    // Disconnect source
-    this.source?.disconnect()
+    // Remove IPC listener
+    if (this.audioBufferCallback) {
+      window.api.audio.offBuffer(this.audioBufferCallback)
+      this.audioBufferCallback = null
+    }
+
+    // Stop audio capture in main process
+    window.api.audio.stop()
 
     // Close audio context
     this.context?.close()
@@ -258,8 +281,6 @@ export class AudioManager {
     // Clear references
     this.channels = []
     this.context = null
-    this.source = null
-    this.stream = null
 
     console.log('AudioManager destroyed')
   }

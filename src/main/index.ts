@@ -11,6 +11,8 @@ import { networkInterfaces } from 'os'
 import type { StartServerResult, StopServerResult } from '../types/camera'
 import { getSettingsManager } from './settings/manager'
 import type { Settings } from '../types/settings'
+import { getAudifyCapture } from './audio/audify-capture'
+import type { AudioDevice, AudioCaptureStatus } from '../types/audio'
 
 // Initialize OSC server and client
 const oscServer = getOSCServer({ port: 5460 })
@@ -274,6 +276,9 @@ app.whenReady().then(async () => {
   // Initialize camera WebSocket forwarding
   initializeCameraStreaming()
 
+  // Initialize audio capture streaming
+  initializeAudioStreaming()
+
   // Setup IPC handlers
   setupIPCHandlers()
 
@@ -300,6 +305,8 @@ app.on('before-quit', () => {
   oscServer.stop()
   oscClient.close()
   cameraServer.stop()
+  const audioCapture = getAudifyCapture()
+  audioCapture.stop()
 })
 
 // Initialize OSC communication
@@ -375,6 +382,40 @@ function initializeCameraStreaming(): void {
   })
 
   console.log('Camera streaming initialized')
+}
+
+/**
+ * Initialize audio capture streaming
+ * Forwards audio buffers from audify to renderer process (main window)
+ */
+function initializeAudioStreaming(): void {
+  const audioCapture = getAudifyCapture()
+
+  // Forward audio buffers to renderer
+  audioCapture.on('buffer', (data: Float32Array, metadata) => {
+    mainWindowRef?.webContents.send('audio:buffer', {
+      buffer: data,
+      channels: metadata.channels,
+      sampleRate: metadata.sampleRate,
+      timestamp: metadata.timestamp
+    })
+  })
+
+  // Forward error events
+  audioCapture.on('error', (error: Error) => {
+    mainWindowRef?.webContents.send('audio:error', error.message)
+  })
+
+  // Forward status events
+  audioCapture.on('started', () => {
+    mainWindowRef?.webContents.send('audio:started')
+  })
+
+  audioCapture.on('stopped', () => {
+    mainWindowRef?.webContents.send('audio:stopped')
+  })
+
+  console.log('Audio capture streaming initialized')
 }
 
 /**
@@ -572,6 +613,45 @@ function setupIPCHandlers(): void {
     const status = cameraServer.getStatus()
     status.ip = getLocalIPAddress()
     return status
+  })
+
+  // ============================================================================
+  // Audio Capture Handlers
+  // ============================================================================
+  ipcMain.handle('audio:list-devices', async (): Promise<AudioDevice[]> => {
+    const audioCapture = getAudifyCapture()
+    return await audioCapture.listDevices()
+  })
+
+  ipcMain.handle(
+    'audio:start',
+    async (_, deviceId?: string): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const audioCapture = getAudifyCapture()
+        await audioCapture.start(deviceId)
+        return { success: true }
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to start audio capture'
+        }
+      }
+    }
+  )
+
+  ipcMain.handle('audio:stop', async (): Promise<{ success: boolean }> => {
+    try {
+      const audioCapture = getAudifyCapture()
+      audioCapture.stop()
+      return { success: true }
+    } catch (error) {
+      return { success: false }
+    }
+  })
+
+  ipcMain.handle('audio:get-status', async (): Promise<AudioCaptureStatus> => {
+    const audioCapture = getAudifyCapture()
+    return audioCapture.getStatus()
   })
 
   // ============================================================================

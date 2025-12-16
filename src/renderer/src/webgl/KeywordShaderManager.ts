@@ -1,5 +1,5 @@
 import type { AudioManager } from '../audio/AudioManager'
-import type { AudioReactivityConfig } from '../stores/useConfigurationStore'
+import type { AudioReactivityConfig } from '../../../types/config'
 import type { KeywordShaderInstance } from './types'
 import { ShaderCompiler } from './ShaderCompiler'
 import { EFFECT_PRESETS } from './effectPresets'
