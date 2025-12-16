@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import { RtAudio, RtAudioFormat } from 'audify'
+import { RtAudio, RtAudioFormat, RtAudioStreamFlags } from 'audify'
 import type { AudioDevice, AudioCaptureStatus, AudioBufferMetadata } from '../../types/audio'
 
 /**
@@ -144,7 +144,7 @@ export class AudifyCapture extends EventEmitter {
           }
         },
         null, // No frame output callback
-        undefined, // Default flags
+        0x1 as RtAudioStreamFlags, // Default flags
         (_type, msg) => {
           console.error('RtAudio error:', msg)
           this.emit('error', new Error(msg))
