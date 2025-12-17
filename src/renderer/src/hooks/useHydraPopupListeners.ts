@@ -25,6 +25,7 @@ export function setupHydraPopupListeners(): void {
     store.setConfig(config)
   })
 
+  // TODO buggy
   // 4. Scroll updates from main window
   window.api.hydra.onScrollUpdate((scrollPercentage: number) => {
     console.log('Received scroll update:', scrollPercentage)
