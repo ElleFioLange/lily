@@ -13,7 +13,6 @@ let isCameraInitialized = false
 let config: ConfigurationJSON | null = null
 
 // TODO handle rendering text input when the popup opens
-// TODO refresh config when its updated for keyboard rendering
 
 // Initialize Hydra when DOM is ready
 window.addEventListener('DOMContentLoaded', async () => {
