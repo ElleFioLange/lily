@@ -26,7 +26,7 @@ skeleton:
     present: 1
     absent: 0
   audio_reactivity:
-    audioChannel: 0
+    audioChannel: 6
     visualEffect: waveform
   args:
     density:

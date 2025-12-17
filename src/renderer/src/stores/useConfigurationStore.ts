@@ -47,6 +47,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
 
   setParsedConfig: (parsedConfig: ConfigurationJSON) => {
     set({ parsedConfig })
+    window.api.hydra.sendConfigUpdate(parsedConfig)
   },
 
   saveConfig: async () => {
@@ -64,6 +65,9 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     try {
       const result = await window.api.config.save(state.config, state.configPath)
       if (result.success) {
+        // Sync hydra pop-up config state
+        window.api.hydra.sendConfigUpdate(state.parsedConfig)
+
         set({ configPath: result.path || null, error: null })
       } else if (result.error) {
         set({ error: result.error })
@@ -86,6 +90,9 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
         const configName = configFile.slice(0, configFile.length - 5) // strip .yaml
 
         if (err) throw err
+
+        // Sync hydra pop-up config state
+        window.api.hydra.sendConfigUpdate(parsedConfig)
         set({
           config: result.content,
           parsedConfig,
@@ -118,6 +125,8 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
     try {
       const result = await window.api.config.saveAs(state.config)
       if (result.success) {
+        // Sync hydra pop-up config state
+        window.api.hydra.sendConfigUpdate(state.parsedConfig)
         set({ configPath: result.path || null, error: null })
       } else if (result.error) {
         // Don't set error for cancellation
@@ -131,6 +140,8 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
   },
 
   newConfig: () => {
+    // Sync hydra pop-up config state
+    window.api.hydra.sendConfigUpdate({})
     set({
       config: '',
       parsedConfig: {},

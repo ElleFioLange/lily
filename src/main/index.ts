@@ -13,6 +13,7 @@ import { getSettingsManager } from './settings/manager'
 import type { Settings } from '../types/settings'
 import { getAudifyCapture } from './audio/audify-capture'
 import type { AudioDevice, AudioCaptureStatus } from '../types/audio'
+import { ConfigurationJSON } from '../types/config'
 
 // Initialize OSC server and client
 const oscServer = getOSCServer({ port: 5460 })
@@ -564,6 +565,18 @@ function setupIPCHandlers(): void {
   ipcMain.on('hydra:text-update', (_, text: string) => {
     if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
       hydraPopupWindowRef.webContents.send('hydra:text-update', text)
+    }
+  })
+
+  // Handle config request from popup window
+  ipcMain.on('hydra:request-config', () => {
+    mainWindowRef?.webContents.send('hydra:request-config')
+  })
+
+  // Handle config update from main window
+  ipcMain.on('hydra:config-update', (_, config: ConfigurationJSON) => {
+    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
+      hydraPopupWindowRef.webContents.send('hydra:config-update', config)
     }
   })
 

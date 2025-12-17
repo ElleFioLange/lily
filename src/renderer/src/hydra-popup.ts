@@ -1,8 +1,8 @@
 import Hydra from 'hydra-synth'
-import { useConfigurationStore } from './stores/useConfigurationStore'
 import { keyRegex } from './utils/parseInput'
 import { AudioManager } from './audio/AudioManager'
 import { KeywordShaderManager } from './webgl/KeywordShaderManager'
+import { ConfigurationJSON } from 'src/types/config'
 
 let hydraInstance: any = null
 let audioManager: AudioManager | null = null
@@ -10,6 +10,7 @@ let shaderManager: KeywordShaderManager | null = null
 let cameraImageElement: HTMLImageElement | null = null
 let latestFrameURL: string | null = null
 let isCameraInitialized = false
+let config: ConfigurationJSON | null = null
 
 // TODO handle rendering text input when the popup opens
 // TODO refresh config when its updated for keyboard rendering
@@ -84,6 +85,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Request initial shader code from main window
   window.api.hydra.requestShader()
+  // Request config from main window
+  window.api.hydra.requestConfig()
 })
 
 /**
@@ -138,12 +141,10 @@ window.api.hydra.onEvaluateShader((code: string) => {
 
 // Listen for text updates
 window.api.hydra.onTextUpdate((text: string) => {
+  console.log(config)
   const textOverlay = document.getElementById('text-overlay')
 
   if (textOverlay) {
-    const { parsedConfig: config } = useConfigurationStore.getState()
-    console.log(config)
-
     if (!config) {
       textOverlay.replaceChildren(text)
       return
@@ -246,7 +247,10 @@ window.api.hydra.onTextUpdate((text: string) => {
   }
 })
 
-// window.api.hydra.onConfigUpdate(() => {})
+window.api.hydra.onConfigUpdate((configUpdate) => {
+  console.log(configUpdate)
+  config = configUpdate
+})
 
 window.api.hydra.onTriggerAnimation(() => {
   const textOverlay = document.getElementById('text-overlay')

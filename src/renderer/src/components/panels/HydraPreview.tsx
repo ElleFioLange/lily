@@ -87,7 +87,6 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
     await window.api.hydra.openPopup()
 
     if (hydraRef.current) {
-      console.log('here')
       const { synth } = hydraRef.current
       synth.hush()
       synth.time = 0

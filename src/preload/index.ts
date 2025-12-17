@@ -163,8 +163,15 @@ const api = {
     onTextUpdate: (callback: (text: string) => void) => {
       ipcRenderer.on('hydra:text-update', (_, text) => callback(text))
     },
-    sendConfigUpdate: () => {
-      ipcRenderer.send('hydra:config-update')
+    requestConfig: () => {
+      ipcRenderer.send('hydra:request-config')
+    },
+    onRequestConfig: (callback: () => void) => {
+      ipcRenderer.on('hydra:request-config', callback)
+    },
+    sendConfigUpdate: (config: ConfigurationJSON) => {
+      console.log('sending config update')
+      ipcRenderer.send('hydra:config-update', config)
     },
     onConfigUpdate: (callback: (config: ConfigurationJSON) => void) => {
       ipcRenderer.on('hydra:config-update', (_, config) => callback(config))

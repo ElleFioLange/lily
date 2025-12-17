@@ -5,6 +5,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useInputStore } from './stores/useInputStore'
 import { setupCameraListeners } from './stores/useCameraStore'
 import { useHydraStore } from './stores/useHydraStore'
+import { useConfigurationStore } from './stores/useConfigurationStore'
 
 function App(): React.JSX.Element {
   const input = useInputStore((state) => state.input)
@@ -26,6 +27,11 @@ function App(): React.JSX.Element {
     window.api.hydra.onRequestShader(() => {
       const { shader } = useHydraStore.getState()
       window.api.hydra.sendShaderResponse(shader)
+    })
+
+    window.api.hydra.onRequestConfig(() => {
+      const { parsedConfig: config } = useConfigurationStore.getState()
+      window.api.hydra.sendConfigUpdate(config)
     })
 
     window.api.osc.send('/request/connection/confirm')

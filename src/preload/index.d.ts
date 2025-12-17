@@ -5,6 +5,7 @@ import type { ExportResult } from '../main/maxdevice/export'
 import type { CameraServerStatus, StartServerResult, StopServerResult } from '../types/camera'
 import type { Settings } from '../types/settings'
 import type { AudioDevice, AudioCaptureStatus, AudioBufferData } from '../types/audio'
+import { ConfigurationJSON } from 'src/types/config'
 
 /**
  * Minimal OSC API Type Definitions
@@ -105,7 +106,11 @@ interface LilyAPI {
     onRequestShader: (callback: () => void) => void
     sendShaderResponse: (code: string) => void
     sendTextUpdate: (text: string) => void
+    requestConfig: () => void
+    onRequestConfig: (callback: () => void) => void
     onTextUpdate: (callback: (text: string) => void) => void
+    sendConfigUpdate: (config: ConfigurationJSON) => void
+    onConfigUpdate: (callback: (config: ConfigurationJSON) => void) => void
     sendScrollUpdate: (scrollPercentage: number) => void
     onScrollUpdate: (callback: (scrollPercentage: number) => void) => void
     triggerAnimation: () => void
