@@ -1,6 +1,7 @@
 import { useConfigurationStore } from '@renderer/stores/useConfigurationStore'
 import { OSCMessage } from 'src/types/osc-messages'
 
+// TODO need to handle stuff like skeleton(() correctly
 export const keyRegex = (key) => new RegExp(`\\b${key}\\(([^\\)]*)\\)`, 'g')
 
 function parseHydra(input: string) {
