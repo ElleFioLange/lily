@@ -387,33 +387,41 @@ function initializeCameraStreaming(): void {
 
 /**
  * Initialize audio capture streaming
- * Forwards audio buffers from audify to renderer process (main window)
+ * Forwards audio buffers from audify to renderer process (hydra popup window)
  */
 function initializeAudioStreaming(): void {
   const audioCapture = getAudifyCapture()
 
-  // Forward audio buffers to renderer
+  // Forward audio buffers to hydra popup window
   audioCapture.on('buffer', (data: Float32Array, metadata) => {
-    mainWindowRef?.webContents.send('audio:buffer', {
-      buffer: data,
-      channels: metadata.channels,
-      sampleRate: metadata.sampleRate,
-      timestamp: metadata.timestamp
-    })
+    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
+      hydraPopupWindowRef.webContents.send('audio:buffer', {
+        buffer: data,
+        channels: metadata.channels,
+        sampleRate: metadata.sampleRate,
+        timestamp: metadata.timestamp
+      })
+    }
   })
 
   // Forward error events
   audioCapture.on('error', (error: Error) => {
-    mainWindowRef?.webContents.send('audio:error', error.message)
+    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
+      hydraPopupWindowRef.webContents.send('audio:error', error.message)
+    }
   })
 
   // Forward status events
   audioCapture.on('started', () => {
-    mainWindowRef?.webContents.send('audio:started')
+    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
+      hydraPopupWindowRef.webContents.send('audio:started')
+    }
   })
 
   audioCapture.on('stopped', () => {
-    mainWindowRef?.webContents.send('audio:stopped')
+    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
+      hydraPopupWindowRef.webContents.send('audio:stopped')
+    }
   })
 
   console.log('Audio capture streaming initialized')
