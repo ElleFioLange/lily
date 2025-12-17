@@ -24,7 +24,8 @@
       "timeout": 60000,
       "presentation": {
         "hidden": true
-      }
+      },
+      "sourceMaps": true
     }
   ],
   "compounds": [
