@@ -1,6 +1,5 @@
 import Meyda from 'meyda'
 import type { AudioFeatures, AudioChannel } from './types'
-import { registerAudioBufferProcessor } from './worklet/register-worklet'
 import type { AudioDevice, AudioBufferData } from '../../../types/audio'
 
 /**
@@ -8,12 +7,13 @@ import type { AudioDevice, AudioBufferData } from '../../../types/audio'
  * Captures up to 16 channels from BlackHole virtual audio device
  * Uses Meyda library for robust audio feature extraction
  * Extracts amplitude, frequency bands, and optional beat detection per channel
+ *
+ * NO WEB AUDIO API - Direct buffer processing for simplicity and performance
  */
 export class AudioManager {
-  private context: AudioContext | null = null
   private channels: AudioChannel[] = []
-  private workletNode: AudioWorkletNode | null = null
   private audioBufferCallback: ((data: AudioBufferData) => void) | null = null
+  private bufferSize: number = 512
 
   /**
    * Initialize audio system and capture from specified device
@@ -61,55 +61,19 @@ export class AudioManager {
         )
       }
 
-      // Create audio context
-      this.context = new AudioContext({ sampleRate: 48000 })
-
-      // Register and create AudioWorklet
-      await registerAudioBufferProcessor(this.context)
-      this.workletNode = new AudioWorkletNode(this.context, 'audio-buffer-processor', {
-        numberOfInputs: 0,
-        numberOfOutputs: 1,
-        outputChannelCount: [16]
-      })
-
-      // Create channel splitter
-      const splitter = this.context.createChannelSplitter(16)
-      this.workletNode.connect(splitter)
-
-      // Create Meyda analyzer for each channel
+      // Initialize channel state (16 channels)
       for (let i = 0; i < 16; i++) {
-        // Create a gain node for this channel (Meyda needs a source node)
-        const channelGain = this.context.createGain()
-        splitter.connect(channelGain, i)
-
-        // Create Meyda analyzer for this channel
-        const analyzer = Meyda.createMeydaAnalyzer({
-          audioContext: this.context,
-          source: channelGain,
-          bufferSize: 512,
-          featureExtractors: ['rms', 'energy', 'spectralCentroid', 'spectralFlatness', 'mfcc'],
-          windowingFunction: 'blackman',
-          callback: null // We'll use .get() instead of callbacks
-        })
-
         this.channels.push({
-          analyzer,
-          channelGain,
+          buffer: new Float32Array(this.bufferSize),
           lastBeatTime: 0,
           beatThreshold: 0.7,
-          energyHistory: [] // For beat detection
+          energyHistory: []
         })
       }
 
       // Setup IPC listener for audio buffers
       this.audioBufferCallback = (data: AudioBufferData) => {
-        console.log('audio buffer callback')
-        if (this.workletNode) {
-          this.workletNode.port.postMessage({
-            type: 'audio-buffer',
-            buffer: data.buffer
-          })
-        }
+        this.processAudioBuffer(data)
       }
       window.api.audio.onBuffer(this.audioBufferCallback)
 
@@ -119,10 +83,34 @@ export class AudioManager {
         throw new Error(result.error || 'Failed to start audio capture')
       }
 
-      console.log(`AudioManager initialized with ${this.channels.length} channels using audify`)
+      console.log(`AudioManager initialized with ${this.channels.length} channels (no Web Audio)`)
     } catch (err) {
       console.error('Failed to initialize audio:', err)
       throw err
+    }
+  }
+
+  /**
+   * Process incoming audio buffer from main process
+   * Buffer is NON-INTERLEAVED: [ch0[0...511], ch1[0...511], ..., ch15[0...511]]
+   * Total length: 16 channels × 512 samples = 8192 samples
+   */
+  private processAudioBuffer(data: AudioBufferData): void {
+    const float32Data = data.buffer
+
+    // Verify buffer size (16 channels × 512 samples = 8192)
+    const expectedLength = 16 * this.bufferSize
+    if (float32Data.length !== expectedLength) {
+      console.warn(`Unexpected buffer size: ${float32Data.length}, expected ${expectedLength}`)
+      return
+    }
+
+    // Split non-interleaved buffer into 16 separate channel buffers
+    for (let ch = 0; ch < 16; ch++) {
+      const startIdx = ch * this.bufferSize
+      const endIdx = startIdx + this.bufferSize
+      const channelBuffer = float32Data.slice(startIdx, endIdx)
+      this.channels[ch].buffer = channelBuffer
     }
   }
 
@@ -146,14 +134,17 @@ export class AudioManager {
     }
 
     const channel = this.channels[channelIndex]
-    const { analyzer } = channel
+    const { buffer } = channel
 
-    // Get Meyda features
-    const features = analyzer.get(['rms', 'energy', 'spectralCentroid', 'spectralFlatness', 'mfcc'])
+    // Extract features directly from buffer using Meyda
+    const features = Meyda.extract(
+      ['rms', 'energy', 'spectralCentroid', 'spectralFlatness', 'mfcc'],
+      buffer
+    )
 
     if (!features) {
       return {
-        signal: new Float32Array(),
+        signal: buffer,
         amplitude: 0,
         bass: 0,
         mid: 0,
@@ -188,13 +179,17 @@ export class AudioManager {
     const beat = this.detectBeatFromEnergy(channel, energy)
 
     return {
-      signal: analyzer._m.signal,
+      signal: buffer,
       amplitude: Math.min(amplitude, 1.0),
       bass: Math.min(bass, 1.0),
       mid: Math.min(mid, 1.0),
       high: Math.min(high, 1.0),
       beat,
       mfcc: features.mfcc
+        ? Array.isArray(features.mfcc)
+          ? new Float32Array(features.mfcc)
+          : features.mfcc
+        : new Float32Array()
     }
   }
 
@@ -251,22 +246,6 @@ export class AudioManager {
    * Clean up audio resources
    */
   destroy(): void {
-    // Stop Meyda analyzers
-    this.channels.forEach((channel) => {
-      if (channel.analyzer) {
-        channel.analyzer.stop()
-      }
-      if (channel.channelGain) {
-        channel.channelGain.disconnect()
-      }
-    })
-
-    // Disconnect worklet
-    if (this.workletNode) {
-      this.workletNode.disconnect()
-      this.workletNode = null
-    }
-
     // Remove IPC listener
     if (this.audioBufferCallback) {
       window.api.audio.offBuffer(this.audioBufferCallback)
@@ -278,12 +257,8 @@ export class AudioManager {
     // Stop audio capture in main process
     window.api.audio.stop()
 
-    // Close audio context
-    this.context?.close()
-
     // Clear references
     this.channels = []
-    this.context = null
 
     console.log('AudioManager destroyed')
   }
@@ -292,7 +267,7 @@ export class AudioManager {
    * Check if audio system is initialized
    */
   isInitialized(): boolean {
-    return this.context !== null && this.channels.length > 0
+    return this.channels.length > 0
   }
 
   /**

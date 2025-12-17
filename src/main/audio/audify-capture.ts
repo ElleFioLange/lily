@@ -123,7 +123,8 @@ export class AudifyCapture extends EventEmitter {
         (inputBuffer: Buffer) => {
           try {
             // Convert Buffer to Float32Array
-            // RtAudio returns interleaved Float32 data
+            // Using RTAUDIO_NONINTERLEAVED (0x1) flag below, so buffer format is:
+            // [ch0[0...511], ch1[0...511], ..., ch15[0...511]] (16 × 512 = 8192 samples)
             const float32Data = new Float32Array(
               inputBuffer.buffer,
               inputBuffer.byteOffset,
@@ -144,8 +145,7 @@ export class AudifyCapture extends EventEmitter {
           }
         },
         null, // No frame output callback
-        // TODO investigate if it makes more sense to use interleaved buffers? (0x1)
-        0x0 as RtAudioStreamFlags, // Default
+        0x1 as RtAudioStreamFlags, // RTAUDIO_NONINTERLEAVED - each channel's samples are contiguous
         (_type, msg) => {
           console.error('RtAudio error:', msg)
           this.emit('error', new Error(msg))
