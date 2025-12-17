@@ -35,7 +35,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Initialize Hydra with explicit dimensions
   hydraInstance = new Hydra({
     canvas,
-    // detectAudio: false,
+    detectAudio: false,
     makeGlobal: false,
     autoLoop: true,
     width: window.innerWidth,

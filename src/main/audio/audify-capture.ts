@@ -144,7 +144,8 @@ export class AudifyCapture extends EventEmitter {
           }
         },
         null, // No frame output callback
-        0x1 as RtAudioStreamFlags, // Default flags
+        // TODO investigate if it makes more sense to use interleaved buffers? (0x1)
+        0x0 as RtAudioStreamFlags, // Default
         (_type, msg) => {
           console.error('RtAudio error:', msg)
           throw new Error(msg)

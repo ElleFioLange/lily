@@ -28,7 +28,7 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
 
     const hydra = new Hydra({
       canvas: canvasRef.current,
-      // detectAudio: false, // Don't request microphone
+      detectAudio: false, // Don't request microphone
       makeGlobal: false, // Keep functions namespaced
       autoLoop: true // Auto-render via requestAnimationFrame
     })

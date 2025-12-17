@@ -152,12 +152,12 @@ export default function SettingsWindow() {
             </div>
 
             {/* Info message */}
-            {!autoDetect && (
+            {/* {!autoDetect && (
               <div className="rounded border border-stone-700 bg-stone-800 px-3 py-2 text-xs text-stone-400">
                 Note: You may need to close and reopen the Hydra popup window for changes to take
                 effect
               </div>
-            )}
+            )} */}
           </div>
         </div>
       </div>
