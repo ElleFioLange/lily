@@ -71,19 +71,10 @@
     </style>
   </head>
   <body>
-    <canvas id="hydra-canvas" class="w-screen h-screen block"></canvas>
-    <div
-      id="text-overlay-container"
-      class="absolute top-0 left-0 right-0 bottom-0 overflow-auto flex justify-center items-center"
-    >
-      <div
-        id="text-overlay"
-        class="text-center text-5xl pointer-events-none z-10 p-8 wrap-break-word whitespace-pre-wrap leading-[115%]"
-      ></div>
-    </div>
+    <div id="root"></div>
     <script>
       window.global = window
     </script>
-    <script type="module" src="/src/hydra-popup.ts"></script>
+    <script type="module" src="/src/hydra-popup.tsx"></script>
   </body>
 </html>
