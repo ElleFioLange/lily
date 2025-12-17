@@ -147,6 +147,7 @@ export class AudifyCapture extends EventEmitter {
         0x1 as RtAudioStreamFlags, // Default flags
         (_type, msg) => {
           console.error('RtAudio error:', msg)
+          throw new Error(msg)
           this.emit('error', new Error(msg))
         }
       )

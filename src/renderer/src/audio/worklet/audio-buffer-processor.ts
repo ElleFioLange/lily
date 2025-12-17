@@ -24,6 +24,7 @@ class AudioBufferProcessor extends AudioWorkletProcessor {
       if (type === 'audio-buffer') {
         // Queue the interleaved buffer
         this.bufferQueue.push(new Float32Array(buffer))
+        console.log(buffer)
 
         // Prevent memory buildup - limit queue to 10 buffers
         if (this.bufferQueue.length > 10) {

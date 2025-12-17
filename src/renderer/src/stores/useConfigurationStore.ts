@@ -3,6 +3,8 @@ import * as jsyaml from 'js-yaml'
 import parseConfig from '@renderer/utils/parseConfig'
 import { ConfigurationJSON } from 'src/types/config'
 
+// TODO make hydra popup sync smoother. probably just needs better flow architecture, but maybe zubridge?
+
 interface ConfigurationState {
   config: string
   parsedConfig: ConfigurationJSON | null

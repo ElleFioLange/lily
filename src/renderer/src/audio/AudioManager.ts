@@ -103,6 +103,7 @@ export class AudioManager {
 
       // Setup IPC listener for audio buffers
       this.audioBufferCallback = (data: AudioBufferData) => {
+        console.log('audio buffer callback')
         if (this.workletNode) {
           this.workletNode.port.postMessage({
             type: 'audio-buffer',
@@ -271,6 +272,8 @@ export class AudioManager {
       window.api.audio.offBuffer(this.audioBufferCallback)
       this.audioBufferCallback = null
     }
+
+    console.log('destroying')
 
     // Stop audio capture in main process
     window.api.audio.stop()
