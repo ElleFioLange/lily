@@ -34,32 +34,56 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
     // TODO add tooltip that shows path on hover
     configPath,
     configName,
-    isValid,
-    error
+    isValid: configIsValid,
+    error: configError
   } = useConfigurationStore()
 
-  const { rawShader, setRawShader } = useHydraStore()
+  const {
+    rawShader,
+    setRawShader,
+    shaderPath,
+    shaderName,
+    isValid: shaderIsValid,
+    error: shaderError,
+    saveShader,
+    openShader,
+    saveShaderAs,
+    newShader
+  } = useHydraStore()
 
   const handleSave = useCallback(async () => {
-    if (configPath !== null) await saveConfig()
-    else await saveConfigAs()
-  }, [configPath, saveConfig, saveConfigAs])
+    if (activeTab === 'config') {
+      if (configPath !== null) await saveConfig()
+      else await saveConfigAs()
+    } else {
+      if (shaderPath !== null) await saveShader()
+      else await saveShaderAs()
+    }
+  }, [activeTab, configPath, shaderPath, saveConfig, saveConfigAs, saveShader, saveShaderAs])
 
   const handleOpen = useCallback(async () => {
-    await openConfig()
-  }, [openConfig])
+    if (activeTab === 'config') {
+      await openConfig()
+    } else {
+      await openShader()
+    }
+  }, [activeTab, openConfig, openShader])
 
   const handleSaveAs = useCallback(async () => {
-    await saveConfigAs()
-  }, [saveConfigAs])
+    if (activeTab === 'config') {
+      await saveConfigAs()
+    } else {
+      await saveShaderAs()
+    }
+  }, [activeTab, saveConfigAs, saveShaderAs])
 
   const handleNew = useCallback(() => {
     if (activeTab === 'config') {
       newConfig()
     } else {
-      // resetHydraShader()
+      newShader()
     }
-  }, [activeTab, newConfig])
+  }, [activeTab, newConfig, newShader])
 
   const handleKeyClick = useCallback((key: string) => {
     editorRef.current?.scrollToKey(key)
@@ -93,7 +117,7 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
 
       {/* Controls Bar */}
       <div className="flex items-around py-2 border-b border-stone-800 bg-stone-900 shrink-0 w-full">
-        <span className="grow px-4">{configName}</span>
+        <span className="grow px-4">{activeTab === 'config' ? configName : shaderName}</span>
         <div className="flex gap-2 overflow-x-auto shrink no-scrollbar pr-4">
           <button
             onClick={handleNew}
@@ -109,14 +133,14 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
           </button>
           <button
             onClick={handleSave}
-            disabled={!isValid}
+            disabled={activeTab === 'config' ? !configIsValid : !shaderIsValid}
             className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Save
           </button>
           <button
             onClick={handleSaveAs}
-            disabled={!isValid}
+            disabled={activeTab === 'config' ? !configIsValid : !shaderIsValid}
             className="px-3 py-1 text-nowrap text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Save As
@@ -125,9 +149,14 @@ export default function ProjectConfig({ panelId }: ProjectConfigProps) {
       </div>
 
       {/* Error Display */}
-      {activeTab === 'config' && error && (
+      {activeTab === 'config' && configError && (
         <div className="px-4 py-2 bg-red-900/20 border-b border-red-800 text-red-200 text-sm shrink-0">
-          Error: {error}
+          Error: {configError}
+        </div>
+      )}
+      {activeTab === 'hydra' && shaderError && (
+        <div className="px-4 py-2 bg-red-900/20 border-b border-red-800 text-red-200 text-sm shrink-0">
+          Error: {shaderError}
         </div>
       )}
 

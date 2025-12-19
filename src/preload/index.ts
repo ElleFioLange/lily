@@ -139,6 +139,21 @@ const api = {
   },
 
   // ============================================================================
+  // Hydra File API
+  // ============================================================================
+  hydraFile: {
+    save: (
+      content: string,
+      path: string
+    ): Promise<{ success: boolean; path?: string; error?: string }> =>
+      ipcRenderer.invoke('hydra:save', content, path),
+    saveAs: (content: string): Promise<{ success: boolean; path?: string; error?: string }> =>
+      ipcRenderer.invoke('hydra:saveAs', content),
+    open: (): Promise<{ success: boolean; content?: string; path?: string; error?: string }> =>
+      ipcRenderer.invoke('hydra:open')
+  },
+
+  // ============================================================================
   // Hydra Video Synthesizer API
   // ============================================================================
   hydra: {

@@ -94,6 +94,20 @@ interface LilyAPI {
   }
 
   /**
+   * Hydra File API
+   *
+   * Methods for loading, saving, and managing Hydra shader files
+   */
+  hydraFile: {
+    save: (
+      content: string,
+      path: string
+    ) => Promise<{ success: boolean; path?: string; error?: string }>
+    open: () => Promise<{ success: boolean; content?: string; path?: string; error?: string }>
+    saveAs: (content: string) => Promise<{ success: boolean; path?: string; error?: string }>
+  }
+
+  /**
    * Hydra Video Synthesizer API
    *
    * Methods for managing Hydra popup window and shader evaluation

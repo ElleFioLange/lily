@@ -29,10 +29,20 @@ interface HydraState {
   shader: string
   evaluationVersion: number
   lastError: string | null
+  shaderPath: string | null
+  shaderName: string | null
+  isValid: boolean
+  error: string | null
   setRawShader: (rawShader: string) => void
   setShader: (shader: string) => void
   setError: (error: string | null) => void
   evaluateShader: () => Promise<void>
+  saveShader: () => Promise<void>
+  openShader: () => Promise<void>
+  saveShaderAs: () => Promise<void>
+  newShader: () => void
+  setShaderPath: (path: string | null) => void
+  setShaderName: (name: string | null) => void
 }
 
 export const useHydraStore = create<HydraState>((set, get) => ({
@@ -40,6 +50,10 @@ export const useHydraStore = create<HydraState>((set, get) => ({
   shader: DEFAULT_HYDRA_SHADER,
   evaluationVersion: 0,
   lastError: null,
+  shaderPath: null,
+  shaderName: 'new-shader',
+  isValid: true,
+  error: null,
 
   setRawShader: (rawShader) => set({ rawShader }),
 
@@ -68,5 +82,82 @@ export const useHydraStore = create<HydraState>((set, get) => ({
 
     // Send to popup window via IPC
     await window.api.hydra.evaluate(processedShader)
-  }
+  },
+
+  saveShader: async () => {
+    const state = get()
+    if (state.shaderPath === null) {
+      set({ error: 'Cannot save with null file path' })
+      return
+    }
+
+    try {
+      const result = await window.api.hydraFile.save(state.rawShader, state.shaderPath)
+      if (result.success) {
+        set({ shaderPath: result.path || null, error: null })
+      } else if (result.error) {
+        set({ error: result.error })
+      }
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : 'Failed to save shader' })
+    }
+  },
+
+  openShader: async () => {
+    try {
+      const result = await window.api.hydraFile.open()
+      if (result.success && result.content && result.path) {
+        const shaderPath = result.path
+        const pathArr = shaderPath.split('/')
+        const fileName = pathArr[pathArr.length - 1]
+        const shaderName = fileName.endsWith('.js') ? fileName.slice(0, -3) : fileName
+
+        set({
+          rawShader: result.content,
+          shader: result.content,
+          shaderPath,
+          shaderName,
+          isValid: true,
+          error: null
+        })
+      } else if (result.error) {
+        if (result.error !== 'No file selected') {
+          set({ error: result.error })
+        }
+      }
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : 'Failed to open file' })
+    }
+  },
+
+  saveShaderAs: async () => {
+    const state = get()
+    try {
+      const result = await window.api.hydraFile.saveAs(state.rawShader)
+      if (result.success) {
+        set({ shaderPath: result.path || null, error: null })
+      } else if (result.error) {
+        if (result.error !== 'No file selected') {
+          set({ error: result.error })
+        }
+      }
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : 'Failed to save file' })
+    }
+  },
+
+  newShader: () => {
+    set({
+      rawShader: DEFAULT_HYDRA_SHADER,
+      shader: DEFAULT_HYDRA_SHADER,
+      shaderPath: null,
+      shaderName: 'new-shader',
+      isValid: true,
+      error: null
+    })
+  },
+
+  setShaderPath: (shaderPath) => set({ shaderPath }),
+
+  setShaderName: (shaderName) => set({ shaderName })
 }))

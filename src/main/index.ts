@@ -542,6 +542,72 @@ function setupIPCHandlers(): void {
   })
 
   // ============================================================================
+  // Hydra File Handlers
+  // ============================================================================
+  ipcMain.handle('hydra:save', async (_, content: string, path: string) => {
+    try {
+      await fs.writeFile(path, content, 'utf-8')
+      return { success: true, path }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to save shader'
+      }
+    }
+  })
+
+  ipcMain.handle('hydra:open', async () => {
+    try {
+      const result = await dialog.showOpenDialog(mainWindowRef!, {
+        title: 'Open Hydra Shader File',
+        filters: [
+          { name: 'JavaScript Files', extensions: ['js'] },
+          { name: 'All Files', extensions: ['*'] }
+        ],
+        properties: ['openFile']
+      })
+
+      if (result.canceled || result.filePaths.length === 0) {
+        return { success: false, error: 'No file selected' }
+      }
+
+      const filePath = result.filePaths[0]
+      const content = await fs.readFile(filePath, 'utf-8')
+      return { success: true, content, path: filePath }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to open file'
+      }
+    }
+  })
+
+  ipcMain.handle('hydra:saveAs', async (_, content: string) => {
+    try {
+      const result = await dialog.showSaveDialog(mainWindowRef!, {
+        title: 'Save Hydra Shader File',
+        defaultPath: 'new-shader.js',
+        filters: [
+          { name: 'JavaScript Files', extensions: ['js'] },
+          { name: 'All Files', extensions: ['*'] }
+        ]
+      })
+
+      if (result.canceled || !result.filePath) {
+        return { success: false, error: 'No file selected' }
+      }
+
+      await fs.writeFile(result.filePath, content, 'utf-8')
+      return { success: true, path: result.filePath }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to save file'
+      }
+    }
+  })
+
+  // ============================================================================
   // Hydra Popup Window Handlers
   // ============================================================================
   ipcMain.handle('hydra:open-popup', async () => {
