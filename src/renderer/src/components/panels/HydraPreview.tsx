@@ -26,9 +26,10 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
   useEffect(() => {
     if (!canvasRef.current || hydraRef.current) return
 
+    // TODO add hydra audio input setting
     const hydra = new Hydra({
       canvas: canvasRef.current,
-      detectAudio: false, // Don't request microphone
+      // detectAudio: false,
       makeGlobal: false, // Keep functions namespaced
       autoLoop: true // Auto-render via requestAnimationFrame
     })

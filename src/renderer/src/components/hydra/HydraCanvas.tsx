@@ -23,7 +23,7 @@ export default function HydraCanvas() {
     // Initialize Hydra with explicit dimensions
     const hydra = new Hydra({
       canvas,
-      detectAudio: false,
+      // detectAudio: false,
       makeGlobal: false,
       autoLoop: true,
       width: window.innerWidth,
