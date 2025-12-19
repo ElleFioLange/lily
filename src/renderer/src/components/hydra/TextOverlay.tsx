@@ -13,7 +13,7 @@ export default function TextOverlay() {
   useEffect(() => {
     if (!containerRef.current) return
     const container = containerRef.current
-    const maxScroll = container.scrollHeight - container.clientHeight
+    const maxScroll = container.scrollHeight + container.clientHeight
     const targetScroll = maxScroll * scrollPercentage
     container.scrollTop = targetScroll
   }, [scrollPercentage])
@@ -50,6 +50,7 @@ export default function TextOverlay() {
 
     // Find all keyword matches
     keys.forEach((key) => {
+      console.log('matching keys')
       const regex = keyRegex(key)
       const matches = currentText.matchAll(regex)
       Array.from(matches).forEach((instance) => {
@@ -109,12 +110,12 @@ export default function TextOverlay() {
     <div
       ref={containerRef}
       id="text-overlay-container"
-      className="absolute top-0 left-0 right-0 bottom-0 overflow-auto flex justify-center items-center"
+      className="absolute top-0 left-0 right-0 bottom-0 overflow-y-auto overflow-x-hidden"
     >
       <div
         ref={overlayRef}
         id="text-overlay"
-        className="text-center text-5xl pointer-events-none z-10 p-8 wrap-break-word whitespace-pre-wrap leading-[115%]"
+        className="text-5xl text-center pointer-events-none overflow-auto z-10 p-8 wrap-break-word whitespace-pre-wrap leading-[115%]"
       >
         {renderContent()}
       </div>
