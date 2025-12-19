@@ -1,7 +1,0 @@
-foundry:
-  ableton:
-    type: clip
-    path: live_set tracks 0 clip_slots 0 clip
-    object: active
-    present: true
-    absent: false
