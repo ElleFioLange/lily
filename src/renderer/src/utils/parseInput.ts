@@ -24,10 +24,10 @@ function parseHydra(input: string) {
     const { name, present, absent } = hydra
     let value = isPresent ? present : absent
 
-    if (args && isPresent && instances[0].length > 1) {
+    if (args) {
       Object.entries(args).forEach(([arg, { presets }], index) => {
         if (arg !== name) return
-        if (presets !== undefined) {
+        if (presets !== undefined && isPresent) {
           // TODO make this more readable
           const preset = instances[0][index + 1]
           if (preset) {
@@ -38,6 +38,7 @@ function parseHydra(input: string) {
       })
     }
 
+    console.log({ name, value })
     hydraParams.push({ name, value })
   })
 
@@ -69,7 +70,7 @@ function parseAbleton(input: string) {
 
     if (type === 'clip' || type === 'track') {
       let path = rawPath
-      if (args && isPresent && instances[0].length > 1) {
+      if (args) {
         Object.entries(args).forEach(([arg, { ableton, default_value, presets }], index) => {
           if (ableton === undefined || default_value.ableton === undefined) return
 
@@ -84,6 +85,7 @@ function parseAbleton(input: string) {
               }
             }
             const indexOfArg = path.indexOf('_' + arg)
+            console.log(key, value)
             path = path.slice(0, indexOfArg) + value + path.slice(indexOfArg + arg.length + 1)
           }
         })
