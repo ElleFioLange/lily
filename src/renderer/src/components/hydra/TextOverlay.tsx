@@ -4,18 +4,17 @@ import { keyRegex } from '@renderer/utils/parseInput'
 import KeywordRenderer from './KeywordRenderer'
 
 export default function TextOverlay() {
-  const containerRef = useRef<HTMLDivElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const { currentText, config, scrollPercentage, triggerAnimationFlag, resetAnimationFlag } =
     useHydraPopupStore()
 
   // Handle scroll updates
   useEffect(() => {
-    if (!containerRef.current) return
-    const container = containerRef.current
-    const maxScroll = container.scrollHeight + container.clientHeight
+    if (!overlayRef.current) return
+    const overlay = overlayRef.current
+    const maxScroll = overlay.scrollHeight + overlay.clientHeight
     const targetScroll = maxScroll * scrollPercentage
-    container.scrollTop = targetScroll
+    overlay.scrollTop = targetScroll
   }, [scrollPercentage])
 
   // Handle animation trigger
@@ -108,14 +107,13 @@ export default function TextOverlay() {
 
   return (
     <div
-      ref={containerRef}
       id="text-overlay-container"
-      className="absolute top-0 left-0 right-0 bottom-0 overflow-y-auto overflow-x-hidden"
+      className="absolute top-0 left-0 right-0 bottom-0 flex items-center"
     >
       <div
         ref={overlayRef}
         id="text-overlay"
-        className="text-5xl text-center pointer-events-none overflow-auto z-10 p-8 wrap-break-word whitespace-pre-wrap leading-[115%]"
+        className="w-full max-h-full overflow-y-auto text-center text-5xl pointer-events-none z-10 p-8 wrap-break-word whitespace-pre-wrap leading-[115%]"
       >
         {renderContent()}
       </div>
