@@ -178,5 +178,6 @@ declare global {
   interface Window {
     electron: ElectronAPI
     api: LilyAPI
+    hydraSynth: any
   }
 }

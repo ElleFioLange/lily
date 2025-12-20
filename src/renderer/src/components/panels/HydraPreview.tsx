@@ -4,6 +4,7 @@ import Panel from '../common/Panel'
 import type { PanelId } from '../../stores/useFocusStore'
 import { useHydraStore } from '../../stores/useHydraStore'
 import { CameraStreamManager } from '../camera/CameraStreamManager'
+import loadScript from '@renderer/utils/loadScript'
 
 interface HydraPreviewProps {
   panelId?: PanelId
@@ -35,6 +36,7 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
     })
 
     hydraRef.current = hydra
+    window.hydraSynth = hydra
 
     // Initial evaluation
     evaluateShader(shader)
@@ -74,9 +76,12 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
 
     try {
       const synth = hydraRef.current.synth
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
 
-      const evalFunc = new Function(...Object.keys(synth), 'synth', code)
-      evalFunc(...Object.values(synth), synth)
+      // Create function with all Hydra methods in scope
+      const evalFunc = new AsyncFunction(...Object.keys(synth), 'synth', 'loadScript', code)
+      evalFunc(...Object.values(synth), synth, loadScript)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Evaluation failed')

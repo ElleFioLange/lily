@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import Hydra from 'hydra-synth'
 import { useHydraPopupStore } from '@renderer/stores/useHydraPopupStore'
+import loadScript from '@renderer/utils/loadScript'
 
 export default function HydraCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -31,6 +32,7 @@ export default function HydraCanvas() {
     })
 
     setHydraInstance(hydra)
+    window.hydraSynth = hydra
     console.log('Hydra instance initialized')
 
     // Handle window resize
@@ -55,9 +57,17 @@ export default function HydraCanvas() {
 
     try {
       const synth = hydra.synth
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
+
       // Create function with all Hydra methods in scope
-      const evalFunc = new Function(...Object.keys(synth), 'synth', currentShaderCode)
-      evalFunc(...Object.values(synth), synth)
+      const evalFunc = new AsyncFunction(
+        ...Object.keys(synth),
+        'synth',
+        'loadScript',
+        currentShaderCode
+      )
+      evalFunc(...Object.values(synth), synth, loadScript)
       console.log('Shader evaluated successfully')
     } catch (err) {
       console.error('Hydra evaluation error:', err)
