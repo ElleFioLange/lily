@@ -1,0 +1,28 @@
+i want there to be plugins
+
+the plugins define a manifest with metadata
+the metadata is a unique string id,
+a name for the plugin
+the type of surface it defines (audio or visual)
+the config schema for keywords to define to send control signals to it
+
+the plugin should define an initialization script
+
+for something like hydra or strudel, this script should spawn an instance within the web environment of Lily
+
+for something like ableton or touch designer this script should send a ping to the application to verify that it is active and listening for control signals
+
+the initialization script is also where a plugin would instantiate a local state store if it needs one
+
+plugins should define a main handler script
+
+this script takes the Lily input (calling it poiesis) and the current configuration file (as a json object) and handles parsing, generating the control signals, and sending the signals
+the script should use a control signal structure, even in the case of something like hydra or strudel. hydra currently works by taking the parsed input and then appending variable values to the beginning of the hydra shader before refreshing the render calling
+the plugin should instantiate a state store which contains the hydra shader code as well as a listener which handles control signals that update the state of the peripheral values controlled by the poiesis
+
+need to implement piping for visual and audio signals to handle reactivity effects, text shaders, and previews
+
+hydra needs a cue/setup structure thing
+
+video plugins need to define a component that will hold the video stream
+when one of these plugins is active, that component will be loaded into both the preview window and the performance window and will be alpha mixed according to the mixer settings
