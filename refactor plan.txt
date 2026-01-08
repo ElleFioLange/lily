@@ -34,3 +34,22 @@ sending OSC messages over UDP
 file loading and saving
 
 preload needs a pluginListenerRegistry that plugins can add listeners to
+
+main editor window has the currently selected plugin's "Main" component loaded. tabbing to a new plugin unmounts the old Main component and mounts the new one.
+state continuity is handled through a zustand store that is created and managed by the initialization script of the plugin
+this is run within useEffect hook within the top level app component.
+this way the "Main" editor components can be loaded and unloaded without disrupting state continuity
+
+The main editor window has a button to switch to "Live preview", which sets it to display the a mirror of the performance window.
+this is a read-only mode, but mouse interactivity is allowed for the currently selected plugin (scrolling text or mouse position updates in hydra, etc.)
+this mode loads the "Render" components of any active plugins that have a render component
+touch designer would have a "graphics" renderer,
+strudel would have a "code" renderer
+hydra would have two renderers, one for "graphics" and one for "code"
+these are alpha mixed according to the mixer params in the settings panel
+
+plugins can also define "effects" renderers
+these can take other renderer layers as inputs, or target other renderer layers as outputs.
+example: ableton plugin provides a renderer layer that generates audio reactive text effects for the poiesis renderer, takes the poiesis layer as an input and also targets the poiesis layer as the layer it draws the effect on top of
+these effects also have corresponding mixer sliders in the settings panel
+

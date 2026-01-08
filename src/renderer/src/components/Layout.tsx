@@ -12,7 +12,7 @@ export default function Layout() {
             <Main />
           </Panel>
 
-          <PanelResizeHandle className="w-px bg-stone-800 cursor-row-resize flex items-center justify-center" />
+          <PanelResizeHandle className="w-px bg-stone-700 cursor-row-resize flex items-center justify-center" />
 
           <Panel defaultSize={34} collapsible>
             <Settings />
@@ -20,7 +20,7 @@ export default function Layout() {
         </PanelGroup>
       </Panel>
 
-      <PanelResizeHandle className="h-px bg-stone-800 cursor-col-resize flex items-center justify-center" />
+      <PanelResizeHandle className="h-px bg-stone-700 cursor-col-resize flex items-center justify-center" />
 
       <Panel defaultSize={30} collapsible>
         <Monitors />

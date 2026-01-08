@@ -3,7 +3,7 @@ import Header from '../common/Header'
 
 export default function Main() {
   return (
-    <div>
+    <div className="size-full">
       <Header options={['test 1', 'test 2']} active="test 1" title="LILY" setActive={() => {}} />
       <Hydra.Main />
     </div>
