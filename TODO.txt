@@ -3,3 +3,9 @@ TODO address this bug 37988:1130/175454.534076:ERROR:gpu/command_buffer/service/
 TODO add stylistic flare that displays some of the technical processes happening behind the scenes to maintain the intereset of the 'coding aesthetic'
 
 TODO rewrite the ableton max device controller to do everything through javascript api
+
+TODO restructure the app to use plugin system for different surfaces (ableton, hydra, touch designer, strudel). plugins need to also define config structures
+
+TODO new UI
+
+TODO add AI interaction. system prompt should be defined in the plugin.
