@@ -1,7 +1,7 @@
+import { ConfigurationJSON } from '../../types/config'
 import Main from './ui/main'
 import Monitor from './ui/monitor'
 import Settings from './ui/settings'
-import { ConfigurationJSON } from '../../types/config'
 
 export { Main, Monitor, Settings }
 
