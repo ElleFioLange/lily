@@ -4,7 +4,8 @@ the plugins define a manifest with metadata
 the metadata is a unique string id,
 a name for the plugin
 the type of surface it defines (audio or visual)
-the config schema for keywords to define to send control signals to it
+
+the plugin should define a typescript type with the config schema for keywords to define to send control signals to it
 
 the plugin should define an initialization script
 
@@ -26,3 +27,10 @@ hydra needs a cue/setup structure thing
 
 video plugins need to define a component that will hold the video stream
 when one of these plugins is active, that component will be loaded into both the preview window and the performance window and will be alpha mixed according to the mixer settings
+
+plugins have access to some helper functions from within Lily
+such as:
+sending OSC messages over UDP
+file loading and saving
+
+preload needs a pluginListenerRegistry that plugins can add listeners to
