@@ -1,14 +1,29 @@
-import { ConfigurationJSON } from '../../types/config'
-import Main from './ui/Main '
+import { Plugin } from '../helpers'
+
+import manifest from './manifest.json'
+
+import init from './init'
+import process from './process'
+
+import Workspace from './ui/Workspace'
 import Monitor from './ui/Monitor'
 import Settings from './ui/Settings'
+import Renderer from './ui/Renderer'
 
-export { Main, Monitor, Settings }
+import { useHydraStore } from './store'
 
-export async function init() {
-  console.log('initialize the hydra instance and store')
+const HydraPlugin: Plugin = {
+  manifest: manifest as Plugin['manifest'],
+
+  init,
+  process,
+
+  Workspace,
+  Monitor,
+  Settings,
+  Renderer,
+
+  useStore: useHydraStore
 }
 
-export async function process(poiesis: string, config: ConfigurationJSON) {
-  console.log('process the poiesis and config and send control signals')
-}
+export default HydraPlugin

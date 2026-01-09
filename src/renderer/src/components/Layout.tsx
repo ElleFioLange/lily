@@ -1,5 +1,5 @@
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
-import Main from './panels/Main'
+import Main from './panels/Workspace'
 import Settings from './panels/Settings'
 import Monitors from './panels/Monitors'
 

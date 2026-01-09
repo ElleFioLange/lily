@@ -6,6 +6,7 @@ import { useInputStore } from './stores/useInputStore'
 import { setupCameraListeners } from './stores/useCameraStore'
 import { useHydraStore } from './stores/useHydraStore'
 import { useConfigurationStore } from './stores/useConfigurationStore'
+import HydraPlugin from '@plugins/hydra'
 
 function App(): React.JSX.Element {
   const input = useInputStore((state) => state.input)
@@ -14,6 +15,8 @@ function App(): React.JSX.Element {
   useKeyboardShortcuts()
 
   useEffect(() => {
+    HydraPlugin.init()
+
     // Setup OSC event listeners when component mounts
     setupOSCListeners()
 

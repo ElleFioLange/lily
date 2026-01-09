@@ -1,4 +1,4 @@
-import * as Hydra from '@plugins/hydra'
+import HydraPlugin from '@plugins/hydra'
 import Header from '../common/Header'
 
 export default function Monitors() {
@@ -10,7 +10,7 @@ export default function Monitors() {
         title="MONITORS"
         setActive={() => {}}
       />
-      <Hydra.Monitor />
+      {HydraPlugin.Monitor && <HydraPlugin.Monitor />}
     </div>
   )
 }

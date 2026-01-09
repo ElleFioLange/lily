@@ -1,4 +1,4 @@
-import * as Hydra from '@plugins/hydra'
+import HydraPlugin from '@plugins/hydra'
 import Header from '../common/Header'
 
 export default function Settings() {
@@ -10,7 +10,8 @@ export default function Settings() {
         title="SETTINGS"
         setActive={() => {}}
       />
-      <Hydra.Settings />
+      {HydraPlugin.Settings && <HydraPlugin.Settings />}
+      {HydraPlugin.Renderer && <HydraPlugin.Renderer />}
     </div>
   )
 }
