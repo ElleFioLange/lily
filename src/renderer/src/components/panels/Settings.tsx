@@ -11,7 +11,6 @@ export default function Settings() {
         setActive={() => {}}
       />
       {HydraPlugin.Settings && <HydraPlugin.Settings />}
-      {HydraPlugin.Renderer && <HydraPlugin.Renderer />}
     </div>
   )
 }
