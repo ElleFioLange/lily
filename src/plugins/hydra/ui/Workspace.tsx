@@ -39,7 +39,7 @@ export default function Workspace({ panelId }: LivePreviewProps) {
         '.cm-content': {
           caretColor: '#f5f5f4',
           fontFamily: 'Monaspace Neon',
-          padding: '8px 0'
+          padding: '0'
         },
         '.cm-gutters': {
           backgroundColor: '#2925245a', // stone-800/35
@@ -55,7 +55,7 @@ export default function Workspace({ panelId }: LivePreviewProps) {
           minWidth: '32px'
         },
         '.cm-activeLine': {
-          backgroundColor: '#78716c80 !important' // stone-500/50
+          backgroundColor: '#78716cd0 !important' // stone-500/50
         },
         '& .cm-line': {
           backgroundColor: '#29252440' // stone-800/25
@@ -81,7 +81,7 @@ export default function Workspace({ panelId }: LivePreviewProps) {
         { tag: tags.punctuation, color: '#fcd34d' }, // amber-300
         { tag: tags.function(tags.variableName), color: '#22d3ee' }, // cyan-400
         { tag: tags.variableName, color: '#d6d3d1' }, // stone-300
-        { tag: tags.comment, color: '#78716c', fontStyle: 'italic' } // stone-500
+        { tag: tags.comment, color: '#d6d3d1', fontStyle: 'italic' } // stone-300
       ])
 
       // Create editor state
