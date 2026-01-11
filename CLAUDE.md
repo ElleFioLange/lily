@@ -221,12 +221,89 @@ All three layouts currently share the same structure:
 
 **Panel Components** (`src/renderer/src/components/panels/`):
 
-- **LivePreview.tsx** - Placeholder for live video preview (future: camera/video input)
-- **HydraPreview.tsx** - Hydra visual synthesizer preview with collapse button and video controls
+- **LivePreview.tsx** - Text input editor for live performance
+- **HydraPreview.tsx** - Hydra visual synthesizer preview, registers canvas with Compositor for performance window
 - **AbletonMonitor.tsx** - Example panel with button that sends custom OSC message via `window.api.osc.send()`
 - **HydraPatches.tsx** - Placeholder for Hydra patch browser/editor
 - **VideoControls.tsx** - Video control panel
 - **ProjectConfig.tsx** - YAML configuration editor with CodeMirror, navigation, and file persistence
+
+### Performance Window
+
+The Performance Window is a separate child window for projector output during performances. It uses React Portal to render into a child window while sharing the same renderer process (and thus all Zustand stores) as the main window.
+
+**Architecture:**
+
+```
+Main Window (React App)
+├── App.tsx
+│   └── PerformanceWindow component
+│       └── React Portal → Child Window (same JS context)
+│           └── Compositor Canvas (alpha-blends sources)
+│               ├── Source: Hydra Canvas (WebGL)
+│               ├── Source: Camera Canvas
+│               └── Source: Future plugins...
+```
+
+**Key Files:**
+
+- **PerformanceWindow.tsx** (`src/renderer/src/components/PerformanceWindow.tsx`) - Opens child window via `window.open()`, creates React Portal
+- **Compositor.ts** (`src/renderer/src/lib/Compositor.ts`) - Alpha-blends multiple canvas sources into output
+- **usePerformanceStore.ts** (`src/renderer/src/stores/usePerformanceStore.ts`) - Performance window state
+
+**Opening the Performance Window:**
+
+- Menu: Window > Open Performance Window
+- Keyboard: Cmd/Ctrl+Shift+P
+- Button: "Performance" button in HydraPreview panel
+
+**Compositor Class:**
+
+```typescript
+interface CompositorSource {
+  id: string
+  canvas: HTMLCanvasElement | OffscreenCanvas
+  alpha: number // 0-1 opacity
+  zIndex: number // Layer order
+  blendMode: GlobalCompositeOperation
+  enabled: boolean
+}
+
+class Compositor {
+  addSource(source: CompositorSource): void
+  removeSource(id: string): void
+  updateSource(id: string, updates: Partial<CompositorSource>): void
+  startRenderLoop(): void
+  stopRenderLoop(): void
+}
+```
+
+**Adding a New Source:**
+
+Plugins can register their canvas with the compositor:
+
+```typescript
+import { usePerformanceStore } from '@renderer/stores/usePerformanceStore'
+
+// Subscribe to compositor availability
+useEffect(() => {
+  const unsubscribe = usePerformanceStore.subscribe((state) => {
+    if (state.compositorRef && canvasRef.current) {
+      state.compositorRef.addSource({
+        id: 'my-plugin',
+        canvas: canvasRef.current,
+        alpha: 1,
+        zIndex: 10,
+        blendMode: 'source-over',
+        enabled: true
+      })
+    }
+  })
+  return unsubscribe
+}, [])
+```
+
+**Important:** Use `preserveDrawingBuffer: true` when creating WebGL contexts for canvases that will be read by the Compositor.
 
 ### Keyboard Shortcuts
 
@@ -249,6 +326,7 @@ All three layouts currently share the same structure:
 - **Cmd/Ctrl+1** - Switch to Performance layout
 - **Cmd/Ctrl+2** - Switch to Ableton Configuration layout
 - **Cmd/Ctrl+3** - Switch to Hydra Configuration layout
+- **Cmd/Ctrl+Shift+P** - Open/close Performance Window
 - **Cmd/Ctrl+R** - Request OSC init from Max device
 
 **Panel-Specific Shortcuts** (examples):
