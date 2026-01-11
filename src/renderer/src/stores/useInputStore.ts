@@ -17,7 +17,6 @@ export const useInputStore = create<InputState>((set, get) => ({
     useHydraStore.getState().evaluateShader()
     const { input } = get()
     const messages = parseInput(input, 'ableton') as any as ParseAbletonResult
-    window.api.hydra.triggerAnimation()
     messages.forEach(({ address, args }) => {
       window.api.osc.send(address, args)
     })

@@ -54,12 +54,8 @@ export const useHydraStore = create<HydraState>((set, get) => ({
 
     const processedShader = paramPrefix + timedShader
 
+    // Update state - HydraPreview watches evaluationVersion and re-evaluates
     set((state) => ({ shader: processedShader, evaluationVersion: state.evaluationVersion + 1 }))
-
-    console.log(processedShader)
-
-    // Send to popup window via IPC
-    await window.api.hydra.evaluate(processedShader)
   },
 
   saveShader: async () => {

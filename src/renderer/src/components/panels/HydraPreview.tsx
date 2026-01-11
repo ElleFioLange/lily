@@ -3,6 +3,7 @@ import Hydra from 'hydra-synth'
 import Panel from '../common/Panel'
 import type { PanelId } from '../../stores/useFocusStore'
 import { useHydraStore } from '../../stores/useHydraStore'
+import { usePerformanceStore } from '../../stores/usePerformanceStore'
 import { CameraStreamManager } from '../camera/CameraStreamManager'
 import loadScript from '@renderer/utils/loadScript'
 
@@ -27,6 +28,12 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
   useEffect(() => {
     if (!canvasRef.current || hydraRef.current) return
 
+    // Get WebGL context with preserveDrawingBuffer for compositor reading
+    const gl = canvasRef.current.getContext('webgl', { preserveDrawingBuffer: true })
+    if (!gl) {
+      console.error('Failed to get WebGL context with preserveDrawingBuffer')
+    }
+
     // TODO add hydra audio input setting
     const hydra = new Hydra({
       canvas: canvasRef.current,
@@ -48,6 +55,42 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Register canvas with compositor when performance window opens
+  useEffect(() => {
+    if (!canvasRef.current) return
+
+    // Check if compositor already exists and register
+    const registerWithCompositor = (): void => {
+      const compositor = usePerformanceStore.getState().compositorRef
+      if (compositor && canvasRef.current) {
+        compositor.addSource({
+          id: 'hydra',
+          canvas: canvasRef.current,
+          alpha: 1,
+          zIndex: 0,
+          blendMode: 'source-over',
+          enabled: true
+        })
+      }
+    }
+
+    // Register immediately if compositor exists
+    registerWithCompositor()
+
+    // Subscribe to future compositor changes
+    const unsubscribe = usePerformanceStore.subscribe((state) => {
+      if (state.compositorRef && canvasRef.current) {
+        // Check if hydra source already exists
+        const existingSource = state.compositorRef.getSource('hydra')
+        if (!existingSource) {
+          registerWithCompositor()
+        }
+      }
+    })
+
+    return unsubscribe
   }, [])
 
   // Re-evaluate when evaluationVersion changes
@@ -88,16 +131,10 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
     }
   }
 
-  const handleOpenPopup = async () => {
-    // Reset preview to keep popup in sync
-    await window.api.hydra.openPopup()
+  const togglePerformanceWindow = usePerformanceStore((state) => state.toggleWindow)
 
-    if (hydraRef.current) {
-      const { synth } = hydraRef.current
-      synth.hush()
-      synth.time = 0
-      evaluateShader(shader)
-    }
+  const handleOpenPerformanceWindow = () => {
+    togglePerformanceWindow()
   }
 
   return (
@@ -109,11 +146,11 @@ export default function HydraPreview({ panelId }: HydraPreviewProps) {
       headerActions={
         <>
           <button
-            onClick={handleOpenPopup}
+            onClick={handleOpenPerformanceWindow}
             className="px-2 py-1 text-xs bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
-            title="Open popup window"
+            title="Open performance window"
           >
-            Popup
+            Performance
           </button>
           <button
             onClick={() => console.log(hydraRef.current.synth.time)}

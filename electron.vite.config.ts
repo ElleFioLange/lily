@@ -23,7 +23,6 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'src/renderer/index.html'),
-          'hydra-popup': resolve(__dirname, 'src/renderer/hydra-popup.html'),
           settings: resolve(__dirname, 'src/renderer/settings.html')
         }
       }

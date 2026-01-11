@@ -103,22 +103,6 @@ export default function LivePreview({ panelId }: LivePreviewProps) {
     }
   }, [input])
 
-  const handleScroll = () => {
-    const editor = editorRef.current!
-    const { clientHeight, scrollTop } = editor
-
-    const container = editor.children[0]
-    const containerHeight = container.clientHeight
-
-    const maxScroll = containerHeight - clientHeight
-
-    // From 0 to 1
-    const scrollPercentage = scrollTop / maxScroll
-
-    // Send scroll position to Hydra popup
-    window.api.hydra.sendScrollUpdate(scrollPercentage)
-  }
-
   return (
     <Panel
       title="Live preview"
@@ -126,12 +110,7 @@ export default function LivePreview({ panelId }: LivePreviewProps) {
       panelId={panelId}
       onClick={() => viewRef.current?.focus()}
     >
-      <div
-        ref={editorRef}
-        onWheel={handleScroll}
-        onScroll={handleScroll}
-        className="w-full max-h-full overflow-auto outline-none relative"
-      />
+      <div ref={editorRef} className="w-full max-h-full overflow-auto outline-none relative" />
     </Panel>
   )
 }

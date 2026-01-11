@@ -3,7 +3,6 @@ import { electronAPI } from '@electron-toolkit/preload'
 import type { OSCMessage } from '../types/osc-messages'
 import type { ExportResult } from '../main/maxdevice/export'
 import type { Settings } from '../types/settings'
-import { ConfigurationJSON } from '../types/config'
 import type { AudioDevice, AudioCaptureStatus, AudioBufferData } from '../types/audio'
 
 /**
@@ -154,54 +153,18 @@ const api = {
   },
 
   // ============================================================================
-  // Hydra Video Synthesizer API
+  // Performance Window API
   // ============================================================================
-  hydra: {
-    openPopup: (): Promise<{ success: boolean }> => ipcRenderer.invoke('hydra:open-popup'),
-    evaluate: (code: string): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('hydra:evaluate', code),
-    onEvaluateShader: (callback: (code: string) => void) => {
-      ipcRenderer.on('hydra:evaluate-shader', (_, code) => callback(code))
-    },
-    requestShader: () => {
-      ipcRenderer.send('hydra:request-shader')
-    },
-    onRequestShader: (callback: () => void) => {
-      ipcRenderer.on('hydra:request-shader', callback)
-    },
-    sendShaderResponse: (code: string) => {
-      ipcRenderer.send('hydra:shader-response', code)
-    },
-    sendTextUpdate: (text: string) => {
-      ipcRenderer.send('hydra:text-update', text)
-    },
-    onTextUpdate: (callback: (text: string) => void) => {
-      ipcRenderer.on('hydra:text-update', (_, text) => callback(text))
-    },
-    requestConfig: () => {
-      ipcRenderer.send('hydra:request-config')
-    },
-    onRequestConfig: (callback: () => void) => {
-      ipcRenderer.on('hydra:request-config', callback)
-    },
-    sendConfigUpdate: (config: ConfigurationJSON) => {
-      console.log('sending config update')
-      ipcRenderer.send('hydra:config-update', config)
-    },
-    onConfigUpdate: (callback: (config: ConfigurationJSON) => void) => {
-      ipcRenderer.on('hydra:config-update', (_, config) => callback(config))
-    },
-    sendScrollUpdate: (scrollPercentage: number) => {
-      ipcRenderer.send('hydra:scroll-update', scrollPercentage)
-    },
-    onScrollUpdate: (callback: (scrollPercentage: number) => void) => {
-      ipcRenderer.on('hydra:scroll-update', (_, scrollPercentage) => callback(scrollPercentage))
-    },
-    triggerAnimation: () => {
-      ipcRenderer.send('hydra:trigger-animation')
-    },
-    onTriggerAnimation: (callback: () => void) => {
-      ipcRenderer.on('hydra:trigger-animation', callback)
+  performance: {
+    /**
+     * Register callback for performance window toggle event (from menu)
+     * @param callback - Function called when toggle is requested
+     * @returns Unsubscribe function
+     */
+    onToggle: (callback: () => void): (() => void) => {
+      const handler = (): void => callback()
+      ipcRenderer.on('performance:toggle', handler)
+      return () => ipcRenderer.removeListener('performance:toggle', handler)
     }
   },
 

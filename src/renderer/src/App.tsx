@@ -1,15 +1,14 @@
 import { useEffect } from 'react'
 import Layout from './components/Layout'
+import { PerformanceWindow } from './components/PerformanceWindow'
 import { setupOSCListeners } from './stores/useOSCStore'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
-import { useInputStore } from './stores/useInputStore'
 import { setupCameraListeners } from './stores/useCameraStore'
-import { useHydraStore } from './stores/useHydraStore'
-import { useConfigurationStore } from './stores/useConfigurationStore'
+import { usePerformanceStore } from './stores/usePerformanceStore'
 import HydraPlugin from '@plugins/hydra'
 
 function App(): React.JSX.Element {
-  const input = useInputStore((state) => state.input)
+  const togglePerformanceWindow = usePerformanceStore((state) => state.toggleWindow)
 
   // Initialize keyboard shortcuts
   useKeyboardShortcuts()
@@ -23,29 +22,22 @@ function App(): React.JSX.Element {
     // Setup camera streaming listeners
     setupCameraListeners()
 
-    // Initialize configuration store
-    // initializeConfigStore()
-
-    // Setup Hydra shader request handler for popup window
-    window.api.hydra.onRequestShader(() => {
-      const { shader } = useHydraStore.getState()
-      window.api.hydra.sendShaderResponse(shader)
-    })
-
-    window.api.hydra.onRequestConfig(() => {
-      const { parsedConfig: config } = useConfigurationStore.getState()
-      window.api.hydra.sendConfigUpdate(config)
+    // Listen for performance window toggle from menu
+    const unsubscribe = window.api.performance.onToggle(() => {
+      togglePerformanceWindow()
     })
 
     window.api.osc.send('/request/connection/confirm')
-  }, [])
 
-  // Send text updates to Hydra popup window
-  useEffect(() => {
-    window.api.hydra.sendTextUpdate(input)
-  }, [input])
+    return unsubscribe
+  }, [togglePerformanceWindow])
 
-  return <Layout />
+  return (
+    <>
+      <Layout />
+      <PerformanceWindow />
+    </>
+  )
 }
 
 export default App

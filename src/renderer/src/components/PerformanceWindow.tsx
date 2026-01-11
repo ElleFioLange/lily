@@ -1,0 +1,120 @@
+import { useEffect, useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { usePerformanceStore } from '../stores/usePerformanceStore'
+import { Compositor } from '../lib/Compositor'
+
+/**
+ * PerformanceWindow renders a full-screen compositor canvas into a child window.
+ * Uses React Portal to render into the child window's document body.
+ * The child window runs in the same renderer process, sharing all stores.
+ */
+export function PerformanceWindow() {
+  const { isOpen, closeWindow, setWindowRef, setCompositorRef } = usePerformanceStore()
+  const [childWindow, setChildWindow] = useState<Window | null>(null)
+  const [container, setContainer] = useState<HTMLElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  // Open window when isOpen becomes true
+  useEffect(() => {
+    if (!isOpen) {
+      // Clean up if window was open
+      if (childWindow && !childWindow.closed) {
+        childWindow.close()
+      }
+      setChildWindow(null)
+      setContainer(null)
+      return
+    }
+
+    // Open the performance window
+    const win = window.open('', 'performance', 'width=1920,height=1080')
+    if (!win) {
+      console.error('Failed to open performance window')
+      closeWindow()
+      return
+    }
+
+    // Set up minimal document styling
+    win.document.title = 'Performance'
+    win.document.body.style.margin = '0'
+    win.document.body.style.padding = '0'
+    win.document.body.style.overflow = 'hidden'
+    win.document.body.style.backgroundColor = '#000'
+    win.document.body.style.width = '100vw'
+    win.document.body.style.height = '100vh'
+
+    setChildWindow(win)
+    setWindowRef(win)
+    setContainer(win.document.body)
+
+    // Handle window close by user
+    const handleBeforeUnload = (): void => {
+      closeWindow()
+    }
+    win.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      win.removeEventListener('beforeunload', handleBeforeUnload)
+      if (!win.closed) {
+        win.close()
+      }
+      setWindowRef(null)
+    }
+  }, [isOpen, closeWindow, setWindowRef])
+
+  // Initialize compositor when canvas is ready
+  useEffect(() => {
+    if (!childWindow || !container) return
+
+    // Wait for next frame to ensure canvas is mounted
+    const timeoutId = setTimeout(() => {
+      const canvas = container.querySelector('canvas') as HTMLCanvasElement | null
+      if (!canvas) {
+        console.error('Canvas not found in performance window')
+        return
+      }
+
+      // Set canvas size to match window
+      canvas.width = childWindow.innerWidth
+      canvas.height = childWindow.innerHeight
+
+      // Create compositor with child window's RAF
+      const compositor = new Compositor(canvas, childWindow)
+      compositor.startRenderLoop()
+      setCompositorRef(compositor)
+
+      // Handle resize
+      const handleResize = (): void => {
+        canvas.width = childWindow.innerWidth
+        canvas.height = childWindow.innerHeight
+      }
+      childWindow.addEventListener('resize', handleResize)
+
+      return () => {
+        childWindow.removeEventListener('resize', handleResize)
+        compositor.destroy()
+        setCompositorRef(null)
+      }
+    }, 0)
+
+    return () => {
+      clearTimeout(timeoutId)
+    }
+  }, [childWindow, container, setCompositorRef])
+
+  // Don't render if not open or container not ready
+  if (!isOpen || !container) return null
+
+  // Render canvas into child window via portal
+  return createPortal(
+    <canvas
+      ref={canvasRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'block'
+      }}
+    />,
+    container
+  )
+}

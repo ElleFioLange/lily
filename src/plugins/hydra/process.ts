@@ -2,7 +2,7 @@ import { ConfigurationJSON } from 'src/types/config'
 import { useHydraStore } from './store'
 import loadScript from '@renderer/utils/loadScript'
 
-export default async function process(poiesis: string, config: ConfigurationJSON) {
+export default async function process(_poiesis: string, _config: ConfigurationJSON) {
   const store = useHydraStore.getState()
 
   const shader = store.shader

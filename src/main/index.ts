@@ -13,7 +13,6 @@ import { getSettingsManager } from './settings/manager'
 import type { Settings } from '../types/settings'
 import { getAudifyCapture } from './audio/audify-capture'
 import type { AudioDevice, AudioCaptureStatus } from '../types/audio'
-import { ConfigurationJSON } from '../types/config'
 
 // Initialize OSC server and client
 const oscServer = getOSCServer({ port: 5460 })
@@ -26,7 +25,6 @@ const cameraServer = getCameraWebSocketServer()
 const settingsManager = getSettingsManager()
 
 let mainWindowRef: BrowserWindow | null = null
-let hydraPopupWindowRef: BrowserWindow | null = null
 let settingsWindowRef: BrowserWindow | null = null
 
 /**
@@ -131,6 +129,14 @@ function createMenu(): void {
       submenu: [
         { role: 'minimize' as const },
         { role: 'zoom' as const },
+        { type: 'separator' as const },
+        {
+          label: 'Open Performance Window',
+          accelerator: 'CmdOrCtrl+Shift+P',
+          click: () => {
+            mainWindowRef?.webContents.send('performance:toggle')
+          }
+        },
         ...(isMac
           ? [
               { type: 'separator' as const },
@@ -172,8 +178,29 @@ function createWindow(): void {
   // Create application menu
   createMenu()
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+  // Handle window.open() calls from renderer
+  mainWindow.webContents.setWindowOpenHandler(({ url, features }) => {
+    // Allow performance window (blank URL opened with 'performance' name)
+    if ((url === '' || url === 'about:blank') && features.includes('width=1920')) {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          width: 1920,
+          height: 1080,
+          backgroundColor: '#000000',
+          title: 'Performance',
+          webPreferences: {
+            preload: join(__dirname, '../preload/index.js'),
+            sandbox: false,
+            nodeIntegration: false,
+            contextIsolation: true
+          }
+        }
+      }
+    }
+
+    // External URLs open in system browser
+    shell.openExternal(url)
     return { action: 'deny' }
   })
 
@@ -184,39 +211,6 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
-}
-
-function createHydraPopup(): void {
-  // Don't create duplicate windows
-  if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
-    hydraPopupWindowRef.focus()
-    return
-  }
-
-  const popupWindow = new BrowserWindow({
-    width: 1280,
-    height: 720,
-    title: 'Hydra Output',
-    backgroundColor: '#000000',
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
-    }
-  })
-
-  hydraPopupWindowRef = popupWindow
-
-  // Load popup HTML
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    popupWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/hydra-popup.html`)
-  } else {
-    popupWindow.loadFile(join(__dirname, '../renderer/hydra-popup.html'))
-  }
-
-  // Cleanup on close
-  popupWindow.on('closed', () => {
-    hydraPopupWindowRef = null
-  })
 }
 
 function createSettingsWindow(): void {
@@ -356,31 +350,21 @@ async function initializeOSC(): Promise<void> {
 
 /**
  * Initialize camera WebSocket streaming
- * Forwards camera frames from WebSocket clients to renderer processes (main window + popup)
+ * Forwards camera frames from WebSocket clients to renderer process
  */
 function initializeCameraStreaming(): void {
-  // Forward camera frames to renderer (both main and popup windows)
+  // Forward camera frames to renderer
   cameraServer.on('frame', (frameBuffer: Buffer) => {
     mainWindowRef?.webContents.send('camera:frame', frameBuffer)
-    // Also forward to popup window if open
-    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
-      hydraPopupWindowRef.webContents.send('camera:frame', frameBuffer)
-    }
   })
 
   // Forward connection status updates
   cameraServer.on('clientConnected', ({ clientCount }) => {
     mainWindowRef?.webContents.send('camera:client-connected', clientCount)
-    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
-      hydraPopupWindowRef.webContents.send('camera:client-connected', clientCount)
-    }
   })
 
   cameraServer.on('clientDisconnected', ({ clientCount }) => {
     mainWindowRef?.webContents.send('camera:client-disconnected', clientCount)
-    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
-      hydraPopupWindowRef.webContents.send('camera:client-disconnected', clientCount)
-    }
   })
 
   console.log('Camera streaming initialized')
@@ -388,41 +372,33 @@ function initializeCameraStreaming(): void {
 
 /**
  * Initialize audio capture streaming
- * Forwards audio buffers from audify to renderer process (hydra popup window)
+ * Forwards audio buffers from audify to renderer process
  */
 function initializeAudioStreaming(): void {
   const audioCapture = getAudifyCapture()
 
-  // Forward audio buffers to hydra popup window
+  // Forward audio buffers to main window (performance window shares the renderer)
   audioCapture.on('buffer', (data: Float32Array, metadata) => {
-    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
-      hydraPopupWindowRef.webContents.send('audio:buffer', {
-        buffer: data,
-        channels: metadata.channels,
-        sampleRate: metadata.sampleRate,
-        timestamp: metadata.timestamp
-      })
-    }
+    mainWindowRef?.webContents.send('audio:buffer', {
+      buffer: data,
+      channels: metadata.channels,
+      sampleRate: metadata.sampleRate,
+      timestamp: metadata.timestamp
+    })
   })
 
   // Forward error events
   audioCapture.on('error', (error: Error) => {
-    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
-      hydraPopupWindowRef.webContents.send('audio:error', error.message)
-    }
+    mainWindowRef?.webContents.send('audio:error', error.message)
   })
 
   // Forward status events
   audioCapture.on('started', () => {
-    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
-      hydraPopupWindowRef.webContents.send('audio:started')
-    }
+    mainWindowRef?.webContents.send('audio:started')
   })
 
   audioCapture.on('stopped', () => {
-    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
-      hydraPopupWindowRef.webContents.send('audio:stopped')
-    }
+    mainWindowRef?.webContents.send('audio:stopped')
   })
 
   console.log('Audio capture streaming initialized')
@@ -605,66 +581,6 @@ function setupIPCHandlers(): void {
         success: false,
         error: err instanceof Error ? err.message : 'Failed to save file'
       }
-    }
-  })
-
-  // ============================================================================
-  // Hydra Popup Window Handlers
-  // ============================================================================
-  ipcMain.handle('hydra:open-popup', async () => {
-    createHydraPopup()
-    return { success: true }
-  })
-
-  ipcMain.handle('hydra:evaluate', async (_, code: string) => {
-    // Forward to popup window if open
-    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
-      hydraPopupWindowRef.webContents.send('hydra:evaluate-shader', code)
-    }
-    return { success: true }
-  })
-
-  // Handle shader request from popup window
-  ipcMain.on('hydra:request-shader', () => {
-    mainWindowRef?.webContents.send('hydra:request-shader')
-  })
-
-  // Handle shader response from main window
-  ipcMain.on('hydra:shader-response', (_, code: string) => {
-    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
-      hydraPopupWindowRef.webContents.send('hydra:evaluate-shader', code)
-    }
-  })
-
-  // Handle text update from main window
-  ipcMain.on('hydra:text-update', (_, text: string) => {
-    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
-      hydraPopupWindowRef.webContents.send('hydra:text-update', text)
-    }
-  })
-
-  // Handle config request from popup window
-  ipcMain.on('hydra:request-config', () => {
-    mainWindowRef?.webContents.send('hydra:request-config')
-  })
-
-  // Handle config update from main window
-  ipcMain.on('hydra:config-update', (_, config: ConfigurationJSON) => {
-    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
-      hydraPopupWindowRef.webContents.send('hydra:config-update', config)
-    }
-  })
-
-  // Handle scroll position update from main window
-  ipcMain.on('hydra:scroll-update', (_, scrollPercentage: number) => {
-    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
-      hydraPopupWindowRef.webContents.send('hydra:scroll-update', scrollPercentage)
-    }
-  })
-
-  ipcMain.on('hydra:trigger-animation', () => {
-    if (hydraPopupWindowRef && !hydraPopupWindowRef.isDestroyed()) {
-      hydraPopupWindowRef.webContents.send('hydra:trigger-animation')
     }
   })
 

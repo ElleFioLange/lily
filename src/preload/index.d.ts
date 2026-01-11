@@ -5,7 +5,6 @@ import type { ExportResult } from '../main/maxdevice/export'
 import type { CameraServerStatus, StartServerResult, StopServerResult } from '../types/camera'
 import type { Settings } from '../types/settings'
 import type { AudioDevice, AudioCaptureStatus, AudioBufferData } from '../types/audio'
-import { ConfigurationJSON } from 'src/types/config'
 
 /**
  * Minimal OSC API Type Definitions
@@ -108,27 +107,17 @@ interface LilyAPI {
   }
 
   /**
-   * Hydra Video Synthesizer API
+   * Performance Window API
    *
-   * Methods for managing Hydra popup window and shader evaluation
+   * Methods for managing the performance window
    */
-  hydra: {
-    openPopup: () => Promise<{ success: boolean }>
-    evaluate: (code: string) => Promise<{ success: boolean }>
-    onEvaluateShader: (callback: (code: string) => void) => void
-    requestShader: () => void
-    onRequestShader: (callback: () => void) => void
-    sendShaderResponse: (code: string) => void
-    sendTextUpdate: (text: string) => void
-    requestConfig: () => void
-    onRequestConfig: (callback: () => void) => void
-    onTextUpdate: (callback: (text: string) => void) => void
-    sendConfigUpdate: (config: ConfigurationJSON) => void
-    onConfigUpdate: (callback: (config: ConfigurationJSON) => void) => void
-    sendScrollUpdate: (scrollPercentage: number) => void
-    onScrollUpdate: (callback: (scrollPercentage: number) => void) => void
-    triggerAnimation: () => void
-    onTriggerAnimation: (callback: () => void) => void
+  performance: {
+    /**
+     * Register callback for performance window toggle event (from menu)
+     * @param callback - Function called when toggle is requested
+     * @returns Unsubscribe function
+     */
+    onToggle: (callback: () => void) => () => void
   }
 
   /**
