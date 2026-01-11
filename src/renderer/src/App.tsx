@@ -6,6 +6,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { setupCameraListeners } from './stores/useCameraStore'
 import { usePerformanceStore } from './stores/usePerformanceStore'
 import HydraPlugin from '@plugins/hydra'
+import { initCompositor } from './lib/Compositor'
 
 function App(): React.JSX.Element {
   const togglePerformanceWindow = usePerformanceStore((state) => state.toggleWindow)
@@ -14,6 +15,8 @@ function App(): React.JSX.Element {
   useKeyboardShortcuts()
 
   useEffect(() => {
+    initCompositor()
+
     HydraPlugin.init()
 
     // Setup OSC event listeners when component mounts

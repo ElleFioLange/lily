@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { usePerformanceStore } from '../stores/usePerformanceStore'
-import { Compositor } from '../lib/Compositor'
+import HydraPlugin from '@plugins/hydra'
+import Workspace from '@plugins/hydra/ui/Workspace'
 
 /**
  * PerformanceWindow renders a full-screen compositor canvas into a child window.
@@ -9,7 +10,7 @@ import { Compositor } from '../lib/Compositor'
  * The child window runs in the same renderer process, sharing all stores.
  */
 export function PerformanceWindow() {
-  const { isOpen, closeWindow, setWindowRef, setCompositorRef } = usePerformanceStore()
+  const { isOpen, closeWindow, setWindowRef, compositorRef } = usePerformanceStore()
   const [childWindow, setChildWindow] = useState<Window | null>(null)
   const [container, setContainer] = useState<HTMLElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -78,11 +79,7 @@ export function PerformanceWindow() {
       canvas.width = childWindow.innerWidth
       canvas.height = childWindow.innerHeight
 
-      // Create compositor with child window's RAF
-      const compositor = new Compositor(canvas, childWindow)
-      compositor.startRenderLoop()
-      setCompositorRef(compositor)
-
+      compositorRef?.addOutput({ id: 'performance', canvas })
       // Handle resize
       const handleResize = (): void => {
         canvas.width = childWindow.innerWidth
@@ -92,29 +89,31 @@ export function PerformanceWindow() {
 
       return () => {
         childWindow.removeEventListener('resize', handleResize)
-        compositor.destroy()
-        setCompositorRef(null)
       }
     }, 0)
 
     return () => {
       clearTimeout(timeoutId)
     }
-  }, [childWindow, container, setCompositorRef])
+  }, [childWindow, container, compositorRef])
 
   // Don't render if not open or container not ready
   if (!isOpen || !container) return null
 
   // Render canvas into child window via portal
   return createPortal(
-    <canvas
-      ref={canvasRef}
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'block'
-      }}
-    />,
+    // <Workspace />,
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      {HydraPlugin.Renderer && <HydraPlugin.Renderer />}
+    </div>,
+    // <canvas
+    //   ref={canvasRef}
+    //   style={{
+    //     width: '100%',
+    //     height: '100%',
+    //     display: 'block'
+    //   }}
+    // />,
     container
   )
 }

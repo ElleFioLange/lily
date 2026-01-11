@@ -6,6 +6,7 @@
 import { FunctionComponent } from 'react'
 import { ConfigurationJSON } from '../types/config'
 import { StoreApi, UseBoundStore } from 'zustand'
+import { usePerformanceStore } from '@renderer/stores/usePerformanceStore'
 
 // export { sendOSC, saveFile, saveAsFile, openFile }
 
@@ -31,4 +32,9 @@ export interface Plugin {
 
   // State store
   useStore?: UseBoundStore<StoreApi<any>>
+}
+
+export function getCompositor() {
+  const { compositorRef } = usePerformanceStore.getState()
+  return compositorRef
 }

@@ -1,3 +1,5 @@
+import { usePerformanceStore } from '@renderer/stores/usePerformanceStore'
+
 /**
  * CompositorSource represents a canvas that can be blended into the compositor output
  */
@@ -17,21 +19,18 @@ export interface CompositorSource {
  */
 export class Compositor {
   private sources: Map<string, CompositorSource> = new Map()
-  private outputCanvas: HTMLCanvasElement
-  private ctx: CanvasRenderingContext2D
-  private targetWindow: Window
+  private outputs: Map<string, { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D }> =
+    new Map()
+  private targetWindow: Window | null = null
   private animationFrameId: number | null = null
   private isRunning: boolean = false
 
-  constructor(outputCanvas: HTMLCanvasElement, targetWindow: Window) {
-    this.outputCanvas = outputCanvas
-    this.targetWindow = targetWindow
+  attachWindow(window: Window): void {
+    this.targetWindow = window
+  }
 
-    const ctx = outputCanvas.getContext('2d')
-    if (!ctx) {
-      throw new Error('Failed to get 2D context from output canvas')
-    }
-    this.ctx = ctx
+  detachWindow() {
+    this.targetWindow = null
   }
 
   /**
@@ -56,6 +55,17 @@ export class Compositor {
     if (source) {
       this.sources.set(id, { ...source, ...updates })
     }
+  }
+
+  addOutput(output: { id: string; canvas: HTMLCanvasElement }): void {
+    const { id, canvas } = output
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Unable to get rendering context for provided output')
+    this.outputs.set(id, { canvas, ctx })
+  }
+
+  removeOutput(id: string): void {
+    this.outputs.delete(id)
   }
 
   /**
@@ -83,10 +93,7 @@ export class Compositor {
    * Render a single frame - composites all enabled sources
    */
   private render(): void {
-    const { ctx, outputCanvas } = this
-
-    // Clear output
-    ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height)
+    if (this.outputs.size === 0) return
 
     // Sort sources by z-index (lower = drawn first = behind)
     const sortedSources = Array.from(this.sources.values())
@@ -95,19 +102,24 @@ export class Compositor {
 
     // Composite each source
     for (const source of sortedSources) {
-      ctx.save()
-      ctx.globalAlpha = source.alpha
-      ctx.globalCompositeOperation = source.blendMode
+      const outputsArray = Array.from(this.outputs.values())
+      for (const { canvas, ctx } of outputsArray) {
+        // Clear output
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.save()
+        ctx.globalAlpha = source.alpha
+        ctx.globalCompositeOperation = source.blendMode
 
-      try {
-        // Draw the source canvas scaled to fill the output
-        ctx.drawImage(source.canvas, 0, 0, outputCanvas.width, outputCanvas.height)
-      } catch (e) {
-        // Canvas might not be ready or could be tainted
-        console.warn(`Compositor: Failed to draw source ${source.id}:`, e)
+        try {
+          // Draw the source canvas scaled to fill the output
+          ctx.drawImage(source.canvas, 0, 0, canvas.width, canvas.height)
+        } catch (e) {
+          // Canvas might not be ready or could be tainted
+          console.warn(`Compositor: Failed to draw source ${source.id}:`, e)
+        }
+
+        ctx.restore()
       }
-
-      ctx.restore()
     }
   }
 
@@ -119,7 +131,7 @@ export class Compositor {
     this.isRunning = true
 
     const loop = (): void => {
-      if (!this.isRunning) return
+      if (!this.isRunning || !this.targetWindow) return
 
       this.render()
 
@@ -136,7 +148,7 @@ export class Compositor {
   stopRenderLoop(): void {
     this.isRunning = false
     if (this.animationFrameId !== null) {
-      this.targetWindow.cancelAnimationFrame(this.animationFrameId)
+      this.targetWindow?.cancelAnimationFrame(this.animationFrameId)
       this.animationFrameId = null
     }
   }
@@ -162,4 +174,11 @@ export class Compositor {
     this.stopRenderLoop()
     this.sources.clear()
   }
+}
+
+export function initCompositor() {
+  const compositor = new Compositor()
+  compositor.startRenderLoop()
+
+  usePerformanceStore.getState().setCompositorRef(compositor)
 }

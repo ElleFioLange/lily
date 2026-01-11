@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Compositor, CompositorSource } from '../lib/Compositor'
+import { Compositor, CompositorSource } from '../lib/Compositor'
 
 interface PerformanceState {
   // Window state
@@ -14,9 +14,11 @@ interface PerformanceState {
   setWindowRef: (win: Window | null) => void
   setCompositorRef: (compositor: Compositor | null) => void
 
-  // Source management (delegates to compositor)
+  // Compositor management
   addSource: (source: CompositorSource) => void
   removeSource: (id: string) => void
+  addOutput: (output: { id: string; canvas: HTMLCanvasElement }) => void
+  removeOutput: (id: string) => void
   setSourceAlpha: (id: string, alpha: number) => void
   setSourceEnabled: (id: string, enabled: boolean) => void
 }
@@ -28,7 +30,7 @@ export const usePerformanceStore = create<PerformanceState>((set, get) => ({
 
   openWindow: () => set({ isOpen: true }),
 
-  closeWindow: () => set({ isOpen: false, windowRef: null, compositorRef: null }),
+  closeWindow: () => set({ isOpen: false, windowRef: null }),
 
   toggleWindow: () => {
     const { isOpen } = get()
@@ -39,7 +41,12 @@ export const usePerformanceStore = create<PerformanceState>((set, get) => ({
     }
   },
 
-  setWindowRef: (windowRef) => set({ windowRef }),
+  setWindowRef: (windowRef) => {
+    const { compositorRef } = get()
+    if (windowRef !== null) compositorRef?.attachWindow(windowRef)
+    else compositorRef?.detachWindow()
+    set({ windowRef })
+  },
 
   setCompositorRef: (compositorRef) => set({ compositorRef }),
 
@@ -51,6 +58,16 @@ export const usePerformanceStore = create<PerformanceState>((set, get) => ({
   removeSource: (id) => {
     const { compositorRef } = get()
     compositorRef?.removeSource(id)
+  },
+
+  addOutput: (output) => {
+    const { compositorRef } = get()
+    compositorRef?.addOutput(output)
+  },
+
+  removeOutput: (id) => {
+    const { compositorRef } = get()
+    compositorRef?.removeOutput(id)
   },
 
   setSourceAlpha: (id, alpha) => {
