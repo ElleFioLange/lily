@@ -1,6 +1,6 @@
 import Hydra from 'hydra-synth'
 import { useHydraStore } from './store'
-import { getCompositor } from '@plugins/helpers'
+import { getCompositor, getWindow } from '@plugins/helpers'
 
 export default function init() {
   const canvas = document.createElement('canvas')

@@ -1,7 +1,7 @@
 // Ableton Live Project Store
 import { create } from 'zustand'
 import type { OSCMessage } from '../../../types/osc-messages'
-import { useLiveStore } from './useLiveStore'
+import { useLiveStore } from '../../../plugins/ableton/store'
 import { v4 as uuid } from 'uuid'
 
 /**

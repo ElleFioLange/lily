@@ -1,11 +1,11 @@
 import { useState } from 'react'
 
-interface YAMLNavigationProps {
+interface ConfigNavigationProps {
   keys: string[]
   onKeyClick: (key: string) => void
 }
 
-export default function YAMLNavigation({ keys, onKeyClick }: YAMLNavigationProps) {
+export default function ConfigNavigation({ keys, onKeyClick }: ConfigNavigationProps) {
   const [isCollapsed, setIsCollapsed] = useState(true)
 
   if (keys.length === 0) {

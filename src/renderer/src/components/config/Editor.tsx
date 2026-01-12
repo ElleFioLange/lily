@@ -15,18 +15,18 @@ import { search, searchKeymap } from '@codemirror/search'
 import { tags } from '@lezer/highlight'
 import * as jsyaml from 'js-yaml'
 
-interface YAMLEditorProps {
+interface ConfigEditorProps {
   value: string
   onChange: (value: string) => void
   onTopLevelKeysChange?: (keys: string[]) => void
 }
 
-export interface YAMLEditorRef {
+export interface ConfigEditorRef {
   scrollToKey: (key: string) => void
 }
 
-const YAMLEditor = forwardRef<YAMLEditorRef, YAMLEditorProps>(
-  ({ value, onChange, onTopLevelKeysChange }, ref: ForwardedRef<YAMLEditorRef>) => {
+const ConfigEditor = forwardRef<ConfigEditorRef, ConfigEditorProps>(
+  ({ value, onChange, onTopLevelKeysChange }, ref: ForwardedRef<ConfigEditorRef>) => {
     const editorRef = useRef<HTMLDivElement>(null)
     const viewRef = useRef<EditorView | null>(null)
 
@@ -228,6 +228,6 @@ const YAMLEditor = forwardRef<YAMLEditorRef, YAMLEditorProps>(
   }
 )
 
-YAMLEditor.displayName = 'YAMLEditor'
+ConfigEditor.displayName = 'EditorConfig'
 
-export default YAMLEditor
+export default ConfigEditor

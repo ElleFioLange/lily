@@ -15,12 +15,12 @@ function App(): React.JSX.Element {
   useKeyboardShortcuts()
 
   useEffect(() => {
+    // Setup OSC event listeners when component mounts
+    setupOSCListeners()
+
     initCompositor()
 
     HydraPlugin.init()
-
-    // Setup OSC event listeners when component mounts
-    setupOSCListeners()
 
     // Setup camera streaming listeners
     setupCameraListeners()

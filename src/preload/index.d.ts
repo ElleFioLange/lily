@@ -1,7 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type { OSCMessage } from '../types/osc-messages'
 import type { LayoutType } from '../types/layouts'
-import type { ExportResult } from '../main/maxdevice/export'
+import type { ExportResult } from '../plugins/ableton/maxdevice/export'
 import type { CameraServerStatus, StartServerResult, StopServerResult } from '../types/camera'
 import type { Settings } from '../types/settings'
 import type { AudioDevice, AudioCaptureStatus, AudioBufferData } from '../types/audio'

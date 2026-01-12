@@ -1,5 +1,5 @@
 import HydraPlugin from '@plugins/hydra'
-import Header from '../common/Header'
+import Header from './common/Header'
 
 export default function Monitors() {
   return (

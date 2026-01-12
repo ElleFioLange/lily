@@ -16,9 +16,6 @@ interface LiveStoreInterface {
   // Actions
   setLiveProjectBuffer: (buffer: LiveProjectBuffer) => void
   setLiveProject: (state: LiveProject) => void
-
-  // OSC Senders
-  requestInit: () => void
 }
 
 // ============================================================================
@@ -31,9 +28,5 @@ export const useLiveStore = create<LiveStoreInterface>((set) => ({
   liveProject: {},
 
   setLiveProjectBuffer: (buffer: LiveProjectBuffer) => set({ liveProjectBuffer: buffer }),
-  setLiveProject: (state) => set({ liveProject: state }),
-
-  requestInit: async () => {
-    await window.api.osc.send('/request/state', [])
-  }
+  setLiveProject: (state) => set({ liveProject: state })
 }))

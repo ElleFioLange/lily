@@ -1,0 +1,8 @@
+{
+  "id": "ableton",
+  "name": "Ableton",
+  "repo": "repo goes here",
+  "author": "sysfem.err",
+  "version": "1.0.0",
+  "outputType": "audio"
+}

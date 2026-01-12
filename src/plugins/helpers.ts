@@ -10,6 +10,9 @@ import { usePerformanceStore } from '@renderer/stores/usePerformanceStore'
 
 // export { sendOSC, saveFile, saveAsFile, openFile }
 
+// TODO expose Javascript editor and YAML editor (maybe others?) as core primites
+// for plugins to use to build their workspaces
+
 export interface Plugin {
   manifest: {
     id: string
@@ -37,4 +40,8 @@ export interface Plugin {
 export function getCompositor() {
   const { compositorRef } = usePerformanceStore.getState()
   return compositorRef
+}
+
+export function getWindow() {
+  return window
 }

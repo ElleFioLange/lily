@@ -1,5 +1,5 @@
 import Panel from '../common/Panel'
-import { useLiveStore } from '@renderer/stores/useLiveStore'
+import { useLiveStore } from '@plugins/ableton/store'
 import type { PanelId } from '../../stores/useFocusStore'
 import { CameraControls } from '../camera/CameraControls'
 

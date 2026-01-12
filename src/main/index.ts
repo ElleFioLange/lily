@@ -4,7 +4,11 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { getOSCServer } from './osc/server'
 import { getOSCClient } from './osc/client'
-import { exportMaxDevice, quickInstallMaxDevice, checkMaxDeviceExists } from './maxdevice/export'
+import {
+  exportMaxDevice,
+  quickInstallMaxDevice,
+  checkMaxDeviceExists
+} from '../plugins/ableton/maxdevice/export'
 import { promises as fs } from 'fs'
 import { getCameraWebSocketServer } from './camera/websocket-server'
 import { networkInterfaces } from 'os'

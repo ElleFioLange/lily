@@ -1,7 +1,8 @@
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
-import Main from './panels/Workspace'
+import Workspace from './Workspace'
 import Settings from './panels/Settings'
-import Monitors from './panels/Monitors'
+import Monitors from './Monitors'
+import Mixer from './Mixer'
 
 export default function Layout() {
   return (
@@ -9,7 +10,7 @@ export default function Layout() {
       <Panel defaultSize={70} minSize={55}>
         <PanelGroup direction="horizontal">
           <Panel defaultSize={66} minSize={60}>
-            <Main />
+            <Workspace />
           </Panel>
 
           <PanelResizeHandle className="w-px bg-stone-700 cursor-row-resize flex items-center justify-center" />
@@ -23,7 +24,17 @@ export default function Layout() {
       <PanelResizeHandle className="h-px bg-stone-700 cursor-col-resize flex items-center justify-center" />
 
       <Panel defaultSize={30} collapsible>
-        <Monitors />
+        <PanelGroup direction="horizontal">
+          <Panel defaultSize={25} minSize={15}>
+            <Mixer />
+          </Panel>
+
+          <PanelResizeHandle className="w-px bg-stone-700 cursor-row-resize flex items-center justify-center" />
+
+          <Panel minSize={50}>
+            <Monitors />
+          </Panel>
+        </PanelGroup>
       </Panel>
     </PanelGroup>
   )
