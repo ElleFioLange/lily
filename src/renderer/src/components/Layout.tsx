@@ -1,6 +1,6 @@
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import Workspace from './Workspace'
-import Settings from './panels/Settings'
+import Settings from './Settings'
 import Monitors from './Monitors'
 import Mixer from './Mixer'
 
