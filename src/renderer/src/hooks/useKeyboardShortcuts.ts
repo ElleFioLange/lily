@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useFocusStore, type PanelId, type ProjectConfigTab } from '../stores/useFocusStore'
-import { useInputStore } from '@renderer/stores/useInputStore'
+import { usePoiesisStore } from '@renderer/stores/usePoiesisStore'
 import { useHydraStore } from '@renderer/stores/useHydraStore'
 
 // TODO refactor this so keyboard shortcuts are able to be defined within panel components too
@@ -60,7 +60,7 @@ export function useKeyboardShortcuts(): void {
         panelId: 'live-preview',
         key: 'Enter',
         modifiers: ['ctrl', 'shift'],
-        handler: () => useInputStore.getState().evaluateInput(),
+        handler: () => usePoiesisStore.getState().evaluateInput(),
         bypassTextInputs: true,
         description: 'Evaluate input and send control messages'
       },

@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { usePerformanceStore } from '../stores/usePerformanceStore'
 import HydraPlugin from '@plugins/hydra'
-import Workspace from '@plugins/hydra/ui/Workspace'
+import PoiesisRenderer from './poiesis/Renderer'
 
 /**
  * PerformanceWindow renders a full-screen compositor canvas into a child window.
@@ -104,7 +104,12 @@ export function PerformanceWindow() {
   return createPortal(
     // <Workspace />,
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {HydraPlugin.Renderer && <HydraPlugin.Renderer />}
+      <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
+        {HydraPlugin.Renderer && <HydraPlugin.Renderer />}
+      </div>
+      <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
+        <PoiesisRenderer />
+      </div>
     </div>,
     // <canvas
     //   ref={canvasRef}

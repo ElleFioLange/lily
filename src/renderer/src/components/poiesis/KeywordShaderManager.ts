@@ -1,9 +1,9 @@
-import type { AudioManager } from '../audio/AudioManager'
-import type { AudioReactivityConfig } from '../../../types/config'
 import type { KeywordShaderInstance } from './types'
 import { ShaderCompiler } from './ShaderCompiler'
 import { EFFECT_PRESETS } from './effectPresets'
 import { AudioFeatures } from '@renderer/audio/types'
+import { AudioManager } from '@renderer/audio/AudioManager'
+import { AudioReactivityConfig } from 'src/types/config'
 
 /**
  * Manages WebGL shader instances for keywords with audio reactivity

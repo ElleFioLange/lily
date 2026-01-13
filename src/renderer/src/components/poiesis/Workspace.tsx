@@ -2,13 +2,13 @@ import { useRef, useEffect } from 'react'
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { defaultKeymap, history } from '@codemirror/commands'
-import { useInputStore } from '@renderer/stores/useInputStore'
+import { usePoiesisStore } from '@renderer/stores/usePoiesisStore'
 
 export default function PoiesisWorkspace() {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
-  const input = useInputStore((state) => state.input)
-  const setInput = useInputStore((state) => state.setInput)
+  const poiesis = usePoiesisStore((state) => state.poiesis)
+  const setPoiesis = usePoiesisStore((state) => state.setPoiesis)
 
   useEffect(() => {
     if (!editorRef.current) return
@@ -53,7 +53,7 @@ export default function PoiesisWorkspace() {
 
     // Create editor state
     const startState = EditorState.create({
-      doc: input,
+      doc: poiesis,
       extensions: [
         centeredTheme,
         EditorView.lineWrapping,
@@ -62,7 +62,7 @@ export default function PoiesisWorkspace() {
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             const newValue = update.state.doc.toString()
-            setInput(newValue)
+            setPoiesis(newValue)
           }
         })
       ]
@@ -81,21 +81,20 @@ export default function PoiesisWorkspace() {
       view.destroy()
       viewRef.current = null
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run once on mount
 
-  // Update editor content when input changes from outside
+  // Update editor content when poiesis changes from outside
   useEffect(() => {
     const view = viewRef.current
     if (!view) return
 
     const currentValue = view.state.doc.toString()
-    if (currentValue !== input) {
+    if (currentValue !== poiesis) {
       view.dispatch({
-        changes: { from: 0, to: currentValue.length, insert: input }
+        changes: { from: 0, to: currentValue.length, insert: poiesis }
       })
     }
-  }, [input])
+  }, [poiesis])
 
   return (
     <div className="size-full flex items-center relative cursor-text">

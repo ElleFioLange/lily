@@ -1,4 +1,4 @@
-import type { AudioReactivityConfig } from '../../../types/config'
+import { AudioReactivityConfig } from 'src/types/config'
 
 /**
  * Per-keyword shader instance data

@@ -4,7 +4,7 @@ import { EditorView, keymap } from '@codemirror/view'
 import { defaultKeymap, history } from '@codemirror/commands'
 import Panel from '../common/Panel'
 import type { PanelId } from '../../stores/useFocusStore'
-import { useInputStore } from '@renderer/stores/useInputStore'
+import { useInputStore } from '@renderer/stores/usePoiesisStore'
 
 interface LivePreviewProps {
   panelId?: PanelId

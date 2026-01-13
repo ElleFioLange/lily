@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { useInputStore } from './useInputStore'
+import { usePoiesisStore } from './usePoiesisStore'
 import parseInput, { ParseHydraResult } from '@renderer/utils/parseInput'
 
 interface HydraState {
@@ -40,8 +40,8 @@ export const useHydraStore = create<HydraState>((set, get) => ({
   setError: (error) => set({ lastError: error }),
 
   evaluateShader: async () => {
-    const { input } = useInputStore.getState()
-    const hydraParams = parseInput(input, 'hydra') as any as ParseHydraResult
+    const { poiesis } = usePoiesisStore.getState()
+    const hydraParams = parseInput(poiesis, 'hydra') as any as ParseHydraResult
     const paramPrefix = hydraParams.reduce(
       (prev, { name, value }) => prev + `let ${name} = ${value}\n`,
       ''
