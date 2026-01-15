@@ -1,42 +1,41 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { keyRegex } from '@renderer/utils/parseInput'
 // import KeywordRenderer from './KeywordRenderer'
-import { usePoiesisStore } from '@renderer/stores/usePoiesisStore'
-import { useConfigurationStore } from '@renderer/stores/useConfigurationStore'
-import KeywordRenderer from './KeywordRenderer'
+import { usePoiesisStore } from '@renderer/poiesis/store'
+import { useConfigurationStore } from '@renderer/config/store'
+import KeywordRenderer from './components/KeywordRenderer'
 
 export default function PoiesisRenderer() {
   const overlayRef = useRef<HTMLDivElement>(null)
-  const { poiesis } = usePoiesisStore()
+  const { poiesis, triggerAnimationFlag, setTriggerAnimationFlag, scrollPercentage } =
+    usePoiesisStore()
   const { config } = useConfigurationStore()
-  // const { currentText, config, scrollPercentage, triggerAnimationFlag, resetAnimationFlag } =
 
   // TODO
   // Handle scroll updates
-  // useEffect(() => {
-  //   if (!overlayRef.current) return
-  //   const overlay = overlayRef.current
-  //   const maxScroll = overlay.scrollHeight + overlay.clientHeight
-  //   const targetScroll = maxScroll * scrollPercentage
-  //   overlay.scrollTop = targetScroll
-  // }, [scrollPercentage])
+  useEffect(() => {
+    if (!overlayRef.current) return
+    const overlay = overlayRef.current
+    const maxScroll = overlay.scrollHeight + overlay.clientHeight
+    const targetScroll = maxScroll * scrollPercentage
+    overlay.scrollTop = targetScroll
+  }, [scrollPercentage])
 
-  // TODO
   // Handle animation trigger
-  // useEffect(() => {
-  //   if (!triggerAnimationFlag || !overlayRef.current) return
+  useEffect(() => {
+    if (!triggerAnimationFlag || !overlayRef.current) return
 
-  //   const overlay = overlayRef.current
-  //   // Reset animation
-  //   overlay.style.animation = 'none'
-  //   // Force reflow to restart animation
-  //   void overlay.offsetHeight
-  //   // Apply animation
-  //   overlay.style.animation = '2s 0s ease-out 1 trigger'
+    const overlay = overlayRef.current
+    // Reset animation
+    overlay.style.animation = 'none'
+    // Force reflow to restart animation
+    void overlay.offsetHeight
+    // Apply animation
+    overlay.style.animation = '2s 0s ease-out 1 trigger'
 
-  //   // Reset the flag
-  //   resetAnimationFlag()
-  // }, [triggerAnimationFlag, resetAnimationFlag])
+    // Reset the flag
+    setTriggerAnimationFlag(false)
+  }, [setTriggerAnimationFlag, triggerAnimationFlag])
 
   // Parse text and render content
   const renderContent = () => {
@@ -108,6 +107,7 @@ export default function PoiesisRenderer() {
       elements.push(<span key="text-end">{poiesis.slice(marker)}</span>)
     }
 
+    console.log(elements)
     return elements
   }
 
@@ -119,7 +119,7 @@ export default function PoiesisRenderer() {
       <div
         ref={overlayRef}
         id="text-overlay"
-        className="w-full max-h-full overflow-y-auto text-center text-5xl pointer-events-none z-10 p-8 wrap-break-word whitespace-pre-wrap leading-[115%]"
+        className="w-full max-h-full overflow-y-auto text-stone-50 text-center text-5xl pointer-events-none z-10 p-8 wrap-break-word whitespace-pre-wrap leading-[115%]"
       >
         {renderContent()}
       </div>

@@ -1,8 +1,8 @@
 import { useRef, useState, useCallback } from 'react'
-import Panel from '../common/Panel'
+import Panel from '@renderer/components/common/Panel'
 import ConfigEditor, { ConfigEditorRef } from './Editor'
 import Navigation from './Navigation'
-import { useConfigurationStore } from '../../stores/useConfigurationStore'
+import { useConfigurationStore } from '../store'
 
 // TODO make the file system more forgiving for saving with errors
 

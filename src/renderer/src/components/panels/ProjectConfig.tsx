@@ -5,7 +5,7 @@ import { useFocusStore } from '../../stores/useFocusStore'
 import YAMLEditor, { type YAMLEditorRef } from '../config/Editor'
 import JavaScriptEditor from '../JavaScriptEditor'
 import YAMLNavigation from '../config/Navigation'
-import { useConfigurationStore } from '../../stores/useConfigurationStore'
+import { useConfigurationStore } from '../../config/store'
 import { useHydraStore } from '@renderer/stores/useHydraStore'
 
 interface ProjectConfigProps {

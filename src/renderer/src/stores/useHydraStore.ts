@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { usePoiesisStore } from './usePoiesisStore'
+import { usePoiesisStore } from '../poiesis/store'
 import parseInput, { ParseHydraResult } from '@renderer/utils/parseInput'
 
 interface HydraState {

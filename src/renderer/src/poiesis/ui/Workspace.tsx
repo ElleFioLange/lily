@@ -2,13 +2,12 @@ import { useRef, useEffect } from 'react'
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { defaultKeymap, history } from '@codemirror/commands'
-import { usePoiesisStore } from '@renderer/stores/usePoiesisStore'
+import { usePoiesisStore } from '@renderer/poiesis/store'
 
 export default function PoiesisWorkspace() {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
-  const poiesis = usePoiesisStore((state) => state.poiesis)
-  const setPoiesis = usePoiesisStore((state) => state.setPoiesis)
+  const { poiesis, setPoiesis, setScrollPercentage } = usePoiesisStore()
 
   useEffect(() => {
     if (!editorRef.current) return
@@ -96,9 +95,32 @@ export default function PoiesisWorkspace() {
     }
   }, [poiesis])
 
+  const handleScroll = () => {
+    const editor = editorRef.current!
+    const { clientHeight, scrollTop } = editor
+
+    const container = editor.children[0]
+    const containerHeight = container.clientHeight
+
+    const maxScroll = containerHeight - clientHeight
+
+    // From 0 to 1
+    const scrollPercentage = scrollTop / maxScroll
+
+    setScrollPercentage(scrollPercentage)
+  }
+
   return (
-    <div className="size-full flex items-center relative cursor-text">
-      <div ref={editorRef} className="w-full max-h-full overflow-auto outline-none relative" />
+    <div
+      className="size-full flex items-center relative cursor-text"
+      onClick={() => viewRef.current?.focus()}
+    >
+      <div
+        ref={editorRef}
+        onWheel={handleScroll}
+        onScroll={handleScroll}
+        className="w-full max-h-full overflow-auto outline-none relative"
+      />
     </div>
   )
 }

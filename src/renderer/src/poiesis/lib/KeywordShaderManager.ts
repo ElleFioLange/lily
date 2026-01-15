@@ -1,4 +1,4 @@
-import type { KeywordShaderInstance } from './types'
+import type { KeywordShaderInstance } from '../ui/components/poiesis/types'
 import { ShaderCompiler } from './ShaderCompiler'
 import { EFFECT_PRESETS } from './effectPresets'
 import { AudioFeatures } from '@renderer/audio/types'

@@ -3,10 +3,10 @@
 import HydraPlugin from '@plugins/hydra'
 import AbletonPlugin from '@plugins/ableton'
 
-import PoiesisWorkspace from './poiesis/Workspace'
+import PoiesisWorkspace from '@renderer/poiesis/ui/Workspace'
+import ConfigWorkspace from '@renderer/config/ui/Workspace'
 import Header from './common/Header'
 import { useState } from 'react'
-import ConfigWorkspace from './config/Workspace'
 
 const surfaces = ['Poiesis', 'Hydra', 'Ableton', 'Config']
 
