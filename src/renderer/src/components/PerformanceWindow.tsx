@@ -44,6 +44,28 @@ export function PerformanceWindow() {
     win.document.body.style.width = '100vw'
     win.document.body.style.height = '100vh'
 
+    // Copy stylesheets from parent window to child window
+    Array.from(document.styleSheets).forEach((stylesheet) => {
+      try {
+        if (stylesheet.href) {
+          // External stylesheet - create link element
+          const link = win.document.createElement('link')
+          link.rel = 'stylesheet'
+          link.href = stylesheet.href
+          win.document.head.appendChild(link)
+        } else if (stylesheet.cssRules) {
+          // Inline stylesheet - copy rules
+          const style = win.document.createElement('style')
+          Array.from(stylesheet.cssRules).forEach((rule) => {
+            style.appendChild(win.document.createTextNode(rule.cssText))
+          })
+          win.document.head.appendChild(style)
+        }
+      } catch (e) {
+        console.warn('Could not copy stylesheet:', e)
+      }
+    })
+
     setChildWindow(win)
     setWindowRef(win)
     setContainer(win.document.body)
