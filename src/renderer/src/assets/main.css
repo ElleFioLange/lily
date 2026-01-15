@@ -18,6 +18,21 @@
     scrollbar-color: var(--color-stone-100) #00000000;
   }
 
+  input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    @apply h-px bg-stone-400 cursor-pointer;
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    @apply h-3 w-1 bg-stone-200;
+  }
+
+  input {
+  }
+
   #root {
     @apply w-screen h-screen overflow-hidden;
   }
