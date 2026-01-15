@@ -1,6 +1,40 @@
+import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
 import Header from './common/Header'
+// import { Compositor } from '@renderer/graphics/Compositor'
+import { useState } from 'react'
+
+type SourceControlProps = {
+  name: string
+  alpha: number
+  enabled: boolean
+  setAlpha: (alpha: number) => void
+  setEnabled: (enabled: boolean) => void
+}
+
+function SourceControl({ name, alpha, enabled, setAlpha, setEnabled }: SourceControlProps) {
+  return (
+    <div className="grid grid-cols-[72px_auto] gap-2">
+      <span
+        className={`cursor-pointer ${enabled ? 'hover:line-through' : 'line-through'}`}
+        onClick={() => setEnabled(!enabled)}
+      >
+        {name}
+      </span>
+      <input
+        type="range"
+        value={alpha}
+        onChange={({ target: { value } }) => setAlpha(parseFloat(value))}
+        min={0}
+        max={1}
+      />
+    </div>
+  )
+}
 
 export default function Mixer() {
+  const { params, updateParams } = useGraphicsStore()
+  const [test, setTest] = useState(true)
+
   return (
     <>
       <Header options={[]} active="test 1" title="MIXER" setActive={() => {}} />
@@ -12,10 +46,29 @@ export default function Mixer() {
           <button>preset 2</button>
         </div>
         <span className="font-bold my-1 text-sm">EDITORS</span>
-        <div className="grid grid-cols-[72px_auto] gap-2">
+        {Object.entries(params).map(([id, { alpha, enabled }]) => {
+          return (
+            <SourceControl
+              key={id}
+              name="Poiesis"
+              alpha={alpha || 0}
+              enabled={enabled || false}
+              setAlpha={(alpha) => updateParams(id, { alpha })}
+              setEnabled={(enabled) => updateParams(id, { enabled })}
+            />
+          )
+        })}
+        {/* <div className="grid grid-cols-[72px_auto] gap-2">
           Poiesis
           <input type="range" />
-        </div>
+          </div> */}
+        <SourceControl
+          name="Poiesis"
+          alpha={0}
+          enabled={test}
+          setAlpha={() => {}}
+          setEnabled={setTest}
+        />
         <div className="grid grid-cols-[72px_auto] gap-2">
           Hydra
           <input type="range" />

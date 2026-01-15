@@ -1,9 +1,9 @@
-import type { KeywordShaderInstance } from '../ui/components/poiesis/types'
 import { ShaderCompiler } from './ShaderCompiler'
 import { EFFECT_PRESETS } from './effectPresets'
 import { AudioFeatures } from '@renderer/audio/types'
 import { AudioManager } from '@renderer/audio/AudioManager'
 import { AudioReactivityConfig } from 'src/types/config'
+import { KeywordShaderInstance } from './types'
 
 /**
  * Manages WebGL shader instances for keywords with audio reactivity

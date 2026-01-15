@@ -6,21 +6,24 @@ import { setupOSCListeners } from './stores/useOSCStore'
 import { setupCameraListeners } from './stores/useCameraStore'
 import { usePerformanceStore } from './stores/usePerformanceStore'
 import HydraPlugin from '@plugins/hydra'
-import { initCompositor } from './lib/Compositor'
+import { useGraphicsStore } from './stores/useGraphicsStore'
+import { Compositor } from './graphics/Compositor'
 
 function App(): React.JSX.Element {
   const togglePerformanceWindow = usePerformanceStore((state) => state.toggleWindow)
+  const { setCompositorRef } = useGraphicsStore()
 
   // Initialize keyboard shortcuts
   // useKeyboardShortcuts()
 
   useEffect(() => {
-    // Setup OSC event listeners when component mounts
-    setupOSCListeners()
-
-    initCompositor()
+    const compositor = new Compositor()
+    setCompositorRef(compositor)
 
     HydraPlugin.init()
+
+    // Setup OSC event listeners when component mounts
+    setupOSCListeners()
 
     // Setup camera streaming listeners
     setupCameraListeners()
@@ -32,7 +35,11 @@ function App(): React.JSX.Element {
 
     window.api.osc.send('/request/connection/confirm')
 
-    return unsubscribe
+    return () => {
+      unsubscribe()
+      setCompositorRef(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [togglePerformanceWindow])
 
   return (

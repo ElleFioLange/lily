@@ -1,6 +1,6 @@
 import Hydra from 'hydra-synth'
 import { useHydraStore } from './store'
-import { getCompositor, getWindow } from '@plugins/helpers'
+import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
 
 export default function init() {
   const canvas = document.createElement('canvas')
@@ -22,13 +22,11 @@ export default function init() {
   store.setHydra(hydra)
   store.setCanvas(canvas)
 
-  const compositor = getCompositor()
-  compositor?.addSource({
-    id: 'hydra',
-    canvas,
-    alpha: 1,
-    zIndex: 0,
-    blendMode: 'source-over',
-    enabled: true
-  })
+  const { addSource, compositorRef } = useGraphicsStore.getState()
+
+  addSource('hydra', canvas)
+
+  console.log('hydra plugin init')
+  console.log(compositorRef)
+  console.log(compositorRef?.getSources())
 }

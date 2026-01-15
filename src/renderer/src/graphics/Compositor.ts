@@ -1,5 +1,3 @@
-import { usePerformanceStore } from '@renderer/stores/usePerformanceStore'
-
 /**
  * CompositorSource represents a canvas that can be blended into the compositor output
  */
@@ -12,6 +10,14 @@ export interface CompositorSource {
   enabled: boolean
 }
 
+export interface CompositorOutput {
+  id: string
+  canvas: HTMLCanvasElement
+  ctx: CanvasRenderingContext2D
+  window: Window
+  animationFrameId: number | null
+}
+
 /**
  * Compositor blends multiple canvas sources into a single output canvas.
  * Uses the target window's requestAnimationFrame for proper timing when
@@ -19,19 +25,8 @@ export interface CompositorSource {
  */
 export class Compositor {
   private sources: Map<string, CompositorSource> = new Map()
-  private outputs: Map<string, { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D }> =
-    new Map()
-  private targetWindow: Window | null = null
-  private animationFrameId: number | null = null
-  private isRunning: boolean = false
-
-  attachWindow(window: Window): void {
-    this.targetWindow = window
-  }
-
-  detachWindow() {
-    this.targetWindow = null
-  }
+  private outputs: Map<string, CompositorOutput> = new Map()
+  private runningTracker: Map<string, boolean> = new Map()
 
   /**
    * Add a canvas source to the compositor
@@ -57,36 +52,15 @@ export class Compositor {
     }
   }
 
-  addOutput(output: { id: string; canvas: HTMLCanvasElement }): void {
+  addOutput(output: Omit<CompositorOutput, 'ctx' | 'animationFrameId'>): void {
     const { id, canvas } = output
     const ctx = canvas.getContext('2d')
     if (!ctx) throw new Error('Unable to get rendering context for provided output')
-    this.outputs.set(id, { canvas, ctx })
+    this.outputs.set(id, { ...output, ctx, animationFrameId: null })
   }
 
   removeOutput(id: string): void {
     this.outputs.delete(id)
-  }
-
-  /**
-   * Set the alpha (opacity) of a source
-   */
-  setSourceAlpha(id: string, alpha: number): void {
-    this.updateSource(id, { alpha: Math.max(0, Math.min(1, alpha)) })
-  }
-
-  /**
-   * Enable or disable a source
-   */
-  setSourceEnabled(id: string, enabled: boolean): void {
-    this.updateSource(id, { enabled })
-  }
-
-  /**
-   * Set the z-index (layer order) of a source
-   */
-  setSourceZIndex(id: string, zIndex: number): void {
-    this.updateSource(id, { zIndex })
   }
 
   /**
@@ -126,17 +100,20 @@ export class Compositor {
   /**
    * Start the render loop using the target window's RAF
    */
-  startRenderLoop(): void {
-    if (this.isRunning) return
-    this.isRunning = true
+  startRenderLoop(outputId: string): void {
+    const output = this.outputs.get(outputId)
+    if (output === undefined) throw new Error('No output found with id ' + outputId)
+
+    if (this.runningTracker.get(outputId)) return
+    this.runningTracker.set(outputId, true)
 
     const loop = (): void => {
-      if (!this.isRunning || !this.targetWindow) return
+      if (!this.runningTracker.get(outputId) || !output?.window) return
 
       this.render()
 
       // Use target window's RAF for proper timing
-      this.animationFrameId = this.targetWindow.requestAnimationFrame(loop)
+      output.animationFrameId = output.window.requestAnimationFrame(loop)
     }
 
     loop()
@@ -145,11 +122,13 @@ export class Compositor {
   /**
    * Stop the render loop
    */
-  stopRenderLoop(): void {
-    this.isRunning = false
-    if (this.animationFrameId !== null) {
-      this.targetWindow?.cancelAnimationFrame(this.animationFrameId)
-      this.animationFrameId = null
+  stopRenderLoop(outputId: string): void {
+    const output = this.outputs.get(outputId)
+    if (output === undefined) throw new Error('No output found with id ' + outputId)
+    this.runningTracker.set(outputId, false)
+    if (output.animationFrameId !== null) {
+      output.window?.cancelAnimationFrame(output.animationFrameId)
+      output.animationFrameId = null
     }
   }
 
@@ -168,17 +147,27 @@ export class Compositor {
   }
 
   /**
+   * Get all current outputs
+   */
+  getOutputs(): CompositorOutput[] {
+    return Array.from(this.outputs.values())
+  }
+
+  /**
+   * Get a specific output by ID
+   */
+  getOutput(id: string): CompositorOutput | undefined {
+    return this.outputs.get(id)
+  }
+
+  /**
    * Clean up and stop rendering
    */
   destroy(): void {
-    this.stopRenderLoop()
+    this.outputs.entries().forEach(([outputId]) => {
+      this.stopRenderLoop(outputId)
+    })
+    this.outputs.clear()
     this.sources.clear()
   }
-}
-
-export function initCompositor() {
-  const compositor = new Compositor()
-  compositor.startRenderLoop()
-
-  usePerformanceStore.getState().setCompositorRef(compositor)
 }

@@ -15,6 +15,7 @@ export default function Renderer(props: HTMLProps<HTMLCanvasElement>) {
     canvas.height = 1080
 
     const animate = () => {
+      ctx?.clearRect(0, 0, 1920, 1080)
       ctx?.drawImage(hydraCanvas, 0, 0)
       const rafId = requestAnimationFrame(animate)
       return rafId

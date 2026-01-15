@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { usePerformanceStore } from '../../stores/usePerformanceStore'
-import HydraPlugin from '@plugins/hydra'
-import PoiesisRenderer from '../../surfaces/poiesis/ui/Renderer'
+// import HydraPlugin from '@plugins/hydra'
+// import PoiesisRenderer from '../../surfaces/poiesis/ui/Renderer'
+import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
 
 /**
  * PerformanceWindow renders a full-screen compositor canvas into a child window.
@@ -10,7 +11,8 @@ import PoiesisRenderer from '../../surfaces/poiesis/ui/Renderer'
  * The child window runs in the same renderer process, sharing all stores.
  */
 export function PerformanceWindow() {
-  const { isOpen, closeWindow, setWindowRef, compositorRef } = usePerformanceStore()
+  const { isOpen, closeWindow, setWindowRef } = usePerformanceStore()
+  const { addOutput, compositorRef } = useGraphicsStore()
   const [childWindow, setChildWindow] = useState<Window | null>(null)
   const [container, setContainer] = useState<HTMLElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -83,11 +85,14 @@ export function PerformanceWindow() {
       }
       setWindowRef(null)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, closeWindow, setWindowRef])
 
   // Initialize compositor when canvas is ready
   useEffect(() => {
+    console.log('performance window approach use effect')
     if (!childWindow || !container) return
+    console.log('performance window enter use effect')
 
     // Wait for next frame to ensure canvas is mounted
     const timeoutId = setTimeout(() => {
@@ -101,7 +106,10 @@ export function PerformanceWindow() {
       canvas.width = childWindow.innerWidth
       canvas.height = childWindow.innerHeight
 
-      compositorRef?.addOutput({ id: 'performance', canvas })
+      addOutput({ id: 'performance', canvas, window })
+      compositorRef?.startRenderLoop('performance')
+      console.log('performance window')
+      console.log(compositorRef?.getOutputs())
       // Handle resize
       const handleResize = (): void => {
         canvas.width = childWindow.innerWidth
@@ -117,7 +125,7 @@ export function PerformanceWindow() {
     return () => {
       clearTimeout(timeoutId)
     }
-  }, [childWindow, container, compositorRef])
+  }, [addOutput, childWindow, container])
 
   // Don't render if not open or container not ready
   if (!isOpen || !container) return null
@@ -125,22 +133,22 @@ export function PerformanceWindow() {
   // Render canvas into child window via portal
   return createPortal(
     // <Workspace />,
-    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
-        {HydraPlugin.Renderer && <HydraPlugin.Renderer />}
-      </div>
-      <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
-        <PoiesisRenderer />
-      </div>
-    </div>,
-    // <canvas
-    //   ref={canvasRef}
-    //   style={{
-    //     width: '100%',
-    //     height: '100%',
-    //     display: 'block'
-    //   }}
-    // />,
+    // <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+    //   <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
+    //     {HydraPlugin.Renderer && <HydraPlugin.Renderer />}
+    //   </div>
+    //   <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
+    //     <PoiesisRenderer />
+    //   </div>
+    // </div>,
+    <canvas
+      ref={canvasRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'block'
+      }}
+    />,
     container
   )
 }
