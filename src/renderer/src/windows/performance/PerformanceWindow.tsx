@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { usePerformanceStore } from '../stores/usePerformanceStore'
+import { usePerformanceStore } from '../../stores/usePerformanceStore'
 import HydraPlugin from '@plugins/hydra'
-import PoiesisRenderer from '../poiesis/ui/Renderer'
+import PoiesisRenderer from '../../poiesis/ui/Renderer'
 
 /**
  * PerformanceWindow renders a full-screen compositor canvas into a child window.

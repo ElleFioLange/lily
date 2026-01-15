@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import Layout from './components/Layout'
-import { PerformanceWindow } from './components/PerformanceWindow'
+import { PerformanceWindow } from './windows/performance/PerformanceWindow'
 import { setupOSCListeners } from './stores/useOSCStore'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { setupCameraListeners } from './stores/useCameraStore'
