@@ -58,7 +58,8 @@ export default function Workspace({ panelId }: LivePreviewProps) {
           backgroundColor: '#78716cd0 !important' // stone-500/50
         },
         '& .cm-line': {
-          backgroundColor: '#29252440' // stone-800/25
+          width: 'fit-content',
+          backgroundColor: '#29252480' // stone-800/50
         },
         '.cm-selectionBackground': {
           backgroundColor: '#44403c !important' // stone-700
@@ -80,6 +81,7 @@ export default function Workspace({ panelId }: LivePreviewProps) {
         { tag: tags.operator, color: '#38bdf8' }, // sky-400
         { tag: tags.punctuation, color: '#fcd34d' }, // amber-300
         { tag: tags.function(tags.variableName), color: '#22d3ee' }, // cyan-400
+        { tag: tags.function(tags.propertyName), color: '#a3e635' }, // lime-400
         { tag: tags.variableName, color: '#d6d3d1' }, // stone-300
         { tag: tags.comment, color: '#d6d3d1', fontStyle: 'italic' } // stone-300
       ])
