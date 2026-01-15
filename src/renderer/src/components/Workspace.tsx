@@ -3,8 +3,8 @@
 import HydraPlugin from '@plugins/hydra'
 import AbletonPlugin from '@plugins/ableton'
 
-import PoiesisWorkspace from '@renderer/poiesis/ui/Workspace'
-import ConfigWorkspace from '@renderer/config/ui/Workspace'
+import PoiesisWorkspace from '@renderer/surfaces/poiesis/ui/Workspace'
+import ConfigWorkspace from '@renderer/surfaces/config/ui/Workspace'
 import Header from './common/Header'
 import { useState } from 'react'
 

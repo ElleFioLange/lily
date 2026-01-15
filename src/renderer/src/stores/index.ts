@@ -1,4 +1,4 @@
-import { usePoiesisStore } from '@renderer/poiesis/store'
-import { useConfigurationStore } from '../config/store'
+import { usePoiesisStore } from '@renderer/surfaces/poiesis/store'
+import { useConfigurationStore } from '../surfaces/config/store'
 
 export { usePoiesisStore, useConfigurationStore }

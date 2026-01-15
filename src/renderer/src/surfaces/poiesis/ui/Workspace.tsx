@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react'
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { defaultKeymap, history } from '@codemirror/commands'
-import { usePoiesisStore } from '@renderer/poiesis/store'
+import { usePoiesisStore } from '@renderer/surfaces/poiesis/store'
 
 export default function PoiesisWorkspace() {
   const editorRef = useRef<HTMLDivElement>(null)

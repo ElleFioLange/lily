@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useFocusStore, type PanelId, type ProjectConfigTab } from '../stores/useFocusStore'
-import { usePoiesisStore } from '@renderer/poiesis/store'
+import { usePoiesisStore } from '@renderer/surfaces/poiesis/store'
 import { useHydraStore } from '@renderer/stores/useHydraStore'
 
 // TODO refactor this so keyboard shortcuts are able to be defined within panel components too

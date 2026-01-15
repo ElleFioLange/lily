@@ -1,8 +1,8 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { keyRegex } from '@renderer/utils/parseInput'
 // import KeywordRenderer from './KeywordRenderer'
-import { usePoiesisStore } from '@renderer/poiesis/store'
-import { useConfigurationStore } from '@renderer/config/store'
+import { usePoiesisStore } from '@renderer/surfaces/poiesis/store'
+import { useConfigurationStore } from '@renderer/surfaces/config/store'
 import KeywordRenderer from './components/KeywordRenderer'
 
 export default function PoiesisRenderer() {

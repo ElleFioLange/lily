@@ -1,7 +1,7 @@
 import { ConfigurationJSON } from 'src/types/config'
 import { useHydraStore } from './store'
 import loadScript from '@renderer/utils/loadScript'
-import { useConfigurationStore } from '@renderer/config/store'
+import { useConfigurationStore } from '@renderer/surfaces/config/store'
 import { keyRegex } from '@renderer/utils/parseInput'
 
 function parseHydra(input: string) {
