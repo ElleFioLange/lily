@@ -5,7 +5,7 @@ export default function Mixer() {
     <>
       <Header options={[]} active="test 1" title="MIXER" setActive={() => {}} />
 
-      <div className="max-h-full p-4 pb-0 [&::last-child]:mb-4 overflow-auto no-scrollbar text-xs flex flex-col gap-1 *:align-center font-neon">
+      <div className="max-h-full px-4 pt-2 pb-0 [&::last-child]:mb-4 overflow-auto no-scrollbar text-xs flex flex-col gap-1 *:align-center font-neon">
         <span className="font-bold my-1 text-sm">PRESETS</span>
         <div className="flex gap-2 overflow-auto">
           <button>preset 1</button>
