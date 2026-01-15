@@ -15,7 +15,7 @@ export default function Header(props: HeaderProps) {
         {options.map((option) => (
           <div className="relative" key={option}>
             <button
-              className={`text-xs ${option === active ? '' : 'cursor-pointer hover:underline'}`}
+              className={`text-xs border-none bg-transparent ${option === active ? 'cursor-default' : 'hover:underline'}`}
               onClick={() => setActive(option)}
             >
               {option}

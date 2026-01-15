@@ -18,19 +18,20 @@
     scrollbar-color: var(--color-stone-100) #00000000;
   }
 
+  button {
+    @apply border border-stone-700 bg-stone-900/50 px-1 place-items-center cursor-pointer hover:bg-stone-500 transition-colors;
+  }
+
   input[type='range'] {
     -webkit-appearance: none;
     appearance: none;
-    @apply h-px bg-stone-400 cursor-pointer;
+    @apply h-px my-2 bg-stone-400 cursor-pointer;
   }
 
   input[type='range']::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     @apply h-3 w-1 bg-stone-200;
-  }
-
-  input {
   }
 
   #root {
