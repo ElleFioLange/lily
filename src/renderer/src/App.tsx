@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import Layout from './components/Layout'
 import { PerformanceWindow } from './windows/performance/PerformanceWindow'
 import { setupOSCListeners } from './stores/useOSCStore'
-import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+// import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { setupCameraListeners } from './stores/useCameraStore'
 import { usePerformanceStore } from './stores/usePerformanceStore'
 import HydraPlugin from '@plugins/hydra'
@@ -12,7 +12,7 @@ function App(): React.JSX.Element {
   const togglePerformanceWindow = usePerformanceStore((state) => state.toggleWindow)
 
   // Initialize keyboard shortcuts
-  useKeyboardShortcuts()
+  // useKeyboardShortcuts()
 
   useEffect(() => {
     // Setup OSC event listeners when component mounts
