@@ -29,6 +29,8 @@ interface GraphicsState {
   removeSource: (id: string) => void
   addOutput: (output: { id: string; canvas: HTMLCanvasElement; window: Window }) => void
   removeOutput: (id: string) => void
+  startRenderLoop: (outputId: string) => void
+  stopRenderLoop: (outputId: string) => void
 }
 
 export const useGraphicsStore = create<GraphicsState>((set, get) => ({
@@ -77,5 +79,15 @@ export const useGraphicsStore = create<GraphicsState>((set, get) => ({
   removeOutput: (id) => {
     const { compositorRef } = get()
     compositorRef?.removeOutput(id)
+  },
+
+  startRenderLoop: (outputId) => {
+    const { compositorRef } = get()
+    compositorRef?.startRenderLoop(outputId)
+  },
+
+  stopRenderLoop: (outputId) => {
+    const { compositorRef } = get()
+    compositorRef?.stopRenderLoop(outputId)
   }
 }))

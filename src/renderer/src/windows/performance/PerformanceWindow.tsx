@@ -12,7 +12,7 @@ import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
  */
 export function PerformanceWindow() {
   const { isOpen, closeWindow, setWindowRef } = usePerformanceStore()
-  const { addOutput, compositorRef } = useGraphicsStore()
+  const { addOutput, startRenderLoop } = useGraphicsStore()
   const [childWindow, setChildWindow] = useState<Window | null>(null)
   const [container, setContainer] = useState<HTMLElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -90,9 +90,9 @@ export function PerformanceWindow() {
 
   // Initialize compositor when canvas is ready
   useEffect(() => {
-    console.log('performance window approach use effect')
     if (!childWindow || !container) return
-    console.log('performance window enter use effect')
+
+    const outputId = 'performance'
 
     // Wait for next frame to ensure canvas is mounted
     const timeoutId = setTimeout(() => {
@@ -106,10 +106,9 @@ export function PerformanceWindow() {
       canvas.width = childWindow.innerWidth
       canvas.height = childWindow.innerHeight
 
-      addOutput({ id: 'performance', canvas, window })
-      compositorRef?.startRenderLoop('performance')
-      console.log('performance window')
-      console.log(compositorRef?.getOutputs())
+      addOutput({ id: outputId, canvas, window })
+      startRenderLoop(outputId)
+
       // Handle resize
       const handleResize = (): void => {
         canvas.width = childWindow.innerWidth
@@ -125,7 +124,7 @@ export function PerformanceWindow() {
     return () => {
       clearTimeout(timeoutId)
     }
-  }, [addOutput, childWindow, container])
+  }, [addOutput, childWindow, container, startRenderLoop])
 
   // Don't render if not open or container not ready
   if (!isOpen || !container) return null
