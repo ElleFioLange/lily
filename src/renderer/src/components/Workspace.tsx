@@ -2,10 +2,42 @@
 
 import Header from './common/Header'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+
+function AddPlugin() {
+  const [open, setOpen] = useState(false)
+  const { registered, loadPlugin } = usePluginsStore()
+  return (
+    <div className="relative mt-1">
+      {open ? (
+        <ul className="w-40 absolute text-xs">
+          {Object.values(registered).map((plugin) => (
+            <button
+              className="top-0 left-0 w-full text-left block"
+              key={plugin.manifest.id}
+              onClick={() => {
+                loadPlugin(plugin.manifest.id)
+                setOpen(false)
+              }}
+            >
+              {plugin.manifest.name}
+            </button>
+          ))}
+        </ul>
+      ) : (
+        <button
+          className="size-4.5 p-0 flex justify-center items-center place-self-center my-auto"
+          onClick={() => setOpen(true)}
+        >
+          +
+        </button>
+      )}
+    </div>
+  )
+}
 
 export default function Workspace() {
-  const { active, focused, loadPlugin } = usePluginsStore()
+  const { active, focused } = usePluginsStore()
 
   const focusedSurface = useMemo(() => {
     return Object.values(active).find(({ instanceId }) => instanceId === focused)
@@ -14,7 +46,7 @@ export default function Workspace() {
   return (
     <div className="size-full flex flex-col">
       <Header title="LILY">
-        <button onClick={() => loadPlugin('hydra')}>+</button>
+        <AddPlugin />
       </Header>
       <div className="relative grow">
         {focusedSurface === undefined ? (
@@ -24,7 +56,10 @@ export default function Workspace() {
             {/* Renderer layers (no interaction) */}
             {focusedSurface.Renderer ? (
               <div className="absolute size-full pointer-events-none">
-                <focusedSurface.Renderer instanceId={focusedSurface.instanceId} />
+                <focusedSurface.Renderer
+                  key={focusedSurface.instanceId}
+                  instanceId={focusedSurface.instanceId}
+                />
               </div>
             ) : null}
 
@@ -37,7 +72,10 @@ export default function Workspace() {
                   </button>
                 </div>
                 <div className="relative overflow-hidden">
-                  <focusedSurface.Workspace instanceId={focusedSurface.instanceId} />
+                  <focusedSurface.Workspace
+                    key={focusedSurface.instanceId}
+                    instanceId={focusedSurface.instanceId}
+                  />
                 </div>
               </div>
             ) : null}
