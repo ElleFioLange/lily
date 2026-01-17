@@ -21,8 +21,16 @@ export const usePluginsStore = create<PluginsManagerStore>((set, get) => ({
 
   registerPlugin: (plugin) => {
     const { registered } = get()
+
+    // Prevent duplicate registration
+    if (registered[plugin.manifest.id]) {
+      console.warn(`[PluginsStore] Plugin "${plugin.manifest.id}" already registered, skipping`)
+      return
+    }
+
     const newRegistered = { ...registered, [plugin.manifest.id]: plugin }
     set({ registered: newRegistered })
+    console.log(`[PluginsStore] Registered: ${plugin.manifest.name}`)
   },
 
   loadPlugin: (pluginId) => {

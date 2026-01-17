@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Layout from './components/Layout'
 import { PerformanceWindow } from './windows/performance/PerformanceWindow'
 import { setupOSCListeners } from './stores/useOSCStore'
@@ -10,11 +10,13 @@ import { Compositor } from './graphics/Compositor'
 import PoiesisPlugin from './surfaces/poiesis'
 import ConfigPlugin from './surfaces/config'
 import { usePluginsStore } from './stores/usePluginsStore'
+import { loadPlugins } from './utils/loadPlugins'
 
 function App(): React.JSX.Element {
   const togglePerformanceWindow = usePerformanceStore((state) => state.toggleWindow)
   const { setCompositorRef } = useGraphicsStore()
   const { registerPlugin } = usePluginsStore()
+  const [pluginsLoaded, setPluginsLoaded] = useState(false)
 
   // Initialize keyboard shortcuts
   // useKeyboardShortcuts()
@@ -28,7 +30,16 @@ function App(): React.JSX.Element {
     registerPlugin(PoiesisPlugin)
     registerPlugin(ConfigPlugin)
 
-    // Register installed plugins (load dynamically)
+    // Dynamically load and register plugins from src/plugins/
+    loadPlugins()
+      .then((plugins) => {
+        plugins.forEach(registerPlugin)
+        setPluginsLoaded(true)
+      })
+      .catch((error) => {
+        console.error('[App] Plugin loading failed:', error)
+        setPluginsLoaded(true)
+      })
 
     // Setup OSC event listeners when component mounts
     setupOSCListeners()
@@ -49,6 +60,14 @@ function App(): React.JSX.Element {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [togglePerformanceWindow])
+
+  if (!pluginsLoaded) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-stone-950 text-stone-100">
+        Loading plugins...
+      </div>
+    )
+  }
 
   return (
     <>
