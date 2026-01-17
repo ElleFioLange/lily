@@ -21,11 +21,11 @@ interface GraphicsState {
 
   updateParams: (id: string, updates: Partial<MixerParams>) => void
   setCompositorRef: (compositor: Compositor | null) => void
-  addSource: (
-    id: string,
-    canvas: HTMLCanvasElement | OffscreenCanvas,
+  addSource: (source: {
+    id: string
+    canvas: HTMLCanvasElement | OffscreenCanvas
     initParams?: Partial<MixerParams>
-  ) => void
+  }) => void
   removeSource: (id: string) => void
   addOutput: (output: { id: string; canvas: HTMLCanvasElement; window: Window }) => void
   removeOutput: (id: string) => void
@@ -48,7 +48,7 @@ export const useGraphicsStore = create<GraphicsState>((set, get) => ({
 
   setCompositorRef: (compositorRef) => set({ compositorRef }),
 
-  addSource: (id, canvas, initParams) => {
+  addSource: ({ id, canvas, initParams }) => {
     const { compositorRef, params } = get()
     const source = {
       id,

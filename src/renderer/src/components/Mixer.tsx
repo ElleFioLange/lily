@@ -1,7 +1,7 @@
 import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
 import Header from './common/Header'
-// import { Compositor } from '@renderer/graphics/Compositor'
-import { useEffect } from 'react'
+import { usePluginsStore } from '@renderer/stores/usePluginsStore'
+import { useMemo } from 'react'
 
 type SourceControlProps = {
   name: string
@@ -15,7 +15,7 @@ function SourceControl({ name, alpha, enabled, setAlpha, setEnabled }: SourceCon
   return (
     <div className="grid grid-cols-[72px_auto] gap-2">
       <span
-        className={`c ursor-pointer ${enabled ? 'hover:line-through' : 'line-through'}`}
+        className={`cursor-pointer ${enabled ? 'hover:line-through' : 'line-through'}`}
         onClick={() => setEnabled(!enabled)}
       >
         {name}
@@ -24,6 +24,7 @@ function SourceControl({ name, alpha, enabled, setAlpha, setEnabled }: SourceCon
         type="range"
         value={alpha}
         onChange={({ target: { value } }) => setAlpha(parseFloat(value))}
+        step={0.01}
         min={0}
         max={1}
       />
@@ -33,8 +34,16 @@ function SourceControl({ name, alpha, enabled, setAlpha, setEnabled }: SourceCon
 
 export default function Mixer() {
   const { params, updateParams } = useGraphicsStore()
+  const { active } = usePluginsStore()
 
-  useEffect(() => {})
+  const sources = useMemo(() => {
+    return Object.entries(params).map(([id, { alpha, enabled }]) => ({
+      id,
+      name: active[id].manifest.name,
+      alpha,
+      enabled
+    }))
+  }, [params, active])
 
   return (
     <>
@@ -47,11 +56,11 @@ export default function Mixer() {
           <button>preset 2</button>
         </div>
         <span className="font-bold my-1 text-sm">EDITORS</span>
-        {Object.entries(params).map(([id, { alpha, enabled }]) => {
+        {sources.map(({ id, name, alpha, enabled }) => {
           return (
             <SourceControl
               key={id}
-              name="Poiesis"
+              name={name}
               alpha={alpha || 0}
               enabled={enabled || false}
               setAlpha={(alpha) => updateParams(id, { alpha })}
@@ -59,23 +68,7 @@ export default function Mixer() {
             />
           )
         })}
-        {/* <div className="grid grid-cols-[72px_auto] gap-2">
-          Poiesis
-          <input type="range" />
-          </div> */}
-        <div className="grid grid-cols-[72px_auto] gap-2">
-          Hydra
-          <input type="range" />
-        </div>
-        <div className="grid grid-cols-[72px_auto] gap-2">
-          Strudel
-          <input type="range" />
-        </div>
         <span className="font-bold my-1 text-sm">GRAPHICS</span>
-        <div className="grid grid-cols-[72px_auto] gap-2">
-          Hydra
-          <input type="range" />
-        </div>
       </div>
     </>
   )

@@ -24,9 +24,9 @@ export default function init(instanceId: string) {
   store.setHydra(hydra)
   store.setCanvas(canvas)
 
-  const { addSource, compositorRef } = useGraphicsStore.getState()
+  const { addSource } = useGraphicsStore.getState()
 
-  addSource('hydra', canvas)
+  addSource({ id: instanceId, canvas })
 
   return useHydraStore
 }

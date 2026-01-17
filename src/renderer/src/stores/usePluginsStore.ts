@@ -2,7 +2,7 @@ import { PluginDefinition, ActivePlugin } from '@plugins/helpers'
 import { create } from 'zustand'
 import { v4 as uuid } from 'uuid'
 
-interface PluginsManagerStore {
+interface PluginsManagerState {
   registered: Record<string, PluginDefinition>
   active: Record<string, ActivePlugin>
   focused: string | null
@@ -14,7 +14,7 @@ interface PluginsManagerStore {
   setFocused: (focused: string | null) => void
 }
 
-export const usePluginsStore = create<PluginsManagerStore>((set, get) => ({
+export const usePluginsStore = create<PluginsManagerState>((set, get) => ({
   registered: {},
   active: {},
   focused: null,
