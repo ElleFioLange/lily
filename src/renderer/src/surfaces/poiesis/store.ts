@@ -1,8 +1,9 @@
+import { PluginState } from 'src/types/plugins'
 import { create } from 'zustand'
 // import { useHydraStore } from './useHydraStore'
 // import parseInput, { ParseAbletonResult } from '@renderer/utils/parseInput'
 
-export interface PoiesisState {
+export interface PoiesisState extends PluginState {
   poiesis: string
   triggerAnimationFlag: boolean
   scrollPercentage: number
@@ -14,6 +15,7 @@ export interface PoiesisState {
 
 export const createPoiesisStore = (instanceId: string) => {
   return create<PoiesisState>((set) => ({
+    instanceId,
     poiesis: '',
     triggerAnimationFlag: false,
     scrollPercentage: 0,

@@ -5,9 +5,11 @@ import { StoreApi, UseBoundStore } from 'zustand'
 // TODO Force returning an OffscreenCanvas for the renderer and implement web workers for parallelization and performance gains
 
 // TODO Define required properties for a plugin's store
-export type PluginStore = {}
+export type PluginState = {
+  instanceId: string
+}
 
-export type UseStore<StoreType extends PluginStore> = UseBoundStore<StoreApi<StoreType>>
+export type UseStore<StoreType extends PluginState> = UseBoundStore<StoreApi<StoreType>>
 
 export type PluginManifest = {
   id: string
@@ -38,7 +40,7 @@ type PluginBase = {
 }
 
 // Plugin definition can either equal PluginBase or optionally define a StoreType to use a zustand store
-export type PluginDefinition<StoreType extends PluginStore | void = void> = StoreType extends void
+export type PluginDefinition<StoreType extends PluginState | void = void> = StoreType extends void
   ? PluginBase
   : PluginBase & {
       createStore: (instanceId: string) => UseStore<Exclude<StoreType, void>>
@@ -46,7 +48,7 @@ export type PluginDefinition<StoreType extends PluginStore | void = void> = Stor
 
 // An active instance of a plugin is required to have a useStore property if its corresponding PluginDefinition has a createStore property
 // Active instances must include an instanceId for managing multiple instances of the same plugin
-export type ActivePlugin<StoreType extends PluginStore | void = void> = Omit<
+export type ActivePlugin<StoreType extends PluginState | void = void> = Omit<
   PluginDefinition,
   'createStore'
 > & { instanceId: string } & (StoreType extends void

@@ -1,10 +1,9 @@
+import { PluginState } from 'src/types/plugins'
 import { create } from 'zustand'
 
 type HydraInstance = any
 
-export interface HydraState {
-  instanceId: string
-
+export interface HydraState extends PluginState {
   // Hydra objects
   hydra: HydraInstance | null
   canvas: null | HTMLCanvasElement
