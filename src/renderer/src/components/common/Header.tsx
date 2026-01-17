@@ -6,13 +6,16 @@ export type HeaderProps = {
   children?: ReactNode
 }
 
+// TODO need to figure out how to add horizontal scrolling
+// basic solution causes problems with overflow: visible for the indicator https://stackoverflow.com/questions/6421966/css-overflow-x-visible-and-overflow-y-hidden-causing-scrollbar-issue
+
 export default function Header({ title, children }: HeaderProps) {
   const { active, focused, setFocused } = usePluginsStore()
 
   return (
     <div className="w-full h-8 bg-stone-900 border-b border-stone-700 flex p-1 z-10">
       <span className="shrink-0 px-4">{title.toUpperCase()}</span>
-      <div className="grow flex gap-3 overflow-x-scrol overflow-y-visible no-scrollbar">
+      <div className="grow flex gap-3 overflow-y-visible no-scrollbar">
         {Object.values(active).map(({ instanceId, manifest: { name } }) => (
           <div className="relative" key={instanceId}>
             <button
