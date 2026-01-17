@@ -1,11 +1,11 @@
-import { useConfigurationStore } from '@renderer/stores/useConfigStore'
+import { useConfigStore } from '@renderer/stores/useConfigStore'
 import { OSCMessage } from 'src/types/osc-messages'
 
 // TODO need to handle stuff like skeleton(() correctly
 export const keyRegex = (key) => new RegExp(`\\b${key}\\(([^\\)]*)\\)`, 'g')
 
 export default function process(poiesis: string) {
-  const { parsedConfig: config } = useConfigurationStore.getState()
+  const { parsedConfig: config } = useConfigStore.getState()
 
   if (config === null) throw new Error('Cannot parse input with invalid config')
 
