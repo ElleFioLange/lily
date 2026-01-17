@@ -9,11 +9,10 @@ export default function Renderer({ instanceId, ...props }: RendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<HydraState>
-  const useHydraStore = instance.useStore
-  const hydraCanvas = useHydraStore((state) => state.canvas)
+  const { canvas: sourceCanvas } = instance.useStore()
 
   useEffect(() => {
-    if (!canvasRef.current || !hydraCanvas) return
+    if (!canvasRef.current || !sourceCanvas) return
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
@@ -23,14 +22,14 @@ export default function Renderer({ instanceId, ...props }: RendererProps) {
 
     const animate = () => {
       ctx?.clearRect(0, 0, 1920, 1080)
-      ctx?.drawImage(hydraCanvas, 0, 0)
+      ctx?.drawImage(sourceCanvas, 0, 0)
       const rafId = requestAnimationFrame(animate)
       return rafId
     }
 
     const rafId = animate()
     return () => cancelAnimationFrame(rafId)
-  }, [hydraCanvas])
+  }, [sourceCanvas])
 
   return <canvas ref={canvasRef} className="size-full" {...props} />
 }

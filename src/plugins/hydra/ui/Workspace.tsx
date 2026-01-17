@@ -20,10 +20,7 @@ export default function Workspace({ instanceId }: UIProps) {
   const viewRef = useRef<EditorView | null>(null)
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<HydraState>
-  const useHydraStore = instance.useStore
-  const shader = useHydraStore((state) => state.shader)
-  const setShader = useHydraStore((state) => state.setShader)
-  const setScrollPercentage = useHydraStore((state) => state.setScrollPercentage)
+  const { shader, setShader, setScrollPercentage } = instance.useStore()
 
   useEffect(
     () => {

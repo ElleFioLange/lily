@@ -15,8 +15,7 @@ export default function PoiesisWorkspace({ instanceId }: PoiesisWorkspaceProps) 
   const viewRef = useRef<EditorView | null>(null)
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<PoiesisState>
-  const usePoiesisStore = instance.useStore
-  const { poiesis, setPoiesis, setScrollPercentage } = usePoiesisStore()
+  const { poiesis, setPoiesis, setScrollPercentage } = instance.useStore()
 
   useEffect(() => {
     if (!editorRef.current) return
