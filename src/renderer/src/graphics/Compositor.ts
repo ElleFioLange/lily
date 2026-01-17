@@ -74,13 +74,13 @@ export class Compositor {
       .filter((s) => s.enabled && s.alpha > 0)
       .sort((a, b) => a.zIndex - b.zIndex)
 
-    // Composite each source
-    for (const source of sortedSources) {
-      const outputsArray = Array.from(this.outputs.values())
-      for (const { canvas, ctx } of outputsArray) {
-        // Clear output
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-        ctx.save()
+    const outputsArray = Array.from(this.outputs.values())
+    for (const { canvas, ctx } of outputsArray) {
+      // Clear output
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.save()
+      // Composite each source
+      for (const source of sortedSources) {
         ctx.globalAlpha = source.alpha
         ctx.globalCompositeOperation = source.blendMode
 

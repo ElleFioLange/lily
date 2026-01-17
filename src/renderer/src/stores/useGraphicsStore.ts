@@ -11,7 +11,7 @@ type MixerParams = {
 const defaultParams = {
   alpha: 1,
   zIndex: 0,
-  blendMode: 'destination-over' as GlobalCompositeOperation,
+  blendMode: 'source-over' as GlobalCompositeOperation,
   enabled: true
 }
 
