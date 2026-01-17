@@ -39,9 +39,9 @@ export const usePluginsStore = create<PluginsManagerStore>((set, get) => ({
     if (plugin === undefined) throw new Error('No plugin registered with id ' + pluginId)
 
     const instanceId = uuid()
-    plugin.init(instanceId)
+    const useStore = plugin.init(instanceId)
 
-    const newActive = { ...active, [instanceId]: { ...plugin, instanceId } }
+    const newActive = { ...active, [instanceId]: { ...plugin, useStore, instanceId } }
 
     set({ active: newActive })
 

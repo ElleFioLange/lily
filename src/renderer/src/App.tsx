@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from './components/Layout'
 import { PerformanceWindow } from './windows/performance/PerformanceWindow'
-import { setupOSCListeners } from './stores/useOSCStore'
+// import { setupOSCListeners } from './stores/useOSCStore'
 // import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { setupCameraListeners } from './stores/useCameraStore'
 import { usePerformanceStore } from './stores/usePerformanceStore'
@@ -42,7 +42,7 @@ function App(): React.JSX.Element {
       })
 
     // Setup OSC event listeners when component mounts
-    setupOSCListeners()
+    // setupOSCListeners()
 
     // Setup camera streaming listeners
     setupCameraListeners()

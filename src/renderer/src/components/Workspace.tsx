@@ -24,7 +24,7 @@ export default function Workspace() {
             {/* Renderer layers (no interaction) */}
             {focusedSurface.Renderer ? (
               <div className="absolute size-full pointer-events-none">
-                <focusedSurface.Renderer />
+                <focusedSurface.Renderer instanceId={focusedSurface.instanceId} />
               </div>
             ) : null}
 
@@ -37,7 +37,7 @@ export default function Workspace() {
                   </button>
                 </div>
                 <div className="relative overflow-hidden">
-                  <focusedSurface.Workspace />
+                  <focusedSurface.Workspace instanceId={focusedSurface.instanceId} />
                 </div>
               </div>
             ) : null}

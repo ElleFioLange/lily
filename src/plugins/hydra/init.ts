@@ -28,7 +28,5 @@ export default function init(instanceId: string) {
 
   addSource('hydra', canvas)
 
-  console.log('hydra plugin init')
-  console.log(compositorRef)
-  console.log(compositorRef?.getSources())
+  return useHydraStore
 }

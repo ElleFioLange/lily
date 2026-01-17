@@ -52,12 +52,9 @@ export default async function process(
   _poiesis: string,
   _config: ConfigurationJSON
 ) {
-  const { getInstance } = usePluginsStore()
+  const { getInstance } = usePluginsStore.getState()
   const instance = getInstance(instanceId) as ActivePlugin<HydraState>
-  const store = instance.useStore()
-
-  const shader = store.shader
-  const hydra = store.hydra
+  const { shader, hydra } = instance.useStore.getState()
   const synth = hydra.synth
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function

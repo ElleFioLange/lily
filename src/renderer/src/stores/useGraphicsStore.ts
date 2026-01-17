@@ -12,7 +12,7 @@ const defaultParams = {
   alpha: 1,
   zIndex: 0,
   blendMode: 'destination-over' as GlobalCompositeOperation,
-  enabled: false
+  enabled: true
 }
 
 interface GraphicsState {
