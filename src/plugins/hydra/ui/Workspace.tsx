@@ -3,24 +3,24 @@ import { EditorState } from '@codemirror/state'
 import { EditorView, highlightActiveLine, keymap, lineNumbers } from '@codemirror/view'
 import { defaultKeymap, history, indentWithTab } from '@codemirror/commands'
 import Panel from '@renderer/components/common/Panel'
-import { PanelId } from '@renderer/stores/useFocusStore'
-import { useHydraStore } from '../store'
 import { javascript } from '@codemirror/lang-javascript'
 import { search, searchKeymap } from '@codemirror/search'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
-// import { useInputStore } from '@renderer/stores/useInputStore'
-
-interface LivePreviewProps {
-  panelId?: PanelId
-}
+import { usePluginsStore } from '@renderer/stores/usePluginsStore'
+import { ActivePlugin } from '@plugins/helpers'
+import { HydraState } from '../store'
+import { UIProps } from 'src/types/plugins'
 
 // TODO history cmd+z still not working right
 // TODO needs cursor navigation shortcuts, formatting, and search (? maybe search?)
 
-export default function Workspace({ panelId }: LivePreviewProps) {
+export default function Workspace({ instanceId }: UIProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
+  const { getInstance } = usePluginsStore()
+  const instance = getInstance(instanceId) as ActivePlugin<HydraState>
+  const useHydraStore = instance.useStore
   const shader = useHydraStore((state) => state.shader)
   const setShader = useHydraStore((state) => state.setShader)
   const setScrollPercentage = useHydraStore((state) => state.setScrollPercentage)
@@ -159,7 +159,6 @@ export default function Workspace({ panelId }: LivePreviewProps) {
       title="Live preview"
       className="size-full"
       contentClassName="size-full flex items-center justify-center relative cursor-text"
-      panelId={panelId}
       onClick={() => viewRef.current?.focus()}
     >
       <div

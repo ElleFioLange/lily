@@ -1,4 +1,4 @@
-import { useConfigurationStore } from '@renderer/surfaces/config/store'
+import { useConfigurationStore } from '@renderer/stores/useConfigStore'
 import { OSCMessage } from 'src/types/osc-messages'
 
 // TODO need to handle stuff like skeleton(() correctly

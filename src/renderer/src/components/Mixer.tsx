@@ -1,7 +1,7 @@
 import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
 import Header from './common/Header'
 // import { Compositor } from '@renderer/graphics/Compositor'
-import { useState } from 'react'
+import { useEffect } from 'react'
 
 type SourceControlProps = {
   name: string
@@ -15,7 +15,7 @@ function SourceControl({ name, alpha, enabled, setAlpha, setEnabled }: SourceCon
   return (
     <div className="grid grid-cols-[72px_auto] gap-2">
       <span
-        className={`cursor-pointer ${enabled ? 'hover:line-through' : 'line-through'}`}
+        className={`c ursor-pointer ${enabled ? 'hover:line-through' : 'line-through'}`}
         onClick={() => setEnabled(!enabled)}
       >
         {name}
@@ -33,11 +33,12 @@ function SourceControl({ name, alpha, enabled, setAlpha, setEnabled }: SourceCon
 
 export default function Mixer() {
   const { params, updateParams } = useGraphicsStore()
-  const [test, setTest] = useState(true)
+
+  useEffect(() => {})
 
   return (
     <>
-      <Header options={[]} active="test 1" title="MIXER" setActive={() => {}} />
+      <Header title="MIXER" />
 
       <div className="max-h-full px-4 pt-2 pb-0 [&::last-child]:mb-4 overflow-auto no-scrollbar text-xs flex flex-col gap-1 *:align-center font-neon">
         <span className="font-bold my-1 text-sm">PRESETS</span>
@@ -62,13 +63,6 @@ export default function Mixer() {
           Poiesis
           <input type="range" />
           </div> */}
-        <SourceControl
-          name="Poiesis"
-          alpha={0}
-          enabled={test}
-          setAlpha={() => {}}
-          setEnabled={setTest}
-        />
         <div className="grid grid-cols-[72px_auto] gap-2">
           Hydra
           <input type="range" />

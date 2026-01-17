@@ -1,8 +1,10 @@
 import Hydra from 'hydra-synth'
-import { useHydraStore } from './store'
+import { createHydraStore } from './store'
 import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
 
-export default function init() {
+export default function init(instanceId: string) {
+  const useHydraStore = createHydraStore(instanceId)
+
   const canvas = document.createElement('canvas')
   canvas.width = 1920
   canvas.height = 1080

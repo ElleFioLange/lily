@@ -2,7 +2,9 @@ import { create } from 'zustand'
 
 type HydraInstance = any
 
-interface HydraState {
+export interface HydraState {
+  instanceId: string
+
   // Hydra objects
   hydra: HydraInstance | null
   canvas: null | HTMLCanvasElement
@@ -31,39 +33,42 @@ interface HydraState {
   newShader: () => void
 }
 
-export const useHydraStore = create<HydraState>((set) => ({
-  hydra: null,
-  canvas: null,
-  shader: '',
-  scrollPercentage: 0,
-  shaderPath: null,
-  shaderName: 'new-shader',
-  isValid: true,
-  error: null,
+export const createHydraStore = (instanceId: string) => {
+  return create<HydraState>((set) => ({
+    instanceId,
+    hydra: null,
+    canvas: null,
+    shader: '',
+    scrollPercentage: 0,
+    shaderPath: null,
+    shaderName: 'new-shader',
+    isValid: true,
+    error: null,
 
-  setHydra: (hydra) => set({ hydra }),
+    setHydra: (hydra) => set({ hydra }),
 
-  setCanvas: (canvas) => set({ canvas }),
+    setCanvas: (canvas) => set({ canvas }),
 
-  setShader: (shader) => set({ shader }),
+    setShader: (shader) => set({ shader }),
 
-  setScrollPercentage: (scrollPercentage) => set({ scrollPercentage }),
+    setScrollPercentage: (scrollPercentage) => set({ scrollPercentage }),
 
-  setShaderPath: (shaderPath) => set({ shaderPath }),
+    setShaderPath: (shaderPath) => set({ shaderPath }),
 
-  setShaderName: (shaderName) => set({ shaderName }),
+    setShaderName: (shaderName) => set({ shaderName }),
 
-  setIsValid: (isValid) => set({ isValid }),
+    setIsValid: (isValid) => set({ isValid }),
 
-  newShader: () => {
-    set({
-      shader: '',
-      shaderPath: null,
-      shaderName: 'new-shader',
-      isValid: true,
-      error: null
-    })
-  },
+    newShader: () => {
+      set({
+        shader: '',
+        shaderPath: null,
+        shaderName: 'new-shader',
+        isValid: true,
+        error: null
+      })
+    },
 
-  setError: (error) => set({ error })
-}))
+    setError: (error) => set({ error })
+  }))
+}

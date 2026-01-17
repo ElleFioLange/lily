@@ -12,7 +12,7 @@ const defaultParams = {
   alpha: 1,
   zIndex: 0,
   blendMode: 'destination-over' as GlobalCompositeOperation,
-  enabled: true
+  enabled: false
 }
 
 interface GraphicsState {
@@ -41,8 +41,7 @@ export const useGraphicsStore = create<GraphicsState>((set, get) => ({
     const { compositorRef, params } = get()
     const source = params[id]
     if (source === undefined) throw new Error('Given invalid ID for source to update')
-    const newParams = { ...params }
-    newParams[id] = { ...source, ...updates }
+    const newParams = { ...params, [id]: { ...source, ...updates } }
     set({ params: newParams })
     compositorRef?.updateSource(id, updates)
   },
@@ -58,8 +57,7 @@ export const useGraphicsStore = create<GraphicsState>((set, get) => ({
       ...initParams
     }
     compositorRef?.addSource(source)
-    const newParams = { ...params }
-    newParams[source.id] = { ...defaultParams, ...initParams }
+    const newParams = { ...params, [source.id]: { ...defaultParams, ...initParams } }
     set({ params: newParams })
   },
 

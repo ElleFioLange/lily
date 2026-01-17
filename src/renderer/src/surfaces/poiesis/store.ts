@@ -2,7 +2,7 @@ import { create } from 'zustand'
 // import { useHydraStore } from './useHydraStore'
 // import parseInput, { ParseAbletonResult } from '@renderer/utils/parseInput'
 
-interface PoiesisState {
+export interface PoiesisState {
   poiesis: string
   triggerAnimationFlag: boolean
   scrollPercentage: number
@@ -12,24 +12,26 @@ interface PoiesisState {
   setScrollPercentage: (scrollPercentage: number) => void
 }
 
-export const usePoiesisStore = create<PoiesisState>((set, get) => ({
-  poiesis: '',
-  triggerAnimationFlag: false,
-  scrollPercentage: 0,
+export const createPoiesisStore = (instanceId: string) => {
+  return create<PoiesisState>((set) => ({
+    poiesis: '',
+    triggerAnimationFlag: false,
+    scrollPercentage: 0,
 
-  setPoiesis: (poiesis) => set({ poiesis }),
+    setPoiesis: (poiesis) => set({ poiesis }),
 
-  setTriggerAnimationFlag: (triggerAnimationFlag) => set({ triggerAnimationFlag }),
+    setTriggerAnimationFlag: (triggerAnimationFlag) => set({ triggerAnimationFlag }),
 
-  setScrollPercentage: (scrollPercentage) => set({ scrollPercentage })
+    setScrollPercentage: (scrollPercentage) => set({ scrollPercentage })
 
-  // evaluateInput: () => {
-  //   console.log('Evaluate the input')
-  //   // useHydraStore.getState().evaluateShader()
-  //   // const { input } = get()
-  //   // const messages = parseInput(input, 'ableton') as any as ParseAbletonResult
-  //   // messages.forEach(({ address, args }) => {
-  //   //   window.api.osc.send(address, args)
-  //   // })
-  // }
-}))
+    // evaluateInput: () => {
+    //   console.log('Evaluate the input')
+    //   // useHydraStore.getState().evaluateShader()
+    //   // const { input } = get()
+    //   // const messages = parseInput(input, 'ableton') as any as ParseAbletonResult
+    //   // messages.forEach(({ address, args }) => {
+    //   //   window.api.osc.send(address, args)
+    //   // })
+    // }
+  }))
+}

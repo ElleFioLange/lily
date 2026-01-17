@@ -4,5 +4,5 @@
   "repo": "repo goes here",
   "author": "sysfem.err",
   "version": "1.0.0",
-  "outputType": "graphics"
+  "outputTypes": ["graphics"]
 }

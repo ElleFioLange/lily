@@ -1,11 +1,13 @@
 import { ConfigurationJSON } from 'src/types/config'
-import { useHydraStore } from './store'
 import loadScript from '@renderer/utils/loadScript'
-import { useConfigurationStore } from '@renderer/surfaces/config/store'
+import { useConfigStore } from '@renderer/stores/useConfigStore'
 import { keyRegex } from '@renderer/utils/parseInput'
+import { usePluginsStore } from '@renderer/stores/usePluginsStore'
+import { HydraState } from './store'
+import { ActivePlugin } from '@plugins/helpers'
 
 function parseHydra(input: string) {
-  const { parsedConfig: config } = useConfigurationStore.getState()
+  const { parsedConfig: config } = useConfigStore.getState()
 
   if (config === null) throw new Error('Cannot parse input with invalid config')
 
@@ -45,8 +47,14 @@ function parseHydra(input: string) {
   return hydraParams
 }
 
-export default async function process(_poiesis: string, _config: ConfigurationJSON) {
-  const store = useHydraStore.getState()
+export default async function process(
+  instanceId: string,
+  _poiesis: string,
+  _config: ConfigurationJSON
+) {
+  const { getInstance } = usePluginsStore()
+  const instance = getInstance(instanceId) as ActivePlugin<HydraState>
+  const store = instance.useStore()
 
   const shader = store.shader
   const hydra = store.hydra

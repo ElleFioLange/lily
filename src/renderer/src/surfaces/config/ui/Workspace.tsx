@@ -1,8 +1,8 @@
 import { useRef, useState, useCallback } from 'react'
 import Panel from '@renderer/components/common/Panel'
-import ConfigEditor, { ConfigEditorRef } from './Editor'
-import Navigation from './Navigation'
-import { useConfigurationStore } from '../store'
+import ConfigEditor, { ConfigEditorRef } from './components/Editor'
+import Navigation from './components/Navigation'
+import { useConfigStore } from '../../../stores/useConfigStore'
 
 // TODO make the file system more forgiving for saving with errors
 
@@ -26,7 +26,7 @@ export default function ConfigWorkspace() {
     configName,
     isValid: configIsValid,
     error: configError
-  } = useConfigurationStore()
+  } = useConfigStore()
 
   const handleSave = useCallback(async () => {
     if (configPath !== null) await saveConfig()

@@ -2,11 +2,20 @@ import { useRef, useEffect } from 'react'
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { defaultKeymap, history } from '@codemirror/commands'
-import { usePoiesisStore } from '@renderer/surfaces/poiesis/store'
+import { usePluginsStore } from '@renderer/stores/usePluginsStore'
+import { ActivePlugin } from '@plugins/helpers'
+import { PoiesisState } from '../store'
 
-export default function PoiesisWorkspace() {
+type PoiesisWorkspaceProps = {
+  instanceId: string
+}
+
+export default function PoiesisWorkspace({ instanceId }: PoiesisWorkspaceProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
+  const { getInstance } = usePluginsStore()
+  const instance = getInstance(instanceId) as ActivePlugin<PoiesisState>
+  const usePoiesisStore = instance.useStore
   const { poiesis, setPoiesis, setScrollPercentage } = usePoiesisStore()
 
   useEffect(() => {

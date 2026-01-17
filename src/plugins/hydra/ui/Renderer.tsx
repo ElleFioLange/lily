@@ -1,8 +1,15 @@
+import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { HTMLProps, useEffect, useRef } from 'react'
-import { useHydraStore } from '../store'
+import { ActivePlugin, UIProps } from 'src/types/plugins'
+import { HydraState } from '../store'
 
-export default function Renderer(props: HTMLProps<HTMLCanvasElement>) {
+type RendererProps = HTMLProps<HTMLCanvasElement> & UIProps
+
+export default function Renderer({ instanceId, ...props }: RendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { getInstance } = usePluginsStore()
+  const instance = getInstance(instanceId) as ActivePlugin<HydraState>
+  const useHydraStore = instance.useStore
   const hydraCanvas = useHydraStore((state) => state.canvas)
 
   useEffect(() => {

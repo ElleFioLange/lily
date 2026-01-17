@@ -3,7 +3,7 @@ import * as jsyaml from 'js-yaml'
 import parseConfig from '@renderer/utils/parseConfig'
 import { ConfigurationJSON } from 'src/types/config'
 
-interface ConfigurationState {
+interface ConfigState {
   config: string
   parsedConfig: ConfigurationJSON | null
   configPath: string | null
@@ -20,7 +20,7 @@ interface ConfigurationState {
   setConfigName: (name: string | null) => void
 }
 
-export const useConfigurationStore = create<ConfigurationState>((set, get) => ({
+export const useConfigStore = create<ConfigState>((set, get) => ({
   config: '',
   parsedConfig: {},
   configPath: null,

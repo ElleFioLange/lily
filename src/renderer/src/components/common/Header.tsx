@@ -1,26 +1,27 @@
+import { usePluginsStore } from '@renderer/stores/usePluginsStore'
+import { ReactNode } from 'react'
+
 export type HeaderProps = {
   title: string
-  options: string[]
-  active: string
-  setActive: (name: string) => void
+  children?: ReactNode
 }
 
-export default function Header(props: HeaderProps) {
-  const { title, options, active, setActive } = props
+export default function Header({ title, children }: HeaderProps) {
+  const { active, focused, setFocused } = usePluginsStore()
 
   return (
     <div className="w-full h-8 bg-stone-900 border-b border-stone-700 flex p-1 z-10">
       <span className="shrink-0 px-4">{title.toUpperCase()}</span>
       <div className="grow flex gap-3 overflow-x-scrol overflow-y-visible no-scrollbar">
-        {options.map((option) => (
-          <div className="relative" key={option}>
+        {Object.values(active).map(({ instanceId, manifest: { name } }) => (
+          <div className="relative" key={instanceId}>
             <button
-              className={`text-xs border-none bg-transparent ${option === active ? 'cursor-default' : 'hover:underline'}`}
-              onClick={() => setActive(option)}
+              className={`text-xs border-none bg-transparent ${instanceId === focused ? 'cursor-default' : 'hover:underline'}`}
+              onClick={() => setFocused(instanceId)}
             >
-              {option}
+              {name}
             </button>
-            {option === active && (
+            {instanceId === focused && (
               <svg
                 preserveAspectRatio="none"
                 height="8"
@@ -37,6 +38,7 @@ export default function Header(props: HeaderProps) {
             )}
           </div>
         ))}
+        {children}
       </div>
     </div>
   )

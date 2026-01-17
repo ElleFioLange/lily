@@ -5,22 +5,30 @@ import { setupOSCListeners } from './stores/useOSCStore'
 // import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { setupCameraListeners } from './stores/useCameraStore'
 import { usePerformanceStore } from './stores/usePerformanceStore'
-import HydraPlugin from '@plugins/hydra'
 import { useGraphicsStore } from './stores/useGraphicsStore'
 import { Compositor } from './graphics/Compositor'
+import PoiesisPlugin from './surfaces/poiesis'
+import ConfigPlugin from './surfaces/config'
+import { usePluginsStore } from './stores/usePluginsStore'
 
 function App(): React.JSX.Element {
   const togglePerformanceWindow = usePerformanceStore((state) => state.toggleWindow)
   const { setCompositorRef } = useGraphicsStore()
+  const { registerPlugin } = usePluginsStore()
 
   // Initialize keyboard shortcuts
   // useKeyboardShortcuts()
 
   useEffect(() => {
+    // Initialize the compositor
     const compositor = new Compositor()
     setCompositorRef(compositor)
 
-    HydraPlugin.init()
+    // Register system plug-ins (poiesis and config)
+    registerPlugin(PoiesisPlugin)
+    registerPlugin(ConfigPlugin)
+
+    // Register installed plugins (load dynamically)
 
     // Setup OSC event listeners when component mounts
     setupOSCListeners()
