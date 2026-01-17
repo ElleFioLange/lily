@@ -43,3 +43,5 @@ Lily Project Structure
   = ableton project
 
 Browsers highlight the project specific structures (like configs, patches, or inputs). Users can also export a structure from a project into their library to be accessible in any other project.
+
+allow configs to be either yaml files which the user manually writes or could be a script file that exports a function "generateConfig" which outputs a ConfigurationJSON object usable by the system, so someone could write say an automatic config generator script that would take the state of the strudel patch and create keywords out of the commented track name labels in the patch
