@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { Compositor } from '@renderer/graphics/Compositor'
 
-type MixerParams = {
+export type MixerParams = {
   alpha: number
   zIndex: number
   blendMode: GlobalCompositeOperation
@@ -16,16 +16,18 @@ const defaultParams = {
 }
 
 interface GraphicsState {
-  params: Record<string, MixerParams>
+  graphics: Record<string, MixerParams>
+  editors: Record<string, MixerParams>
   compositorRef: Compositor | null
 
-  updateParams: (id: string, updates: Partial<MixerParams>) => void
+  updateParams: (id: string, type: 'graphics' | 'editors', updates: Partial<MixerParams>) => void
   setCompositorRef: (compositor: Compositor | null) => void
-  addSource: (source: {
+  addGraphicsSource: (source: {
     id: string
     canvas: HTMLCanvasElement | OffscreenCanvas
     initParams?: Partial<MixerParams>
   }) => void
+  addEditorSource: (source: { id: string; initParams?: Partial<MixerParams> }) => void
   removeSource: (id: string) => void
   addOutput: (output: { id: string; canvas: HTMLCanvasElement; window: Window }) => void
   removeOutput: (id: string) => void
@@ -34,22 +36,36 @@ interface GraphicsState {
 }
 
 export const useGraphicsStore = create<GraphicsState>((set, get) => ({
-  params: {},
+  graphics: {},
+  editors: {},
   compositorRef: null,
 
-  updateParams: (id, updates) => {
-    const { compositorRef, params } = get()
-    const source = params[id]
-    if (source === undefined) throw new Error('Given invalid ID for source to update')
-    const newParams = { ...params, [id]: { ...source, ...updates } }
-    set({ params: newParams })
-    compositorRef?.updateSource(id, updates)
+  updateParams: (id, type, updates) => {
+    switch (type) {
+      case 'editors': {
+        const { editors } = get()
+        const source = editors[id]
+        if (source === undefined) throw new Error('Given invalid ID for source to update')
+        const newEditors = { ...editors, [id]: { ...source, ...updates } }
+        set({ editors: newEditors })
+        break
+      }
+      case 'graphics': {
+        const { compositorRef, graphics } = get()
+        const source = graphics[id]
+        if (source === undefined) throw new Error('Given invalid ID for source to update')
+        const newGraphics = { ...graphics, [id]: { ...source, ...updates } }
+        set({ graphics: newGraphics })
+        compositorRef?.updateSource(id, updates)
+        break
+      }
+    }
   },
 
   setCompositorRef: (compositorRef) => set({ compositorRef }),
 
-  addSource: ({ id, canvas, initParams }) => {
-    const { compositorRef, params } = get()
+  addGraphicsSource: ({ id, canvas, initParams }) => {
+    const { compositorRef, graphics } = get()
     const source = {
       id,
       canvas,
@@ -57,16 +73,35 @@ export const useGraphicsStore = create<GraphicsState>((set, get) => ({
       ...initParams
     }
     compositorRef?.addSource(source)
-    const newParams = { ...params, [source.id]: { ...defaultParams, ...initParams } }
-    set({ params: newParams })
+    const newGraphics = {
+      ...graphics,
+      [id]: { ...defaultParams, ...initParams }
+    }
+    set({ graphics: newGraphics })
+  },
+
+  addEditorSource: ({ id, initParams }) => {
+    const { editors } = get()
+    const newEditors = {
+      ...editors,
+      [id]: { ...defaultParams, ...initParams }
+    }
+    set({ editors: newEditors })
   },
 
   removeSource: (id) => {
-    const { compositorRef, params } = get()
-    compositorRef?.removeSource(id)
-    const newParams = { ...params }
-    delete newParams[id]
-    set({ params: newParams })
+    const { compositorRef, graphics, editors } = get()
+    if (graphics[id] !== undefined) {
+      compositorRef?.removeSource(id)
+      const newGraphics = { ...graphics }
+      delete newGraphics[id]
+      set({ graphics: newGraphics })
+    }
+    if (editors[id] !== undefined) {
+      const newEditors = { ...editors }
+      delete newEditors[id]
+      set({ editors: newEditors })
+    }
   },
 
   addOutput: (output) => {

@@ -4,6 +4,7 @@ import { usePerformanceStore } from '../../stores/usePerformanceStore'
 // import HydraPlugin from '@plugins/hydra'
 // import PoiesisRenderer from '../../surfaces/poiesis/ui/Renderer'
 import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
+import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 
 /**
  * PerformanceWindow renders a full-screen compositor canvas into a child window.
@@ -12,7 +13,8 @@ import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
  */
 export function PerformanceWindow() {
   const { isOpen, closeWindow, setWindowRef } = usePerformanceStore()
-  const { addOutput, startRenderLoop } = useGraphicsStore()
+  const { editors, addOutput, startRenderLoop } = useGraphicsStore()
+  const { getInstance } = usePluginsStore()
   const [childWindow, setChildWindow] = useState<Window | null>(null)
   const [container, setContainer] = useState<HTMLElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -140,14 +142,27 @@ export function PerformanceWindow() {
     //     <PoiesisRenderer />
     //   </div>
     // </div>,
-    <canvas
-      ref={canvasRef}
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'block'
-      }}
-    />,
+    <div className="w-screen h-screen relative">
+      <canvas className="size-full block absolute" ref={canvasRef} />
+      {Object.entries(editors).map(([id, { alpha, enabled }]) => {
+        if (!enabled) return null
+        const plugin = getInstance(id)
+        if (plugin === undefined || plugin.Workspace === undefined) return null
+        return (
+          <div
+            className="absolute size-full"
+            key={id}
+            style={{
+              opacity: alpha
+              // TODO handle the variance between GlobalCompositeOperation and MixBlendMode types
+              // mixBlendMode: blendMode
+            }}
+          >
+            <plugin.Workspace instanceId={id} />
+          </div>
+        )
+      })}
+    </div>,
     container
   )
 }

@@ -10,12 +10,13 @@ import { tags } from '@lezer/highlight'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { ActivePlugin } from '@plugins/helpers'
 import { HydraState } from '../store'
-import { UIProps } from 'src/types/plugins'
+import { WorkspaceProps } from 'src/types/plugins'
 
 // TODO history cmd+z still not working right
 // TODO needs cursor navigation shortcuts, formatting, and search (? maybe search?)
+// TODO handle the extra HTMLDivProps from the WorkspaceProps type
 
-export default function Workspace({ instanceId }: UIProps) {
+export default function Workspace({ instanceId }: WorkspaceProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const { getInstance } = usePluginsStore()

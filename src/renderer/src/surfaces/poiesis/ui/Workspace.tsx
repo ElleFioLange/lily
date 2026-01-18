@@ -88,6 +88,7 @@ export default function PoiesisWorkspace({ instanceId }: PoiesisWorkspaceProps) 
       view.destroy()
       viewRef.current = null
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run once on mount
 
   // Update editor content when poiesis changes from outside

@@ -1,10 +1,9 @@
-import { FunctionComponent } from 'react'
+import { FunctionComponent, HTMLProps } from 'react'
 import { ConfigurationJSON } from './config'
 import { StoreApi, UseBoundStore } from 'zustand'
 
 // TODO Force returning an OffscreenCanvas for the renderer and implement web workers for parallelization and performance gains
 
-// TODO Define required properties for a plugin's store
 export type PluginState = {
   instanceId: string
 }
@@ -22,7 +21,10 @@ export type PluginManifest = {
 
 export type UIProps = {
   instanceId: string
-} & any
+}
+
+export type WorkspaceProps = UIProps & HTMLProps<HTMLDivElement>
+export type RendererProps = UIProps & HTMLProps<HTMLCanvasElement>
 
 type PluginBase = {
   manifest: PluginManifest
@@ -33,10 +35,10 @@ type PluginBase = {
   cleanup: (instanceId: string) => void
 
   // UI Elements
-  Workspace?: FunctionComponent<UIProps>
+  Workspace?: FunctionComponent<WorkspaceProps>
   Settings?: FunctionComponent<UIProps>
   Monitor?: FunctionComponent<UIProps>
-  Renderer?: FunctionComponent<UIProps>
+  Renderer?: FunctionComponent<RendererProps>
 }
 
 // Plugin definition can either equal PluginBase or optionally define a StoreType to use a zustand store

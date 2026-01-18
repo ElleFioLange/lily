@@ -1,7 +1,6 @@
 import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
 import Header from './common/Header'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
-import { useMemo } from 'react'
 
 type SourceControlProps = {
   name: string
@@ -33,17 +32,8 @@ function SourceControl({ name, alpha, enabled, setAlpha, setEnabled }: SourceCon
 }
 
 export default function Mixer() {
-  const { params, updateParams } = useGraphicsStore()
-  const { active } = usePluginsStore()
-
-  const sources = useMemo(() => {
-    return Object.entries(params).map(([id, { alpha, enabled }]) => ({
-      id,
-      name: active[id].manifest.name,
-      alpha,
-      enabled
-    }))
-  }, [params, active])
+  const { editors, graphics, updateParams } = useGraphicsStore()
+  const { getInstance } = usePluginsStore()
 
   return (
     <>
@@ -56,19 +46,37 @@ export default function Mixer() {
           <button>preset 2</button>
         </div>
         <span className="font-bold my-1 text-sm">EDITORS</span>
-        {sources.map(({ id, name, alpha, enabled }) => {
+        {Object.entries(editors).map(([id, { alpha, enabled }]) => {
+          const plugin = getInstance(id)
+          if (plugin === undefined) return null
+          const name = plugin.manifest.name
           return (
             <SourceControl
               key={id}
               name={name}
               alpha={alpha || 0}
               enabled={enabled || false}
-              setAlpha={(alpha) => updateParams(id, { alpha })}
-              setEnabled={(enabled) => updateParams(id, { enabled })}
+              setAlpha={(alpha) => updateParams(id, 'editors', { alpha })}
+              setEnabled={(enabled) => updateParams(id, 'editors', { enabled })}
             />
           )
         })}
         <span className="font-bold my-1 text-sm">GRAPHICS</span>
+        {Object.entries(graphics).map(([id, { alpha, enabled }]) => {
+          const plugin = getInstance(id)
+          if (plugin === undefined) return null
+          const name = plugin.manifest.name
+          return (
+            <SourceControl
+              key={id}
+              name={name}
+              alpha={alpha || 0}
+              enabled={enabled || false}
+              setAlpha={(alpha) => updateParams(id, 'graphics', { alpha })}
+              setEnabled={(enabled) => updateParams(id, 'graphics', { enabled })}
+            />
+          )
+        })}
       </div>
     </>
   )

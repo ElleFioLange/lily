@@ -1,6 +1,8 @@
 /**
  * CompositorSource represents a canvas that can be blended into the compositor output
  */
+
+// TODO Should compositor handle the editors? Needs to at least handle virtual camera inputs for 3rd party programs (touch designer, etc.) until syphon integration is built
 export interface CompositorSource {
   id: string
   canvas: HTMLCanvasElement | OffscreenCanvas
