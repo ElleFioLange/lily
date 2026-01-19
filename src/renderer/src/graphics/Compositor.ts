@@ -2,13 +2,15 @@
  * CompositorSource represents a canvas that can be blended into the compositor output
  */
 
+import { BlendMode } from '@renderer/stores/useGraphicsStore'
+
 // TODO Should compositor handle the editors? Needs to at least handle virtual camera inputs for 3rd party programs (touch designer, etc.) until syphon integration is built
 export interface CompositorSource {
   id: string
   canvas: HTMLCanvasElement | OffscreenCanvas
   alpha: number // 0-1 opacity
   zIndex: number // Layer order (lower = behind)
-  blendMode: GlobalCompositeOperation
+  blendMode: BlendMode
   enabled: boolean
 }
 
@@ -84,7 +86,7 @@ export class Compositor {
       // Composite each source
       for (const source of sortedSources) {
         ctx.globalAlpha = source.alpha
-        ctx.globalCompositeOperation = source.blendMode
+        ctx.globalCompositeOperation = source.blendMode as GlobalCompositeOperation // Casting because typeof source.blendMode is Omit<GlobalCompositeOperation, 'copy'>
 
         try {
           // Draw the source canvas scaled to fill the output

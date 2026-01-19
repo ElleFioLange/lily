@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { usePerformanceStore } from '../../stores/usePerformanceStore'
 // import HydraPlugin from '@plugins/hydra'
@@ -133,18 +133,9 @@ export function PerformanceWindow() {
 
   // Render canvas into child window via portal
   return createPortal(
-    // <Workspace />,
-    // <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-    //   <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
-    //     {HydraPlugin.Renderer && <HydraPlugin.Renderer />}
-    //   </div>
-    //   <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
-    //     <PoiesisRenderer />
-    //   </div>
-    // </div>,
     <div className="w-screen h-screen relative">
       <canvas className="size-full block absolute" ref={canvasRef} />
-      {Object.entries(editors).map(([id, { alpha, enabled }]) => {
+      {Object.entries(editors).map(([id, { alpha, enabled, blendMode }]) => {
         if (!enabled) return null
         const plugin = getInstance(id)
         if (plugin === undefined || plugin.Workspace === undefined) return null
@@ -153,9 +144,8 @@ export function PerformanceWindow() {
             className="absolute size-full"
             key={id}
             style={{
-              opacity: alpha
-              // TODO handle the variance between GlobalCompositeOperation and MixBlendMode types
-              // mixBlendMode: blendMode
+              opacity: alpha,
+              mixBlendMode: blendMode as CSSProperties['mixBlendMode']
             }}
           >
             <plugin.Workspace instanceId={id} />

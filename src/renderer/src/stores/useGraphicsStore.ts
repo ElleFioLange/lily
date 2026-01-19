@@ -1,17 +1,19 @@
 import { create } from 'zustand'
 import { Compositor } from '@renderer/graphics/Compositor'
 
+export type BlendMode = Omit<GlobalCompositeOperation, 'copy'>
+
 export type MixerParams = {
   alpha: number
   zIndex: number
-  blendMode: GlobalCompositeOperation
+  blendMode: BlendMode
   enabled: boolean
 }
 
 const defaultParams = {
   alpha: 1,
   zIndex: 0,
-  blendMode: 'source-over' as GlobalCompositeOperation,
+  blendMode: 'source-over' as BlendMode,
   enabled: true
 }
 
