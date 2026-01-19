@@ -105,7 +105,7 @@ export default function init(instanceId: string) {
 
   const { addGraphicsSource, addEditorSource } = useGraphicsStore.getState()
   addGraphicsSource({ id: instanceId, canvas })
-  addEditorSource({ id: instanceId })  // If plugin has editor overlay
+  addEditorSource({ id: instanceId }) // If plugin has editor overlay
 
   return useStore
 }
@@ -202,9 +202,9 @@ The Performance Window (`src/renderer/src/windows/performance/PerformanceWindow.
 
 ```typescript
 interface PluginsManagerState {
-  registered: Record<string, PluginDefinition>  // Available plugins
-  active: Record<string, ActivePlugin>          // Running instances
-  focused: string | null                        // Currently focused instanceId
+  registered: Record<string, PluginDefinition> // Available plugins
+  active: Record<string, ActivePlugin> // Running instances
+  focused: string | null // Currently focused instanceId
 
   registerPlugin: (plugin) => void
   loadPlugin: (pluginId) => void
@@ -265,6 +265,7 @@ interface PluginsManagerState {
    }
    ```
 3. Create store factory in `store.ts`:
+
    ```typescript
    import { PluginState } from 'src/types/plugins'
    import { create } from 'zustand'
@@ -275,14 +276,16 @@ interface PluginsManagerState {
 
    export const createMyPluginStore = (instanceId: string) => {
      return create<MyPluginState>((set) => ({
-       instanceId,
+       instanceId
        // Initial state and setters
      }))
    }
    ```
+
 4. Create `init.ts`, `process.ts`, `cleanup.ts`
 5. Create UI components in `ui/` folder
 6. Export in `index.ts`:
+
    ```typescript
    import { PluginDefinition } from '../helpers'
    import manifest from './manifest.json'

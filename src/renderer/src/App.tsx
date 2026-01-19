@@ -48,14 +48,19 @@ function App(): React.JSX.Element {
     setupCameraListeners()
 
     // Listen for performance window toggle from menu
-    const unsubscribe = window.api.performance.onToggle(() => {
+    const unsubPerformance = window.api.performance.onToggle(() => {
       togglePerformanceWindow()
+    })
+
+    const unsubActions = window.api.actions.onRun(() => {
+      console.log('handle running actions')
     })
 
     window.api.osc.send('/request/connection/confirm')
 
     return () => {
-      unsubscribe()
+      unsubPerformance()
+      unsubActions()
       setCompositorRef(null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

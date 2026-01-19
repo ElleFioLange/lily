@@ -169,6 +169,17 @@ const api = {
   },
 
   // ============================================================================
+  // Actions API
+  // ============================================================================
+  actions: {
+    onRun: (callback: () => void): (() => void) => {
+      const handler = (): void => callback()
+      ipcRenderer.on('actions:run', handler)
+      return () => ipcRenderer.removeListener('actions:run', handler)
+    }
+  },
+
+  // ============================================================================
   // Camera WebSocket Streaming API
   // ============================================================================
   camera: {

@@ -121,6 +121,15 @@ interface LilyAPI {
   }
 
   /**
+   * Actions API
+   *
+   * Methods for managing application actions
+   */
+  actions: {
+    onRun: (callback: () => void) => () => void
+  }
+
+  /**
    * Camera WebSocket Streaming API
    *
    * Methods for managing camera streaming from mobile devices

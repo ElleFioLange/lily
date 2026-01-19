@@ -150,6 +150,20 @@ function createMenu(): void {
             ]
           : [{ role: 'close' as const }])
       ]
+    },
+
+    // Actions menu
+    {
+      label: 'Actions',
+      submenu: [
+        {
+          label: 'Run',
+          accelerator: 'CmdOrCtrl+Shift+Enter',
+          click: () => {
+            mainWindowRef?.webContents.send('actions:run')
+          }
+        }
+      ]
     }
   ]
 
