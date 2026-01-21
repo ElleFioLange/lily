@@ -41,9 +41,11 @@ export const usePluginsStore = create<PluginsManagerState>((set, get) => ({
     const instanceId = uuid()
     const useStore = plugin.init(instanceId)
 
-    const newActive = { ...active, [instanceId]: { ...plugin, useStore, instanceId } }
+    const activePlugin = { ...plugin, useStore, instanceId }
 
-    set({ active: newActive })
+    const newActive = { ...active, [instanceId]: activePlugin }
+
+    set({ active: newActive, focused: instanceId })
 
     // TODO Try to consolidate render processing of multiple instances of the same plugin maybe?
     // Check for other instances of the same plugin

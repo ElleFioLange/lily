@@ -16,6 +16,7 @@ import { tags } from '@lezer/highlight'
 import * as jsyaml from 'js-yaml'
 
 interface ConfigEditorProps {
+  instanceId: string
   value: string
   onChange: (value: string) => void
   onTopLevelKeysChange?: (keys: string[]) => void

@@ -8,7 +8,6 @@ import { usePerformanceStore } from './stores/usePerformanceStore'
 import { useGraphicsStore } from './stores/useGraphicsStore'
 import { Compositor } from './graphics/Compositor'
 import PoiesisPlugin from './surfaces/poiesis'
-import ConfigPlugin from './surfaces/config'
 import { usePluginsStore } from './stores/usePluginsStore'
 import { loadPlugins } from './utils/loadPlugins'
 
@@ -28,7 +27,6 @@ function App(): React.JSX.Element {
 
     // Register system plug-ins (poiesis and config)
     registerPlugin(PoiesisPlugin)
-    registerPlugin(ConfigPlugin)
 
     // Dynamically load and register plugins from src/plugins/
     loadPlugins()

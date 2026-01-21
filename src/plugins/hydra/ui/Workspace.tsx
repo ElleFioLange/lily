@@ -14,7 +14,7 @@ import { WorkspaceProps } from 'src/types/plugins'
 
 // TODO history cmd+z still not working right
 // TODO needs cursor navigation shortcuts, formatting, and search (? maybe search?)
-// TODO handle the extra HTMLDivProps from the WorkspaceProps type
+// TODO handle the extra HTMLDivProps from the
 
 export default function Workspace({ instanceId }: WorkspaceProps) {
   const editorRef = useRef<HTMLDivElement>(null)
