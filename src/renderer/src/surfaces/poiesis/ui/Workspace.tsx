@@ -15,7 +15,7 @@ export default function PoiesisWorkspace({ instanceId, ...props }: WorkspaceProp
       {openSurface === 'poiesis' ? (
         <PoiesisEditor instanceId={instanceId} />
       ) : (
-        <ConfigEditor instanceId={instanceId} value="" onChange={() => {}} />
+        <ConfigEditor instanceId={instanceId} />
       )}
     </div>
   )

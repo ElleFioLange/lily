@@ -1,51 +1,50 @@
 import { ConfigurationJSON } from 'src/types/config'
 import loadScript from '@renderer/utils/loadScript'
-import { useConfigStore } from '@renderer/stores/useConfigStore'
 import { keyRegex } from '@renderer/utils/parseInput'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { HydraState } from './store'
 import { ActivePlugin } from '@plugins/helpers'
 
-function parseHydra(input: string) {
-  const { parsedConfig: config } = useConfigStore.getState()
+// function parseHydra(input: string) {
+//   const { parsedConfig: config } = useConfigStore.getState()
 
-  if (config === null) throw new Error('Cannot parse input with invalid config')
+//   if (config === null) throw new Error('Cannot parse input with invalid config')
 
-  const keys = Object.entries(config)
-  const hydraParams: { name: string; value: number | string | boolean }[] = []
+//   const keys = Object.entries(config)
+//   const hydraParams: { name: string; value: number | string | boolean }[] = []
 
-  keys.forEach(([key, params]) => {
-    const regex = keyRegex(key)
-    const matches = input.matchAll(regex)
-    const instances = Array.from(matches)
-    const isPresent = instances.length > 0
-    const { hydra, args } = params
+//   keys.forEach(([key, params]) => {
+//     const regex = keyRegex(key)
+//     const matches = input.matchAll(regex)
+//     const instances = Array.from(matches)
+//     const isPresent = instances.length > 0
+//     const { hydra, args } = params
 
-    if (!hydra) return
+//     if (!hydra) return
 
-    const { name, present, absent } = hydra
-    let value = isPresent ? present : absent
+//     const { name, present, absent } = hydra
+//     let value = isPresent ? present : absent
 
-    if (args) {
-      Object.entries(args).forEach(([arg, { presets }], index) => {
-        if (arg !== name) return
-        if (presets !== undefined && isPresent) {
-          // TODO make this more readable
-          const preset = instances[0][index + 1]
-          if (preset) {
-            const presetValue = presets[preset].hydra
-            if (presetValue) value = presetValue
-          }
-        }
-      })
-    }
+//     if (args) {
+//       Object.entries(args).forEach(([arg, { presets }], index) => {
+//         if (arg !== name) return
+//         if (presets !== undefined && isPresent) {
+//           // TODO make this more readable
+//           const preset = instances[0][index + 1]
+//           if (preset) {
+//             const presetValue = presets[preset].hydra
+//             if (presetValue) value = presetValue
+//           }
+//         }
+//       })
+//     }
 
-    console.log({ name, value })
-    hydraParams.push({ name, value })
-  })
+//     console.log({ name, value })
+//     hydraParams.push({ name, value })
+//   })
 
-  return hydraParams
-}
+//   return hydraParams
+// }
 
 export default async function process(
   instanceId: string,
