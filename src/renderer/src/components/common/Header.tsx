@@ -14,7 +14,7 @@ export default function Header({ title, children }: HeaderProps) {
 
   return (
     <div className="w-full h-8 bg-stone-900 border-b border-stone-700 flex p-1 z-10">
-      <span className="shrink-0 px-4">{title.toUpperCase()}</span>
+      <span className="shrink-0 px-4 text-base">{title.toUpperCase()}</span>
       <div className="grow flex gap-3 overflow-y-visible no-scrollbar">
         {Object.values(active).map(({ instanceId, manifest: { name } }) => (
           <div className="relative" key={instanceId}>

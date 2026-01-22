@@ -13,13 +13,16 @@
 }
 
 @layer base {
+  * {
+    @apply text-sm;
+  }
   body {
     @apply bg-stone-950 text-stone-100 overflow-hidden select-none;
     scrollbar-color: var(--color-stone-100) #00000000;
   }
 
   button {
-    @apply border border-stone-700 bg-stone-900/50 px-1 place-items-center cursor-pointer hover:bg-stone-500 transition-colors;
+    @apply border border-stone-700 bg-stone-900/50 px-1 place-items-center cursor-pointer hover:bg-stone-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   input[type='range'] {
