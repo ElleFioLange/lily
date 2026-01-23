@@ -38,11 +38,15 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
         color: '#fafaf9',
         fontSize: '24px !important',
         padding: '2rem',
-        textAlign: 'center',
-        whiteSpace: 'pre-wrap'
+        whiteSpace: 'pre-wrap',
+        display: 'flex !important',
+        flexDirection: 'column',
+        alignItems: 'center'
       },
       '.cm-line': {
-        textAlign: 'center'
+        // textAlign: 'center',
+        width: 'fit-content',
+        backgroundColor: '#29252440' // stone-800/25
       },
       '.cm-cursor': {
         borderLeftColor: '#fafaf9'
