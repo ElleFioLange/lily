@@ -54,29 +54,21 @@ export default function Workspace() {
         ) : (
           <>
             {/* Renderer layers (no interaction) */}
-            {focusedSurface.Renderer ? (
-              <div className="absolute size-full pointer-events-none">
-                <focusedSurface.Renderer
-                  key={focusedSurface.instanceId}
-                  instanceId={focusedSurface.instanceId}
-                />
-              </div>
-            ) : null}
+            {Object.values(active).map(({ instanceId, Renderer }) =>
+              Renderer ? (
+                <div key={instanceId} className="absolute size-full pointer-events-none">
+                  <Renderer instanceId={instanceId} />
+                </div>
+              ) : null
+            )}
 
             {/* Plugin main layers (interactable) */}
             {focusedSurface.Workspace ? (
-              <div className="absolute size-full grid grid-rows-[min-content_auto]">
-                <div className="w-full p-2 flex text-xs">
-                  <button onClick={() => focusedSurface.process(focusedSurface.instanceId, '', {})}>
-                    test
-                  </button>
-                </div>
-                <div className="relative overflow-hidden">
-                  <focusedSurface.Workspace
-                    key={focusedSurface.instanceId}
-                    instanceId={focusedSurface.instanceId}
-                  />
-                </div>
+              <div className="absolute size-full overflow-hidden">
+                <focusedSurface.Workspace
+                  key={focusedSurface.instanceId}
+                  instanceId={focusedSurface.instanceId}
+                />
               </div>
             ) : null}
           </>

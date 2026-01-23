@@ -1,4 +1,4 @@
-import { useRef, useEffect, useImperativeHandle, useCallback } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap, lineNumbers, highlightActiveLine } from '@codemirror/view'
 import { defaultKeymap, history, indentWithTab } from '@codemirror/commands'
@@ -9,8 +9,8 @@ import { tags } from '@lezer/highlight'
 import * as jsyaml from 'js-yaml'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { ActivePlugin } from '@plugins/helpers'
-import { PoiesisState } from '@renderer/poiesis/store'
 import Navigation from './Navigation'
+import { PoiesisState } from '@renderer/surfaces/poiesis/store'
 
 interface ConfigEditorProps {
   instanceId: string
@@ -57,30 +57,29 @@ export default function ConfigEditor({ instanceId }: ConfigEditorProps) {
   }, [])
 
   // Stone color theme for CodeMirror
-  const stoneTheme = EditorView.theme({
+  const configTheme = EditorView.theme({
     '&': {
-      backgroundColor: '#1c1917', // stone-900
-      // color: '#f5f5f4', // stone-100
       height: '100%',
-      fontSize: '14px'
+      fontSize: '14px',
+      backgroundColor: '#29252480' // stone-800/50
     },
     '.cm-content': {
-      caretColor: '#f5f5f4',
+      caretColor: '#fafaf9',
       fontFamily: 'Monaspace Neon',
-      padding: '8px 0'
+      padding: '0'
     },
     '.cm-gutters': {
-      backgroundColor: '#292524', // stone-800
-      color: '#a8a29e', // stone-400
+      backgroundColor: '#29252464', // stone-800/40
+      color: '#f5f5f4', // stone-100
       border: 'none',
       paddingRight: '8px'
-    },
-    '.cm-activeLineGutter': {
-      backgroundColor: '#292524'
     },
     '.cm-lineNumbers .cm-gutterElement': {
       padding: '0 8px',
       minWidth: '32px'
+    },
+    '.cm-activeLine': {
+      backgroundColor: '#78716c80' // stone-800/50
     },
     '.cm-foldGutter': {
       padding: '0 4px'
@@ -90,18 +89,9 @@ export default function ConfigEditor({ instanceId }: ConfigEditorProps) {
       border: 'none',
       color: '#a8a29e'
     },
-    '.cm-activeLine': {
-      backgroundColor: '#292524' // stone-800
-    },
-    '.cm-selectionBackground': {
-      backgroundColor: '#44403c !important' // stone-700
-    },
-    '&.cm-focused .cm-selectionBackground': {
-      backgroundColor: '#44403c !important'
-    },
-    '.cm-cursor': {
-      borderLeftColor: '#f5f5f4'
-    },
+    // '.cm-cursor': {
+    //   borderLeftColor: '#f5f5f4'
+    // },
     // YAML syntax highlighting
     '.cm-property': {
       color: '#d6d3d1' // stone-300 - YAML keys
@@ -189,7 +179,7 @@ export default function ConfigEditor({ instanceId }: ConfigEditorProps) {
         foldGutter(),
         yaml(),
         search(),
-        stoneTheme,
+        configTheme,
         syntaxHighlighting(highlightStyle),
         EditorView.lineWrapping,
         history(),
@@ -252,34 +242,16 @@ export default function ConfigEditor({ instanceId }: ConfigEditorProps) {
   }, [config, extractTopLevelKeys])
 
   return (
-    <div className="flex flex-col">
+    <div className="size-full flex flex-col">
       <div className="flex items-around py-2 border-b border-stone-800 bg-stone-900 shrink-0 w-full">
         <span className="grow px-4">{configName}</span>
         <div className="flex gap-2 overflow-x-auto shrink no-scrollbar pr-4">
-          <button
-            onClick={handleNew}
-            className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
-          >
-            New
-          </button>
-          <button
-            onClick={handleOpen}
-            className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors"
-          >
-            Open
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!configIsValid}
-            className="px-3 py-1 text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <button onClick={handleNew}>New</button>
+          <button onClick={handleOpen}>Open</button>
+          <button onClick={handleSave} disabled={!configIsValid}>
             Save
           </button>
-          <button
-            onClick={handleSaveAs}
-            disabled={!configIsValid}
-            className="px-3 py-1 text-nowrap text-sm bg-stone-700 hover:bg-stone-600 text-stone-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <button onClick={handleSaveAs} disabled={!configIsValid}>
             Save As
           </button>
         </div>

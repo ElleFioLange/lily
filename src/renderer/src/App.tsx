@@ -25,7 +25,7 @@ function App(): React.JSX.Element {
     const compositor = new Compositor()
     setCompositorRef(compositor)
 
-    // Register system plug-ins (poiesis and config)
+    // Register Poiesis plug-in
     registerPlugin(PoiesisPlugin)
 
     // Dynamically load and register plugins from src/plugins/

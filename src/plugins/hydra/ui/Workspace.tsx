@@ -28,9 +28,8 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
       if (!editorRef.current) return
 
       // Stone color theme for CodeMirror
-      const stoneTheme = EditorView.theme({
+      const hydraTheme = EditorView.theme({
         '&': {
-          // backgroundColor: '#1c191780', // stone-900/50
           height: '100%',
           fontSize: '14px'
         },
@@ -45,15 +44,12 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
           border: 'none',
           paddingRight: '8px'
         },
-        '.cm-activeLineGutter': {
-          backgroundColor: '#78716c80 !important' // stone-500/50
-        },
         '.cm-lineNumbers .cm-gutterElement': {
           padding: '0 8px',
           minWidth: '32px'
         },
         '.cm-activeLine': {
-          backgroundColor: '#78716cd0 !important' // stone-500/50
+          backgroundColor: '#78716cd0 !important' // stone-500/75
         },
         '& .cm-line': {
           width: 'fit-content',
@@ -92,7 +88,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
           highlightActiveLine(),
           javascript(),
           search(),
-          stoneTheme,
+          hydraTheme,
           syntaxHighlighting(highlightStyle),
           EditorView.lineWrapping,
           history(),

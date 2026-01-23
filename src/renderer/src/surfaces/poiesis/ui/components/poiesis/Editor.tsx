@@ -21,11 +21,10 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
     if (!editorRef.current) return
 
     // Custom theme for centered, minimal text editor
-    const centeredTheme = EditorView.theme({
+    const poiesisTheme = EditorView.theme({
       '&': {
         backgroundColor: 'transparent',
-        height: '100%',
-        fontSize: '24px'
+        height: '100%'
       },
       '.cm-scroller': {
         display: 'flex',
@@ -37,6 +36,7 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
         caretColor: '#fafaf9',
         fontFamily: 'Monaspace Xenon',
         color: '#fafaf9',
+        fontSize: '24px !important',
         padding: '2rem',
         textAlign: 'center',
         whiteSpace: 'pre-wrap'
@@ -62,7 +62,7 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
     const startState = EditorState.create({
       doc: poiesis,
       extensions: [
-        centeredTheme,
+        poiesisTheme,
         EditorView.lineWrapping,
         history(),
         keymap.of(defaultKeymap),
@@ -128,7 +128,7 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
         ref={editorRef}
         onWheel={handleScroll}
         onScroll={handleScroll}
-        className="w-full max-h-full overflow-auto outline-none relative"
+        className="w-full h-min max-h-full overflow-auto outline-none relative text-2xl"
       />
     </div>
   )
