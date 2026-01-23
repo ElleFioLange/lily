@@ -10,6 +10,7 @@ import { Compositor } from './graphics/Compositor'
 import PoiesisPlugin from './surfaces/poiesis'
 import { usePluginsStore } from './stores/usePluginsStore'
 import { loadPlugins } from './utils/loadPlugins'
+import run from './utils/actions/run'
 
 function App(): React.JSX.Element {
   const togglePerformanceWindow = usePerformanceStore((state) => state.toggleWindow)
@@ -50,9 +51,7 @@ function App(): React.JSX.Element {
       togglePerformanceWindow()
     })
 
-    const unsubActions = window.api.actions.onRun(() => {
-      console.log('handle running actions')
-    })
+    const unsubActions = window.api.actions.onRun(run)
 
     window.api.osc.send('/request/connection/confirm')
 

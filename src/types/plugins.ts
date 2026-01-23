@@ -31,7 +31,8 @@ type PluginBase = {
 
   // Primary functionality
   init: (instanceId: string) => void
-  process: (instanceId: string, poiesis?: string, config?: ConfigurationJSON) => void
+  // Poiesis and config are passed as arrays to handle multiple poiesis instances
+  process: (instanceId: string, poiesis?: string[], config?: ConfigurationJSON[]) => void
   cleanup: (instanceId: string) => void
 
   // UI Elements

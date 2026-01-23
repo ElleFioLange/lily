@@ -70,6 +70,7 @@ export const createPoiesisStore = (instanceId: string) => {
         if (err) throw err
         set({ config, parsedConfig, configIsValid: true, configError: null })
       } catch (err) {
+        // TODO Make error handling more forgiving (don't set parsedConfig to null over a typo)
         set({
           config,
           parsedConfig: null,
