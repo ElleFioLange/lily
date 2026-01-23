@@ -10,6 +10,7 @@ export interface PoiesisState extends PluginState {
   // Poiesis
   poiesis: string
   triggerAnimationFlag: boolean
+  lastRunValue: string
   scrollPercentage: number
   setPoiesis: (input: string) => void
   setTriggerAnimationFlag: (triggerAnimationFlag: boolean) => void
@@ -20,8 +21,8 @@ export interface PoiesisState extends PluginState {
   parsedConfig: ConfigurationJSON | null
   configPath: string | null
   configName: string | null
-  isValid: boolean
-  error: string | null
+  configIsValid: boolean
+  configError: string | null
   setConfig: (rawConfig: string) => void
   setParsedConfig: (parsedConfig: ConfigurationJSON) => void
   saveConfig: () => Promise<void>
@@ -44,6 +45,7 @@ export const createPoiesisStore = (instanceId: string) => {
     // Poiesis
     poiesis: '',
     triggerAnimationFlag: false,
+    lastRunValue: '',
     scrollPercentage: 0,
 
     setPoiesis: (poiesis) => set({ poiesis }),
@@ -57,8 +59,8 @@ export const createPoiesisStore = (instanceId: string) => {
     parsedConfig: {},
     configPath: null,
     configName: 'new-config',
-    isValid: true,
-    error: null,
+    configIsValid: true,
+    configError: null,
 
     setConfig: (config: string) => {
       // Validate YAML
@@ -66,13 +68,13 @@ export const createPoiesisStore = (instanceId: string) => {
         jsyaml.load(config)
         const { parsedConfig, err } = parseConfig(config)
         if (err) throw err
-        set({ config, parsedConfig, isValid: true, error: null })
+        set({ config, parsedConfig, configIsValid: true, configError: null })
       } catch (err) {
         set({
           config,
           parsedConfig: null,
-          isValid: false,
-          error: err instanceof Error ? err.message : 'Invalid YAML'
+          configIsValid: false,
+          configError: err instanceof Error ? err.message : 'Invalid YAML'
         })
       }
     },
@@ -83,25 +85,25 @@ export const createPoiesisStore = (instanceId: string) => {
 
     saveConfig: async () => {
       const state = get()
-      if (!state.isValid) {
-        set({ error: 'Cannot save invalid YAML' })
+      if (!state.configIsValid) {
+        set({ configError: 'Cannot save invalid YAML' })
         return
       }
 
       if (state.configPath === null) {
-        set({ error: 'Cannot save with null file path' })
+        set({ configError: 'Cannot save with null file path' })
         return
       }
 
       try {
         const result = await window.api.config.save(state.config, state.configPath)
         if (result.success) {
-          set({ configPath: result.path || null, error: null })
+          set({ configPath: result.path || null, configError: null })
         } else if (result.error) {
-          set({ error: result.error })
+          set({ configError: result.error })
         }
       } catch (err) {
-        set({ error: err instanceof Error ? err.message : 'Failed to save configuration' })
+        set({ configError: err instanceof Error ? err.message : 'Failed to save configuration' })
       }
     },
 
@@ -124,42 +126,42 @@ export const createPoiesisStore = (instanceId: string) => {
             parsedConfig,
             configPath,
             configName,
-            isValid: true,
-            error: null
+            configIsValid: true,
+            configError: null
           })
         } else if (result.error) {
           // Don't set error for cancellation
           if (result.error !== 'No file selected') {
-            set({ error: result.error, isValid: false })
+            set({ configError: result.error, configIsValid: false })
           }
         }
       } catch (err) {
         set({
-          error: err instanceof Error ? err.message : 'Failed to open file',
-          isValid: false
+          configError: err instanceof Error ? err.message : 'Failed to open file',
+          configIsValid: false
         })
       }
     },
 
     saveConfigAs: async () => {
       const state = get()
-      if (!state.isValid) {
-        set({ error: 'Cannot save invalid YAML' })
+      if (!state.configIsValid) {
+        set({ configError: 'Cannot save invalid YAML' })
         return
       }
 
       try {
         const result = await window.api.config.saveAs(state.config)
         if (result.success) {
-          set({ configPath: result.path || null, error: null })
+          set({ configPath: result.path || null, configError: null })
         } else if (result.error) {
           // Don't set error for cancellation
           if (result.error !== 'No file selected') {
-            set({ error: result.error })
+            set({ configError: result.error })
           }
         }
       } catch (err) {
-        set({ error: err instanceof Error ? err.message : 'Failed to save file' })
+        set({ configError: err instanceof Error ? err.message : 'Failed to save file' })
       }
     },
 
@@ -169,8 +171,8 @@ export const createPoiesisStore = (instanceId: string) => {
         parsedConfig: {},
         configPath: null,
         configName: 'new-config',
-        isValid: true,
-        error: null
+        configIsValid: true,
+        configError: null
       })
     },
 
