@@ -12,8 +12,12 @@ export default function init(instanceId: string) {
   // Get WebGL context with preserveDrawingBuffer for compositor reading
   canvas.getContext('webgl', { preserveDrawingBuffer: true })
 
+  // This is required for hydra's audio detection to work
+  const parent = document.createElement('div')
+  parent.appendChild(canvas)
+
   const hydra = new Hydra({
-    detectAudio: false,
+    detectAudio: true,
     canvas: canvas,
     makeGlobal: false,
     autoLoop: true
