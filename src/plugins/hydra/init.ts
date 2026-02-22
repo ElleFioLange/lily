@@ -20,6 +20,7 @@ export default function init(instanceId: string) {
     detectAudio: true,
     canvas: canvas,
     makeGlobal: false,
+    precision: 'highp',
     autoLoop: true
   })
 
