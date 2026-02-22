@@ -1,4 +1,4 @@
-import { PluginDefinition, PluginManifest } from '../helpers'
+import { PluginDefinition, PluginManifest } from '../utils'
 
 import manifest from './manifest.json'
 

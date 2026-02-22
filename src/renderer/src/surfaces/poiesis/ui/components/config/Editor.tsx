@@ -8,7 +8,7 @@ import { search, searchKeymap } from '@codemirror/search'
 import { tags } from '@lezer/highlight'
 import * as jsyaml from 'js-yaml'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
-import { ActivePlugin } from '@plugins/helpers'
+import { ActivePlugin } from '@plugins/utils'
 import Navigation from './Navigation'
 import { PoiesisState } from '@renderer/surfaces/poiesis/store'
 

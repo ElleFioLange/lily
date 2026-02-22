@@ -3,7 +3,7 @@ import { EditorState } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { defaultKeymap, history } from '@codemirror/commands'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
-import { ActivePlugin } from '@plugins/helpers'
+import { ActivePlugin } from '@plugins/utils'
 import { PoiesisState } from '../../../store'
 
 type PoiesisEditorProps = {

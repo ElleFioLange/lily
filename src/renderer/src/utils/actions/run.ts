@@ -1,4 +1,4 @@
-import { ActivePlugin } from '@plugins/helpers'
+import { ActivePlugin } from '@plugins/utils'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { PoiesisState } from '@renderer/surfaces/poiesis/store'
 

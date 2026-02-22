@@ -1,4 +1,4 @@
-import { PluginDefinition, ActivePlugin } from '@plugins/helpers'
+import { PluginDefinition, ActivePlugin } from '@plugins/utils'
 import { create } from 'zustand'
 import { v4 as uuid } from 'uuid'
 

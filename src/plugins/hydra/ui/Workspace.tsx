@@ -8,7 +8,7 @@ import { search, searchKeymap } from '@codemirror/search'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
-import { ActivePlugin } from '@plugins/helpers'
+import { ActivePlugin } from '@plugins/utils'
 import { HydraState } from '../store'
 import { WorkspaceProps } from 'src/types/plugins'
 

@@ -3,7 +3,7 @@ import loadScript from '@renderer/utils/loadScript'
 import { keyRegex } from '@renderer/utils/parseInput'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { HydraState } from './store'
-import { ActivePlugin } from '@plugins/helpers'
+import { ActivePlugin } from '@plugins/utils'
 
 // function parseHydra(input: string) {
 //   const { parsedConfig: config } = useConfigStore.getState()
