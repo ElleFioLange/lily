@@ -7,7 +7,7 @@ import process from './process'
 
 import Workspace from './ui/Workspace'
 import Monitor from './ui/Monitor'
-import Settings from './ui/Settings'
+import Options from './ui/Options'
 
 import { createPoiesisStore, PoiesisState } from './store'
 import cleanup from './cleanup'
@@ -21,7 +21,7 @@ const PoiesisPlugin: PluginDefinition<PoiesisState> = {
 
   Workspace,
   Monitor,
-  Settings,
+  Options,
 
   createStore: createPoiesisStore
 }

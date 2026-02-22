@@ -37,7 +37,7 @@ type PluginBase = {
 
   // UI Elements
   Workspace?: FunctionComponent<WorkspaceProps>
-  Settings?: FunctionComponent<UIProps>
+  Options?: FunctionComponent<UIProps>
   Monitor?: FunctionComponent<UIProps>
   Renderer?: FunctionComponent<RendererProps>
 }

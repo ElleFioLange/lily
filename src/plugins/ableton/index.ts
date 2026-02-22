@@ -8,7 +8,7 @@ import cleanup from './cleanup'
 
 import Workspace from './ui/Workspace'
 import Monitor from './ui/Monitor'
-import Settings from './ui/Settings'
+import Options from './ui/Options'
 
 import { createLiveStore, LiveState } from './store'
 
@@ -21,7 +21,7 @@ const AbletonPlugin: PluginDefinition<LiveState> = {
 
   Workspace,
   Monitor,
-  Settings,
+  Options,
 
   createStore: createLiveStore
 }

@@ -50,7 +50,7 @@ src/plugins/hydra/
     ├── Workspace.tsx  # Main editor/workspace UI
     ├── Renderer.tsx   # Canvas/graphics renderer (optional)
     ├── Monitor.tsx    # Bottom panel monitor view
-    └── Settings.tsx   # Settings panel view
+    └── Options.tsx   # Options panel view
 ```
 
 ### Plugin Types (`src/types/plugins.ts`)
@@ -73,7 +73,7 @@ type PluginDefinition<StoreType> = {
   createStore: (instanceId: string) => UseStore<StoreType>
   // UI Components (all optional)
   Workspace?: FunctionComponent<WorkspaceProps>
-  Settings?: FunctionComponent<UIProps>
+  Options?: FunctionComponent<UIProps>
   Monitor?: FunctionComponent<UIProps>
   Renderer?: FunctionComponent<RendererProps>
 }
@@ -180,8 +180,8 @@ The Performance Window (`src/renderer/src/windows/performance/PerformanceWindow.
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  Workspace (66%)        │  Settings (34%)       │
-│  - Plugin Workspace     │  - Plugin Settings    │
+│  Workspace (66%)        │  Options (34%)       │
+│  - Plugin Workspace     │  - Plugin Options    │
 │  - Plugin Renderer      │                       │
 ├─────────────────────────┴───────────────────────┤
 │  Mixer (25%)            │  Monitors (75%)       │
@@ -196,7 +196,7 @@ The Performance Window (`src/renderer/src/windows/performance/PerformanceWindow.
 - **Workspace.tsx** - Displays focused plugin's Workspace + Renderer, AddPlugin dropdown
 - **Mixer.tsx** - Alpha/enabled controls for editors and graphics sources
 - **Monitors.tsx** - Renders active plugins' Monitor components in tabs
-- **Settings.tsx** - Renders active plugins' Settings components in tabs
+- **Options.tsx** - Renders active plugins' Options components in tabs
 
 ### Plugins Store (`src/renderer/src/stores/usePluginsStore.ts`)
 

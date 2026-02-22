@@ -8,7 +8,7 @@ import cleanup from './cleanup'
 
 import Workspace from './ui/Workspace'
 import Monitor from './ui/Monitor'
-import Settings from './ui/Settings'
+import Options from './ui/Options'
 import Renderer from './ui/Renderer'
 
 import { createHydraStore, HydraState } from './store'
@@ -22,7 +22,7 @@ const HydraPlugin: PluginDefinition<HydraState> = {
 
   Workspace,
   Monitor,
-  Settings,
+  Options,
   Renderer,
 
   createStore: createHydraStore

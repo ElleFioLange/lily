@@ -1,6 +1,6 @@
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import Workspace from './Workspace'
-import Settings from './Settings'
+import Options from './Options'
 import Monitors from './Monitors'
 import Mixer from './Mixer'
 
@@ -16,7 +16,7 @@ export default function Layout() {
           <PanelResizeHandle className="w-px bg-stone-700 cursor-row-resize flex items-center justify-center" />
 
           <Panel defaultSize={34} collapsible>
-            <Settings />
+            <Options />
           </Panel>
         </PanelGroup>
       </Panel>
