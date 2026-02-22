@@ -22,6 +22,14 @@
     @apply border border-stone-700 bg-stone-900/50 text-sm px-1 place-items-center cursor-pointer hover:bg-stone-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
+  ul {
+    @apply border border-stone-700 text-sm cursor-pointer;
+  }
+
+  li {
+    @apply bg-stone-900 even:bg-stone-800 p-1 hover:bg-stone-700/70 cursor-pointer;
+  }
+
   input[type='range'] {
     -webkit-appearance: none;
     appearance: none;

@@ -12,7 +12,7 @@ function AddPlugin() {
       {open ? (
         <ul className="w-40 absolute text-xs">
           {Object.values(registered).map((plugin) => (
-            <button
+            <li
               className="top-0 left-0 w-full text-left block"
               key={plugin.manifest.id}
               onClick={() => {
@@ -21,7 +21,7 @@ function AddPlugin() {
               }}
             >
               {plugin.manifest.name}
-            </button>
+            </li>
           ))}
         </ul>
       ) : (
