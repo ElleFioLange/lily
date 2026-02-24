@@ -9,3 +9,6 @@ TODO restructure the app to use plugin system for different surfaces (ableton, h
 TODO new UI
 
 TODO add AI interaction. system prompt should be defined in the plugin.
+
+TODO setup plugin structure to pass the available lilyAPI objects to the init function on initialization (reference claude chat "Electron plugin compatibility for prebuilt apps")
+
