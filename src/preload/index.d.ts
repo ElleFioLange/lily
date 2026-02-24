@@ -16,6 +16,19 @@ import type { AudioDevice, AudioCaptureStatus, AudioBufferData } from '../types/
 
 interface LilyAPI {
   /**
+   * File System API
+   *
+   * API for opening and managing files
+   */
+  files: {
+    open: () => Promise<{ success: boolean; content?: string; path?: string; error?: string }>
+    save: (
+      content: string,
+      path: string
+    ) => Promise<{ success: boolean; path?: string; error?: string }>
+    saveAs: (content: string) => Promise<{ success: boolean; path?: string; error?: string }>
+  }
+  /**
    * OSC Communication API
    *
    * Minimal, generic API for sending and receiving OSC messages.

@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Menu, dialog, FileFilter } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -444,55 +444,13 @@ function initializeAudioStreaming(): void {
  */
 function setupIPCHandlers(): void {
   // ============================================================================
-  // OSC Communication Handler
+  // File System Handler
   // ============================================================================
-  /**
-   * Generic OSC send handler
-   * Forwards OSC messages from renderer to the OSC client
-   */
-  ipcMain.handle('osc:send', async (_, address: string, args: unknown[]) => {
-    oscClient.send(address, args as Array<number | string | boolean>)
-  })
-
-  // ============================================================================
-  // Max Device Export Handlers
-  // ============================================================================
-  ipcMain.handle('max-device:export', async () => {
-    return await exportMaxDevice()
-  })
-
-  ipcMain.handle('max-device:quick-install', async () => {
-    return await quickInstallMaxDevice()
-  })
-
-  ipcMain.handle('max-device:check-exists', async () => {
-    return await checkMaxDeviceExists()
-  })
-
-  // ============================================================================
-  // Configuration File Handlers
-  // ============================================================================
-
-  ipcMain.handle('config:save', async (_, content: string, path: string) => {
-    try {
-      await fs.writeFile(path, content, 'utf-8')
-      return { success: true, path }
-    } catch (err) {
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : 'Failed to save configuration'
-      }
-    }
-  })
-
-  ipcMain.handle('config:open', async () => {
+  ipcMain.handle('files:open', async (_, filters: FileFilter[]) => {
     try {
       const result = await dialog.showOpenDialog(mainWindowRef!, {
-        title: 'Open Configuration File',
-        filters: [
-          { name: 'YAML Files', extensions: ['yaml', 'yml'] },
-          { name: 'All Files', extensions: ['*'] }
-        ],
+        title: 'Open File',
+        filters,
         properties: ['openFile']
       })
 
@@ -511,23 +469,10 @@ function setupIPCHandlers(): void {
     }
   })
 
-  ipcMain.handle('config:saveAs', async (_, content: string) => {
+  ipcMain.handle('files:save', async (_, content: string, path: string) => {
     try {
-      const result = await dialog.showSaveDialog(mainWindowRef!, {
-        title: 'Save Configuration File',
-        defaultPath: 'new-config.yaml',
-        filters: [
-          { name: 'YAML Files', extensions: ['yaml', 'yml'] },
-          { name: 'All Files', extensions: ['*'] }
-        ]
-      })
-
-      if (result.canceled || !result.filePath) {
-        return { success: false, error: 'No file selected' }
-      }
-
-      await fs.writeFile(result.filePath, content, 'utf-8')
-      return { success: true, path: result.filePath }
+      await fs.writeFile(path, content, 'utf-8')
+      return { success: true, path }
     } catch (err) {
       return {
         success: false,
@@ -535,6 +480,61 @@ function setupIPCHandlers(): void {
       }
     }
   })
+
+  ipcMain.handle(
+    'files:saveAs',
+    async (_, filters: FileFilter[], defaultPath: string, content: string) => {
+      try {
+        const result = await dialog.showSaveDialog(mainWindowRef!, {
+          title: 'Save File',
+          defaultPath,
+          filters
+        })
+
+        if (result.canceled || !result.filePath) {
+          return { success: false, error: 'No file selected' }
+        }
+
+        await fs.writeFile(result.filePath, content, 'utf-8')
+        return { success: true, path: result.filePath }
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : 'Failed to save file'
+        }
+      }
+    }
+  )
+  // ============================================================================
+  // OSC Communication Handler
+  // ============================================================================
+  /**
+   * Generic OSC send handler
+   * Forwards OSC messages from renderer to the OSC client
+   */
+  ipcMain.handle('osc:send', async (_, address: string, args: unknown[]) => {
+    oscClient.send(address, args as Array<number | string | boolean>)
+  })
+
+  // ============================================================================
+  // Max Device Export Handlers
+
+  // ============================================================================
+  ipcMain.handle('max-device:export', async () => {
+    return await exportMaxDevice()
+  })
+
+  ipcMain.handle('max-device:quick-install', async () => {
+    return await quickInstallMaxDevice()
+  })
+
+  ipcMain.handle('max-device:check-exists', async () => {
+    return await checkMaxDeviceExists()
+  })
+
+  // ============================================================================
+  // Configuration File Handlers
+  // ============================================================================
 
   // ============================================================================
   // Hydra File Handlers

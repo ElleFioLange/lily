@@ -30,6 +30,20 @@ import type { AudioDevice, AudioCaptureStatus, AudioBufferData } from '../types/
 // Custom APIs for renderer
 const api = {
   // ============================================================================
+  // File System API
+  // ============================================================================
+  files: {
+    open: (): Promise<{ success: boolean; content?: string; path?: string; error?: string }> =>
+      ipcRenderer.invoke('files:open'),
+    save: (
+      content: string,
+      path: string
+    ): Promise<{ success: boolean; path?: string; error?: string }> =>
+      ipcRenderer.invoke('files:save', content, path),
+    saveAs: (content: string): Promise<{ success: boolean; path?: string; error?: string }> =>
+      ipcRenderer.invoke('files:saveAs', content)
+  },
+  // ============================================================================
   // OSC Communication API
   // ============================================================================
   osc: {
