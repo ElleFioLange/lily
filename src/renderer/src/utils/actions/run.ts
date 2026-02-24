@@ -3,6 +3,7 @@ import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { PoiesisState } from '@renderer/surfaces/poiesis/store'
 
 export default function run() {
+  console.log('running')
   const { active, focused } = usePluginsStore.getState()
   if (focused === null) return
 
@@ -20,11 +21,12 @@ export default function run() {
   if (poiesisPlugins.length) {
     const { poiesis, parsedConfig } = poiesisPlugins[0].useStore.getState()
     for (const plugin of otherPlugins) {
-      plugin.process(plugin.instanceId, [poiesis], [parsedConfig])
+      console.log('running process of ' + plugin.manifest.name)
+      plugin.process(plugin.instanceId, [{ poiesis, config: parsedConfig }])
     }
   } else {
     for (const plugin of otherPlugins) {
-      plugin.process(plugin.instanceId)
+      // plugin.process(plugin.instanceId)
     }
   }
 

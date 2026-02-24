@@ -53,6 +53,8 @@ function App(): React.JSX.Element {
 
     const unsubActions = window.api.actions.onRun(run)
 
+    console.log('hello')
+
     window.api.osc.send('/request/connection/confirm')
 
     return () => {
