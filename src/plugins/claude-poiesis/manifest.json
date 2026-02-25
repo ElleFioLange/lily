@@ -1,0 +1,8 @@
+{
+  "id": "claude-poiesis",
+  "name": "Claude-Poiesis",
+  "repo": "local",
+  "author": "sysfem.err",
+  "version": "1.0.0",
+  "outputTypes": ["editor"]
+}

@@ -48,8 +48,7 @@ import { ActivePlugin } from '@plugins/utils'
 
 export default async function process(
   instanceId: string,
-  _poiesis: string,
-  _config: ConfigurationJSON
+  _inputs: { poiesis: string; config: ConfigurationJSON }[]
 ) {
   const { getInstance } = usePluginsStore.getState()
   const instance = getInstance(instanceId) as ActivePlugin<HydraState>

@@ -26,7 +26,7 @@ export default function run() {
     }
   } else {
     for (const plugin of otherPlugins) {
-      // plugin.process(plugin.instanceId)
+      plugin.process(plugin.instanceId, [])
     }
   }
 
