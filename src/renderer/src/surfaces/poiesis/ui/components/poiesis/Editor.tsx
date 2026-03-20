@@ -5,17 +5,22 @@ import { defaultKeymap, history } from '@codemirror/commands'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { ActivePlugin } from '@plugins/utils'
 import { PoiesisState } from '../../../store'
+import { AudioManager } from '@renderer/audio/AudioManager'
+import { KeywordShaderManager } from '@renderer/surfaces/poiesis/lib/KeywordShaderManager'
+import TextOverlay from './TextOverlay'
 
 type PoiesisEditorProps = {
   instanceId: string
+  environment: 'main' | 'performance'
 }
 
-export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
+export default function PoiesisEditor({ instanceId, environment }: PoiesisEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<PoiesisState>
-  const { poiesis, setPoiesis, setScrollPercentage } = instance.useStore()
+  const { poiesis, setPoiesis, setScrollPercentage, setAudioManager, setShaderManager } =
+    instance.useStore()
 
   useEffect(() => {
     if (!editorRef.current) return
@@ -109,31 +114,80 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
   }, [poiesis])
 
   const handleScroll = () => {
-    const editor = editorRef.current!
-    const { clientHeight, scrollTop } = editor
+    const editor = editorRef.current
+    if (editor) {
+      const { clientHeight, scrollTop } = editor
 
-    const container = editor.children[0]
-    const containerHeight = container.clientHeight
+      const container = editor.children[0]
+      const containerHeight = container.clientHeight
 
-    const maxScroll = containerHeight - clientHeight
+      const maxScroll = containerHeight - clientHeight
 
-    // From 0 to 1
-    const scrollPercentage = scrollTop / maxScroll
+      // From 0 to 1
+      const scrollPercentage = scrollTop / maxScroll
 
-    setScrollPercentage(scrollPercentage)
+      setScrollPercentage(scrollPercentage)
+    }
   }
 
-  return (
-    <div
-      className="size-full flex items-center relative cursor-text"
-      onClick={() => viewRef.current?.focus()}
-    >
+  // Initialize audio keyword shader system
+  useEffect(() => {
+    if (environment === 'performance') {
+      let audioManager: AudioManager | null = null
+      let shaderManager: KeywordShaderManager | null = null
+
+      async function initializeSystems() {
+        // Initialize audio system
+        try {
+          // Load settings to get selected audio device
+          const settings = await window.api.settings.get()
+          const deviceId = settings.audio.autoDetect
+            ? undefined
+            : settings.audio.deviceId || undefined
+
+          audioManager = new AudioManager()
+          await audioManager.initialize(deviceId)
+          setAudioManager(audioManager)
+          console.log('Audio system initialized')
+        } catch (err) {
+          console.error('Failed to initialize audio:', err)
+          console.warn('Continuing without audio - shaders will receive zero values')
+        }
+
+        // Initialize shader manager (depends on audio)
+        if (audioManager) {
+          shaderManager = new KeywordShaderManager(audioManager)
+          shaderManager.startRenderLoop()
+          setShaderManager(shaderManager)
+          console.log('Shader manager initialized')
+        } else {
+          console.warn('Shader manager not initialized due to audio failure')
+        }
+      }
+
+      initializeSystems()
+
+      // Cleanup on unmount
+      return () => {
+        setAudioManager(null)
+        setShaderManager(null)
+      }
+    } else return () => {}
+  }, [environment, setAudioManager, setShaderManager])
+
+  if (environment === 'main')
+    return (
       <div
-        ref={editorRef}
-        onWheel={handleScroll}
-        onScroll={handleScroll}
-        className="w-full h-min max-h-full overflow-auto outline-none relative text-2xl"
-      />
-    </div>
-  )
+        className="size-full flex items-center relative cursor-text"
+        onClick={() => viewRef.current?.focus()}
+      >
+        <div
+          ref={editorRef}
+          onWheel={handleScroll}
+          onScroll={handleScroll}
+          className="w-full h-min max-h-full overflow-auto outline-none relative text-2xl"
+        />
+      </div>
+    )
+  else return <TextOverlay instanceId={instanceId} />
 }

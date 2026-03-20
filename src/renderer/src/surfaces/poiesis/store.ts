@@ -1,8 +1,10 @@
+import { AudioManager } from '@renderer/audio/AudioManager'
 import parseConfig from '@renderer/utils/parseConfig'
 import jsyaml from 'js-yaml'
 import { ConfigurationJSON } from 'src/types/config'
 import { PluginState } from 'src/types/plugins'
 import { create } from 'zustand'
+import { KeywordShaderManager } from './lib/KeywordShaderManager'
 // import { useHydraStore } from './useHydraStore'
 // import parseInput, { ParseAbletonResult } from '@renderer/utils/parseInput'
 
@@ -12,9 +14,13 @@ export interface PoiesisState extends PluginState {
   triggerAnimationFlag: boolean
   lastRunValue: string
   scrollPercentage: number
+  audioManager: AudioManager | null
+  shaderManager: KeywordShaderManager | null
   setPoiesis: (input: string) => void
   setTriggerAnimationFlag: (triggerAnimationFlag: boolean) => void
   setScrollPercentage: (scrollPercentage: number) => void
+  setAudioManager: (audioManager: AudioManager | null) => void
+  setShaderManager: (shaderManager: KeywordShaderManager | null) => void
 
   // Config
   config: string
@@ -45,12 +51,18 @@ export const createPoiesisStore = (instanceId: string) => {
     triggerAnimationFlag: false,
     lastRunValue: '',
     scrollPercentage: 0,
+    audioManager: null,
+    shaderManager: null,
 
     setPoiesis: (poiesis) => set({ poiesis }),
 
     setTriggerAnimationFlag: (triggerAnimationFlag) => set({ triggerAnimationFlag }),
 
     setScrollPercentage: (scrollPercentage) => set({ scrollPercentage }),
+
+    setAudioManager: (audioManager) => set({ audioManager }),
+
+    setShaderManager: (shaderManager) => set({ shaderManager }),
 
     // Config
     config: '',

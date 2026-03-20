@@ -148,7 +148,7 @@ export function PerformanceWindow() {
               mixBlendMode: blendMode as CSSProperties['mixBlendMode']
             }}
           >
-            <plugin.Workspace instanceId={id} />
+            <plugin.Workspace instanceId={id} environment="performance" />
           </div>
         )
       })}

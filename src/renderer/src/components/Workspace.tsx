@@ -68,6 +68,7 @@ export default function Workspace() {
                 <focusedSurface.Workspace
                   key={focusedSurface.instanceId}
                   instanceId={focusedSurface.instanceId}
+                  environment="main"
                 />
               </div>
             ) : null}

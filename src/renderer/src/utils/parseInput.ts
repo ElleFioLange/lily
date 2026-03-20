@@ -1,15 +1,13 @@
-import { useConfigStore } from '@renderer/stores/useConfigStore'
+import { ConfigurationJSON } from 'src/types/config'
 import { OSCMessage } from 'src/types/osc-messages'
 
 // TODO need to handle stuff like skeleton(() correctly
 export const keyRegex = (key) => new RegExp(`\\b${key}\\(([^\\)]*)\\)`, 'g')
 
-function parseHydra(input: string) {
-  const { parsedConfig: config } = useConfigStore.getState()
+function parseHydra(input: string, parsedConfig: ConfigurationJSON) {
+  if (parsedConfig === null) throw new Error('Cannot parse input with invalid parsedConfig')
 
-  if (config === null) throw new Error('Cannot parse input with invalid config')
-
-  const keys = Object.entries(config)
+  const keys = Object.entries(parsedConfig)
   const hydraParams: { name: string; value: number | string | boolean }[] = []
 
   keys.forEach(([key, params]) => {
