@@ -49,11 +49,15 @@ export default function KeywordRenderer({
   }, [keyword, text, audioConfig, shaderManager])
 
   return (
-    <span id={keyword} className="keyword-container">
-      <span ref={textSpanRef} className="keyword-text">
+    <span id={keyword} className="relative inline-block bg-stone-800/25">
+      <span ref={textSpanRef} className="relative z-1 font-krypton font-semibold text-transparent">
         {text}
       </span>
-      <canvas ref={canvasRef} className="keyword-shader" data-keyword={keyword} />
+      <canvas
+        ref={canvasRef}
+        className="absolute top-0 left-0 size-full z-2 pointer-none"
+        data-keyword={keyword}
+      />
     </span>
   )
 }

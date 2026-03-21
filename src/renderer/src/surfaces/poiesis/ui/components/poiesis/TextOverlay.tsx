@@ -80,7 +80,11 @@ export default function TextOverlay({ instanceId }: TextOverlayProps) {
 
       // Add text before keyword
       if (start > marker) {
-        elements.push(<span key={`text-${index}`}>{poiesis.slice(marker, start)}</span>)
+        elements.push(
+          <span key={`text-${index}`} className="bg-stone-800/25">
+            {poiesis.slice(marker, start)}
+          </span>
+        )
       }
 
       // Add keyword renderer or plain keyword
