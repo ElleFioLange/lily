@@ -34,5 +34,7 @@ export default function init(instanceId: string) {
   addGraphicsSource({ id: instanceId, canvas })
   addEditorSource({ id: instanceId })
 
+  console.log('hydra initialized')
+
   return useHydraStore
 }
