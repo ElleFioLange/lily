@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react'
-import { EditorState } from '@codemirror/state'
-import { EditorView, keymap } from '@codemirror/view'
-import { defaultKeymap, history } from '@codemirror/commands'
+// import { EditorState } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
+// import { defaultKeymap, history } from '@codemirror/commands'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { ActivePlugin } from '@plugins/utils'
 import { ClaudePoiesisState } from '@plugins/claude-poiesis/store'
@@ -34,8 +34,7 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
   const viewRef = useRef<EditorView | null>(null)
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<ClaudePoiesisState>
-  const { draft, conversation, setDraft, setConversation, setScrollPercentage } =
-    instance.useStore()
+  const { draft, conversation, setDraft, setConversation } = instance.useStore()
 
   useEffect(() => {
     conversationRef.current?.scrollTo({ top: conversationRef.current?.scrollHeight })
@@ -71,7 +70,8 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
           content,
           role: speaker === 'artist' ? 'user' : 'assistant'
         })),
-        system: 'Continue this poem with a short stanza.',
+        system:
+          'You are playing a character named Madeleine. You are a companion to a musical performance. You are embodied on stage as a female mannequinn wearing a long black wool skirt, a cream sleeveless vest, and a womens business jacket. I, the performer, am having a conversation with you as part of the performance. Respond in in short, sharply written sentences. NO MORE THAN 2 SENTENCES. KEEP IT SHORT. Your main goal is to ask questions to prompt insight from me as a performer. Topics will be range from art to artificial intelligence to politics to culture to gender and much more.',
         model: 'claude-sonnet-4-6'
       })
       .then((response) => {
@@ -94,7 +94,6 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
     >
       <div className="w-full h-2/5 overflow-auto outline-none relative text-2xl grid grid-cols-[minmax(64px,20%)_1fr_1fr_minmax(64px,20%)] gap-4">
         <div />
-        <div />
         <textarea
           className="min-h-8 max-h-32 p-2 border border-stone-100 outline-none resize-none"
           value={draft}
@@ -106,6 +105,7 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
           }}
           onChange={(e) => setDraft(e.target.value)}
         />
+        <div />
         <div />
       </div>
       <div
@@ -123,8 +123,8 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
                 // style={{ order: -idx }}
               >
                 <div />
-                <div className="bg-stone-950/50 p-2">{message.content}</div>
                 <div />
+                <div className="bg-stone-950/50 p-2">{message.content}</div>
                 <div />
               </div>
             )
@@ -136,8 +136,8 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
                 // style={{ order: -idx }}
               >
                 <div />
-                <div />
                 <div className="bg-stone-950/50 p-2">{message.content}</div>
+                <div />
                 <div />
               </div>
             )
