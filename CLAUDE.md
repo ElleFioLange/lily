@@ -232,6 +232,52 @@ interface PluginsManagerState {
 - Generic `send(address, args)` method
 - Handles type conversion (numbers, strings, booleans)
 
+## Claude API Communication
+
+The Claude API is accessed securely through the main process, keeping API keys out of the renderer.
+
+### Architecture
+
+1. **Main Process** (`src/main/claude/client.ts`) - Singleton client managing Anthropic SDK
+2. **IPC Handler** (`src/main/index.ts`) - `claude:sendMessage` handler
+3. **Preload Script** (`src/preload/index.ts`) - Exposes `window.api.claude.sendMessage()`
+4. **Types** (`src/types/claude.ts`) - TypeScript definitions for Claude API
+
+### Client (`src/main/claude/client.ts`)
+
+Singleton service that:
+
+- Initializes Anthropic client with API key from `process.env.CLAUDE_API_KEY`
+- Provides `sendMessage()` method for conversation-style interactions
+- Handles errors and returns structured results
+
+### Usage in Renderer
+
+```typescript
+const result = await window.api.claude.sendMessage({
+  messages: [
+    { role: 'user', content: 'Hello!' },
+    { role: 'assistant', content: 'Hi there!' },
+    { role: 'user', content: 'How are you?' }
+  ],
+  system: 'You are a helpful assistant...',
+  model: 'claude-sonnet-4-6', // Optional, defaults to sonnet-4-6
+  maxTokens: 128 // Optional, defaults to 128
+})
+
+if (result.success) {
+  console.log('Claude response:', result.content)
+} else {
+  console.error('Error:', result.error)
+}
+```
+
+### Security
+
+- API key is **only** accessible in the main process (Node.js environment)
+- Renderer process communicates via IPC, never directly with Anthropic API
+- Follows Electron security best practices for API key management
+
 ## Styling
 
 - **Tailwind CSS v4** with stone color palette

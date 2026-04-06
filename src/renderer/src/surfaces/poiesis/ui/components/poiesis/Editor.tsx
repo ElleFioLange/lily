@@ -41,7 +41,7 @@ export default function PoiesisEditor({ instanceId, environment }: PoiesisEditor
         caretColor: '#fafaf9',
         fontFamily: 'Monaspace Xenon',
         color: '#fafaf9',
-        fontSize: '24px !important',
+        fontSize: environment === 'main' ? '24px !important' : '48px !important',
         padding: '2rem',
         whiteSpace: 'pre-wrap',
         display: 'flex !important',

@@ -4,6 +4,7 @@ import type { OSCMessage } from '../types/osc-messages'
 import type { ExportResult } from '../plugins/ableton/maxdevice/export'
 import type { Settings } from '../types/settings'
 import type { AudioDevice, AudioCaptureStatus, AudioBufferData } from '../types/audio'
+import type { ClaudeSendMessageParams, ClaudeSendMessageResult } from '../types/claude'
 
 /**
  * Preload Script - Minimal OSC API Bridge
@@ -301,6 +302,19 @@ const api = {
      * @returns Promise resolving when settings are saved
      */
     save: (settings: Settings): Promise<void> => ipcRenderer.invoke('settings:save', settings)
+  },
+
+  // ============================================================================
+  // Claude API
+  // ============================================================================
+  claude: {
+    /**
+     * Send a message to Claude and get a response
+     * @param params - Message parameters (messages, system prompt, model, max tokens)
+     * @returns Promise resolving to Claude's response or error
+     */
+    sendMessage: (params: ClaudeSendMessageParams): Promise<ClaudeSendMessageResult> =>
+      ipcRenderer.invoke('claude:sendMessage', params)
   }
 }
 

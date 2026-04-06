@@ -5,6 +5,7 @@ import type { ExportResult } from '../plugins/ableton/maxdevice/export'
 import type { CameraServerStatus, StartServerResult, StopServerResult } from '../types/camera'
 import type { Settings } from '../types/settings'
 import type { AudioDevice, AudioCaptureStatus, AudioBufferData } from '../types/audio'
+import type { ClaudeSendMessageParams, ClaudeSendMessageResult } from '../types/claude'
 
 /**
  * Minimal OSC API Type Definitions
@@ -182,6 +183,15 @@ interface LilyAPI {
   settings: {
     get: () => Promise<Settings>
     save: (settings: Settings) => Promise<void>
+  }
+
+  /**
+   * Claude API
+   *
+   * Methods for communicating with the Claude API
+   */
+  claude: {
+    sendMessage: (params: ClaudeSendMessageParams) => Promise<ClaudeSendMessageResult>
   }
 }
 

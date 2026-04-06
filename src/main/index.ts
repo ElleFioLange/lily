@@ -17,6 +17,8 @@ import { getSettingsManager } from './settings/manager'
 import type { Settings } from '../types/settings'
 import { getAudifyCapture } from './audio/audify-capture'
 import type { AudioDevice, AudioCaptureStatus } from '../types/audio'
+import { getClaudeClient } from './claude/client'
+import type { ClaudeSendMessageParams, ClaudeSendMessageResult } from '../types/claude'
 
 // Initialize OSC server and client
 const oscServer = getOSCServer({ port: 5460 })
@@ -27,6 +29,9 @@ const cameraServer = getCameraWebSocketServer()
 
 // Initialize settings manager
 const settingsManager = getSettingsManager()
+
+// Initialize Claude API client
+const claudeClient = getClaudeClient()
 
 let mainWindowRef: BrowserWindow | null = null
 let settingsWindowRef: BrowserWindow | null = null
@@ -283,6 +288,9 @@ app.whenReady().then(async () => {
 
   // Load settings
   await settingsManager.load()
+
+  // Initialize Claude API client
+  claudeClient.init()
 
   // Initialize OSC communication
   initializeOSC()
@@ -686,4 +694,14 @@ function setupIPCHandlers(): void {
   ipcMain.handle('settings:save', async (_, settings: Settings): Promise<void> => {
     await settingsManager.set(settings)
   })
+
+  // ============================================================================
+  // Claude API Handlers
+  // ============================================================================
+  ipcMain.handle(
+    'claude:sendMessage',
+    async (_, params: ClaudeSendMessageParams): Promise<ClaudeSendMessageResult> => {
+      return await claudeClient.sendMessage(params)
+    }
+  )
 }
