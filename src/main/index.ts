@@ -17,6 +17,7 @@ import { getSettingsManager } from './settings/manager'
 import type { Settings } from '../types/settings'
 import { getAudifyCapture } from './audio/audify-capture'
 import type { AudioDevice, AudioCaptureStatus } from '../types/audio'
+import 'dotenv/config'
 import { getClaudeClient } from './claude/client'
 import type { ClaudeSendMessageParams, ClaudeSendMessageResult } from '../types/claude'
 
