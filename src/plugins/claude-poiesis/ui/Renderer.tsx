@@ -3,32 +3,48 @@ import { useEffect, useRef } from 'react'
 import { ActivePlugin, RendererProps } from 'src/types/plugins'
 import { ClaudePoiesisState } from '../store'
 
+const MAX_SCALE = 8
+
 function drawMask(canvas: HTMLCanvasElement, word: string) {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
   ctx.clearRect(0, 0, canvas.width, canvas.height)
-
   if (!word) return
 
   ctx.globalCompositeOperation = 'source-over'
   ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-  // Scale font so text spans full canvas width
+  // Render area inset by 4% of canvas width on all sides
+  const pad = canvas.width * 0.04
+  const renderW = canvas.width - pad * 2
+  const renderH = canvas.height - pad * 2
+
+  // Measure text bounding box at a fixed reference size
   const baseFontSize = 200
   ctx.font = `bold ${baseFontSize}px sans-serif`
   const metrics = ctx.measureText(word)
-  const fontSize = Math.floor((baseFontSize * canvas.width) / metrics.width)
+  const textW = metrics.width
+  const textH = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
 
-  ctx.font = `bold ${fontSize}px sans-serif`
-  ctx.textBaseline = 'middle'
-  ctx.textAlign = 'left'
+  // Independent x/y scale factors to fill render area, each capped at MAX_SCALE
+  const scaleX = Math.min(renderW / textW, MAX_SCALE)
+  const scaleY = Math.min(renderH / textH, MAX_SCALE)
 
-  // Punch transparent holes where text glyphs are
+  // Center the scaled text box within the render area
+  const tx = pad + (renderW - textW * scaleX) / 2
+  const ty = pad + (renderH - textH * scaleY) / 2 + metrics.actualBoundingBoxAscent * scaleY
+
   ctx.globalCompositeOperation = 'destination-out'
   ctx.fillStyle = 'rgba(255, 255, 255, 1)'
-  ctx.fillText(word, 0, canvas.height / 2)
+  ctx.textBaseline = 'alphabetic'
+  ctx.textAlign = 'left'
+  ctx.save()
+  ctx.translate(tx, ty)
+  ctx.scale(scaleX, scaleY)
+  ctx.fillText(word, 0, 0)
+  ctx.restore()
 
   ctx.globalCompositeOperation = 'source-over'
 }
