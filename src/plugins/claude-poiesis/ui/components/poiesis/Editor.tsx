@@ -32,7 +32,8 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
     isWaitingForClaude,
     setIsWaitingForClaude,
     artistFont,
-    claudeFont
+    claudeFont,
+    systemPrompt
   } = instance.useStore()
 
   useEffect(() => {
@@ -76,8 +77,7 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
         content,
         role: speaker === 'artist' ? 'user' : 'assistant'
       })),
-      system:
-        'You are playing a character named Madeleine. You are a companion to a musical performance. You are embodied on stage as a female mannequinn wearing a long black wool skirt, a cream sleeveless vest, and a womens business jacket. I, the performer, am having a conversation with you as part of the performance. Respond in in short, sharply written sentences. NO MORE THAN 2 SENTENCES. KEEP IT SHORT. Your main goal is to ask questions to prompt insight from me as a performer. Topics will be range from art to artificial intelligence to politics to culture to gender and much more.',
+      system: systemPrompt,
       model: 'claude-sonnet-4-6',
       maxTokens: 128
     })

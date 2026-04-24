@@ -58,8 +58,16 @@ function FontSelect({ label, value, onChange }: FontSelectProps) {
 export default function Options({ instanceId }: UIProps) {
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<ClaudePoiesisState>
-  const { openSurface, setOpenSurface, artistFont, claudeFont, setArtistFont, setClaudeFont } =
-    instance.useStore()
+  const {
+    openSurface,
+    setOpenSurface,
+    artistFont,
+    claudeFont,
+    setArtistFont,
+    setClaudeFont,
+    systemPrompt,
+    setSystemPrompt
+  } = instance.useStore()
 
   const handleOpen = async () => {
     const { success, content, path, error } = await window.api.files.open()
@@ -82,6 +90,15 @@ export default function Options({ instanceId }: UIProps) {
       <div className="flex flex-col gap-3">
         <FontSelect label="Artist font" value={artistFont} onChange={setArtistFont} />
         <FontSelect label="Claude font" value={claudeFont} onChange={setClaudeFont} />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label className="text-xs text-stone-400 uppercase tracking-wider">System prompt</label>
+        <textarea
+          className="bg-stone-900 border border-stone-700 text-stone-100 px-2 py-1 outline-none resize-none hover:border-stone-500 focus:border-stone-400 text-sm leading-relaxed"
+          rows={8}
+          value={systemPrompt}
+          onChange={(e) => setSystemPrompt(e.target.value)}
+        />
       </div>
       <FileSystem className="border-none p-0" handleOpen={handleOpen} files={testFiles} />
     </div>

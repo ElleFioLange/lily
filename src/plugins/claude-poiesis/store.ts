@@ -54,6 +54,10 @@ export interface ClaudePoiesisState extends PluginState {
   setConfigPath: (path: string | null) => void
   setConfigName: (name: string | null) => void
 
+  // System prompt
+  systemPrompt: string
+  setSystemPrompt: (prompt: string) => void
+
   // Workspace open surface
   openSurface: 'poiesis' | 'config'
   setOpenSurface: (openSurface: 'poiesis' | 'config') => void
@@ -212,6 +216,11 @@ export const createPoiesisStore = (instanceId: string) => {
     setConfigPath: (configPath) => set({ configPath }),
 
     setConfigName: (configName) => set({ configName }),
+
+    // System prompt
+    systemPrompt:
+      'You are playing a character named Madeleine. You are a companion to a musical performance. You are embodied on stage as a female mannequinn wearing a long black wool skirt, a cream sleeveless vest, and a womens business jacket. I, the performer, am having a conversation with you as part of the performance. Respond in in short, sharply written sentences. NO MORE THAN 2 SENTENCES. KEEP IT SHORT. Your main goal is to ask questions to prompt insight from me as a performer. Topics will be range from art to artificial intelligence to politics to culture to gender and much more.',
+    setSystemPrompt: (systemPrompt) => set({ systemPrompt }),
 
     // Workspace open surface
     openSurface: 'poiesis' as 'poiesis', // Holy shit what the hell
