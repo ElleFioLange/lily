@@ -6,7 +6,7 @@ import { ClaudePoiesisState } from '../store'
 // Neither axis may stretch more than MAX_SCALE times the other axis's natural fill factor
 const MAX_SCALE = 4
 
-function drawMask(canvas: HTMLCanvasElement, word: string) {
+function drawMask(canvas: HTMLCanvasElement, word: string, font: string) {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
@@ -24,7 +24,7 @@ function drawMask(canvas: HTMLCanvasElement, word: string) {
 
   // Measure text bounding box at a fixed reference size
   const baseFontSize = 200
-  ctx.font = `bold ${baseFontSize}px sans-serif`
+  ctx.font = `bold ${baseFontSize}px ${font}`
   const metrics = ctx.measureText(word)
   const textW = metrics.width
   const textH = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
@@ -57,13 +57,13 @@ export default function Renderer({ instanceId, ...props }: RendererProps) {
   const previewRef = useRef<HTMLCanvasElement>(null)
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<ClaudePoiesisState>
-  const { maskCanvas, maskWord } = instance.useStore()
+  const { maskCanvas, maskWord, maskFont } = instance.useStore()
 
-  // Redraw mask canvas whenever the displayed word changes
+  // Redraw mask canvas whenever the displayed word or font changes
   useEffect(() => {
     if (!maskCanvas) return
-    drawMask(maskCanvas, maskWord)
-  }, [maskWord, maskCanvas])
+    drawMask(maskCanvas, maskWord, maskFont)
+  }, [maskWord, maskFont, maskCanvas])
 
   // Mirror mask canvas to the preview element via RAF
   useEffect(() => {

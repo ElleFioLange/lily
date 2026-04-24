@@ -8,8 +8,8 @@ type PoiesisEditorProps = {
   instanceId: string
 }
 
-const CHAR_DELAY_MS = 80
-const WORD_PAUSE_MS = 200
+const CHAR_DELAY_MS = 120
+const WORD_PAUSE_MS = 300
 
 function sleep(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms))
@@ -28,8 +28,11 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
     setDraft,
     setConversation,
     setMaskWord,
+    setMaskFont,
     isWaitingForClaude,
-    setIsWaitingForClaude
+    setIsWaitingForClaude,
+    artistFont,
+    claudeFont
   } = instance.useStore()
 
   useEffect(() => {
@@ -90,7 +93,8 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
 
       setConversation([...newConversation, claudeMessage])
 
-      // Animate Claude's response word by word
+      // Animate Claude's response word by word using Claude's font
+      setMaskFont(claudeFont)
       const words = result.content.split(' ').filter((w) => w.length > 0)
       animateClaudeWords(words)
     } else if (result.error) {
@@ -101,6 +105,7 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
   const handleDraftChange = (value: string) => {
     setDraft(value)
     if (!isWaitingForClaude) {
+      setMaskFont(artistFont)
       const words = value.split(' ')
       setMaskWord(words[words.length - 1])
     }
@@ -115,6 +120,7 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
         <div />
         <textarea
           className="min-h-8 max-h-32 p-2 border border-stone-100 outline-none resize-none"
+          style={{ fontFamily: artistFont }}
           value={draft}
           disabled={isWaitingForClaude}
           onKeyDown={(e) => {
@@ -138,7 +144,7 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
               <div className="grid grid-cols-subgrid col-span-4 " key={message.content + idx}>
                 <div />
                 <div />
-                <div className="bg-stone-950/50 p-2">{message.content}</div>
+                <div className="bg-stone-950/50 p-2" style={{ fontFamily: claudeFont }}>{message.content}</div>
                 <div />
               </div>
             )
@@ -146,7 +152,7 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
             return (
               <div className="grid grid-cols-subgrid col-span-4" key={message.content + idx}>
                 <div />
-                <div className="bg-stone-950/50 p-2">{message.content}</div>
+                <div className="bg-stone-950/50 p-2" style={{ fontFamily: artistFont }}>{message.content}</div>
                 <div />
                 <div />
               </div>

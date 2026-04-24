@@ -27,10 +27,18 @@ export interface ClaudePoiesisState extends PluginState {
   // Mask renderer
   maskCanvas: HTMLCanvasElement | null
   maskWord: string
+  maskFont: string
   isWaitingForClaude: boolean
   setMaskCanvas: (canvas: HTMLCanvasElement) => void
   setMaskWord: (word: string) => void
+  setMaskFont: (font: string) => void
   setIsWaitingForClaude: (waiting: boolean) => void
+
+  // Fonts
+  artistFont: string
+  claudeFont: string
+  setArtistFont: (font: string) => void
+  setClaudeFont: (font: string) => void
 
   // Config
   config: string
@@ -74,10 +82,18 @@ export const createPoiesisStore = (instanceId: string) => {
     // Mask renderer
     maskCanvas: null,
     maskWord: '',
+    maskFont: 'sans-serif',
     isWaitingForClaude: false,
     setMaskCanvas: (maskCanvas) => set({ maskCanvas }),
     setMaskWord: (maskWord) => set({ maskWord }),
+    setMaskFont: (maskFont) => set({ maskFont }),
     setIsWaitingForClaude: (isWaitingForClaude) => set({ isWaitingForClaude }),
+
+    // Fonts
+    artistFont: 'sans-serif',
+    claudeFont: 'sans-serif',
+    setArtistFont: (artistFont) => set({ artistFont }),
+    setClaudeFont: (claudeFont) => set({ claudeFont }),
 
     // Config
     config: '',
