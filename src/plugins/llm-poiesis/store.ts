@@ -3,24 +3,24 @@ import jsyaml from 'js-yaml'
 import { ConfigurationJSON } from 'src/types/config'
 import { PluginState } from 'src/types/plugins'
 import { create } from 'zustand'
-// import { useHydraStore } from './useHydraStore'
-// import parseInput, { ParseAbletonResult } from '@renderer/utils/parseInput'
 
-export type ClaudePoiesisMessage = {
-  speaker: 'artist' | 'claude'
+export type LLMPoiesisMessage = {
+  speaker: 'artist' | 'response'
   content: string
   timestamp: Date
 }
 
-export interface ClaudePoiesisState extends PluginState {
+export type LLMProvider = 'claude' | 'local'
+
+export interface LLMPoiesisState extends PluginState {
   // Poiesis
   draft: string
-  conversation: ClaudePoiesisMessage[]
+  conversation: LLMPoiesisMessage[]
   triggerAnimationFlag: boolean
   lastRunValue: string
   scrollPercentage: number
   setDraft: (draft: string) => void
-  setConversation: (conversation: ClaudePoiesisMessage[]) => void
+  setConversation: (conversation: LLMPoiesisMessage[]) => void
   setTriggerAnimationFlag: (triggerAnimationFlag: boolean) => void
   setScrollPercentage: (scrollPercentage: number) => void
 
@@ -28,17 +28,23 @@ export interface ClaudePoiesisState extends PluginState {
   maskCanvas: HTMLCanvasElement | null
   maskWord: string
   maskFont: string
-  isWaitingForClaude: boolean
+  isWaitingForResponse: boolean
   setMaskCanvas: (canvas: HTMLCanvasElement) => void
   setMaskWord: (word: string) => void
   setMaskFont: (font: string) => void
-  setIsWaitingForClaude: (waiting: boolean) => void
+  setIsWaitingForResponse: (waiting: boolean) => void
 
   // Fonts
   artistFont: string
-  claudeFont: string
+  responseFont: string
   setArtistFont: (font: string) => void
-  setClaudeFont: (font: string) => void
+  setResponseFont: (font: string) => void
+
+  // LLM provider
+  llmProvider: LLMProvider
+  localModelUrl: string
+  setLLMProvider: (provider: LLMProvider) => void
+  setLocalModelUrl: (url: string) => void
 
   // Config
   config: string
@@ -63,8 +69,8 @@ export interface ClaudePoiesisState extends PluginState {
   setOpenSurface: (openSurface: 'poiesis' | 'config') => void
 }
 
-export const createPoiesisStore = (instanceId: string) => {
-  return create<ClaudePoiesisState>((set) => ({
+export const createLLMPoiesisStore = (instanceId: string) => {
+  return create<LLMPoiesisState>((set) => ({
     // Plugin UIProps
     instanceId,
 
@@ -76,28 +82,31 @@ export const createPoiesisStore = (instanceId: string) => {
     scrollPercentage: 0,
 
     setDraft: (draft) => set({ draft }),
-
     setConversation: (conversation) => set({ conversation }),
-
     setTriggerAnimationFlag: (triggerAnimationFlag) => set({ triggerAnimationFlag }),
-
     setScrollPercentage: (scrollPercentage) => set({ scrollPercentage }),
 
     // Mask renderer
     maskCanvas: null,
     maskWord: '',
     maskFont: 'sans-serif',
-    isWaitingForClaude: false,
+    isWaitingForResponse: false,
     setMaskCanvas: (maskCanvas) => set({ maskCanvas }),
     setMaskWord: (maskWord) => set({ maskWord }),
     setMaskFont: (maskFont) => set({ maskFont }),
-    setIsWaitingForClaude: (isWaitingForClaude) => set({ isWaitingForClaude }),
+    setIsWaitingForResponse: (isWaitingForResponse) => set({ isWaitingForResponse }),
 
     // Fonts
     artistFont: 'sans-serif',
-    claudeFont: 'sans-serif',
+    responseFont: 'sans-serif',
     setArtistFont: (artistFont) => set({ artistFont }),
-    setClaudeFont: (claudeFont) => set({ claudeFont }),
+    setResponseFont: (responseFont) => set({ responseFont }),
+
+    // LLM provider
+    llmProvider: 'claude',
+    localModelUrl: 'http://localhost:1234/v1',
+    setLLMProvider: (llmProvider) => set({ llmProvider }),
+    setLocalModelUrl: (localModelUrl) => set({ localModelUrl }),
 
     // Config
     config: '',
@@ -108,14 +117,12 @@ export const createPoiesisStore = (instanceId: string) => {
     configError: null,
 
     setConfig: (config: string) => {
-      // Validate YAML
       try {
         jsyaml.load(config)
         const { parsedConfig, err } = parseConfig(config)
         if (err) throw err
         set({ config, parsedConfig, configIsValid: true, configError: null })
       } catch (err) {
-        // TODO Make error handling more forgiving (don't set parsedConfig to null over a typo)
         set({
           config,
           parsedConfig: null,
@@ -129,38 +136,12 @@ export const createPoiesisStore = (instanceId: string) => {
       set({ parsedConfig })
     },
 
-    // saveConfig: async () => {
-    //   const state = get()
-    //   if (!state.configIsValid) {
-    //     set({ configError: 'Cannot save invalid YAML' })
-    //     return
-    //   }
-
-    //   if (state.configPath === null) {
-    //     set({ configError: 'Cannot save with null file path' })
-    //     return
-    //   }
-
-    //   try {
-    //     const result = await window.api.config.save(state.config, state.configPath)
-    //     if (result.success) {
-    //       set({ configPath: result.path || null, configError: null })
-    //     } else if (result.error) {
-    //       set({ configError: result.error })
-    //     }
-    //   } catch (err) {
-    //     set({ configError: err instanceof Error ? err.message : 'Failed to save configuration' })
-    //   }
-    // },
-
     openConfig: (content: string, path: string) => {
       try {
-        // TODO double check if this works on windows? maybe need backslashes?
         const pathArr = path.split('/')
         const file = pathArr.at(-1)
-        const name = file?.split('.')[0] // strip .yaml
+        const name = file?.split('.')[0]
 
-        // Parse and validate loaded content
         const { parsedConfig, err } = parseConfig(content)
         if (err) throw err
 
@@ -180,28 +161,6 @@ export const createPoiesisStore = (instanceId: string) => {
       }
     },
 
-    // saveConfigAs: async () => {
-    //   const state = get()
-    //   if (!state.configIsValid) {
-    //     set({ configError: 'Cannot save invalid YAML' })
-    //     return
-    //   }
-
-    //   try {
-    //     const result = await window.api.config.saveAs(state.config)
-    //     if (result.success) {
-    //       set({ configPath: result.path || null, configError: null })
-    //     } else if (result.error) {
-    //       // Don't set error for cancellation
-    //       if (result.error !== 'No file selected') {
-    //         set({ configError: result.error })
-    //       }
-    //     }
-    //   } catch (err) {
-    //     set({ configError: err instanceof Error ? err.message : 'Failed to save file' })
-    //   }
-    // },
-
     newConfig: () => {
       set({
         config: '',
@@ -214,7 +173,6 @@ export const createPoiesisStore = (instanceId: string) => {
     },
 
     setConfigPath: (configPath) => set({ configPath }),
-
     setConfigName: (configName) => set({ configName }),
 
     // System prompt
@@ -223,7 +181,7 @@ export const createPoiesisStore = (instanceId: string) => {
     setSystemPrompt: (systemPrompt) => set({ systemPrompt }),
 
     // Workspace open surface
-    openSurface: 'poiesis' as 'poiesis', // Holy shit what the hell
+    openSurface: 'poiesis' as 'poiesis',
 
     setOpenSurface: (openSurface) => set({ openSurface })
   }))

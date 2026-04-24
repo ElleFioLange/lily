@@ -1,6 +1,6 @@
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { ActivePlugin, UIProps } from 'src/types/plugins'
-import { ClaudePoiesisState } from '../store'
+import { LLMPoiesisState, LLMProvider } from '../store'
 import FileSystem from '@renderer/components/FileSystem'
 
 const testFiles = {
@@ -26,13 +26,15 @@ const FONTS = [
   { label: 'Impact', value: 'Impact, "Arial Narrow", sans-serif' }
 ]
 
-type FontSelectProps = {
+function FontSelect({
+  label,
+  value,
+  onChange
+}: {
   label: string
   value: string
   onChange: (font: string) => void
-}
-
-function FontSelect({ label, value, onChange }: FontSelectProps) {
+}) {
   return (
     <div className="flex flex-col gap-1">
       <label className="text-xs text-stone-400 uppercase tracking-wider">{label}</label>
@@ -57,14 +59,18 @@ function FontSelect({ label, value, onChange }: FontSelectProps) {
 
 export default function Options({ instanceId }: UIProps) {
   const { getInstance } = usePluginsStore()
-  const instance = getInstance(instanceId) as ActivePlugin<ClaudePoiesisState>
+  const instance = getInstance(instanceId) as ActivePlugin<LLMPoiesisState>
   const {
     openSurface,
     setOpenSurface,
     artistFont,
-    claudeFont,
+    responseFont,
     setArtistFont,
-    setClaudeFont,
+    setResponseFont,
+    llmProvider,
+    setLLMProvider,
+    localModelUrl,
+    setLocalModelUrl,
     systemPrompt,
     setSystemPrompt
   } = instance.useStore()
@@ -87,10 +93,42 @@ export default function Options({ instanceId }: UIProps) {
       <button onClick={() => setOpenSurface(openSurface === 'poiesis' ? 'config' : 'poiesis')}>
         {openSurface}
       </button>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-xs text-stone-400 uppercase tracking-wider">LLM provider</label>
+        <div className="flex gap-2">
+          {(['claude', 'local'] as LLMProvider[]).map((p) => (
+            <button
+              key={p}
+              className={`flex-1 px-3 py-1 text-sm border ${
+                llmProvider === p
+                  ? 'border-stone-300 text-stone-100 bg-stone-700'
+                  : 'border-stone-700 text-stone-400 hover:border-stone-500 hover:text-stone-200'
+              }`}
+              onClick={() => setLLMProvider(p)}
+            >
+              {p === 'claude' ? 'Claude API' : 'Local (LM Studio)'}
+            </button>
+          ))}
+        </div>
+        {llmProvider === 'local' && (
+          <div className="flex flex-col gap-1 mt-1">
+            <label className="text-xs text-stone-500">Server URL</label>
+            <input
+              className="bg-stone-900 border border-stone-700 text-stone-100 px-2 py-1 outline-none text-sm hover:border-stone-500 focus:border-stone-400 font-mono"
+              value={localModelUrl}
+              onChange={(e) => setLocalModelUrl(e.target.value)}
+              placeholder="http://localhost:1234/v1"
+            />
+          </div>
+        )}
+      </div>
+
       <div className="flex flex-col gap-3">
         <FontSelect label="Artist font" value={artistFont} onChange={setArtistFont} />
-        <FontSelect label="Claude font" value={claudeFont} onChange={setClaudeFont} />
+        <FontSelect label="Response font" value={responseFont} onChange={setResponseFont} />
       </div>
+
       <div className="flex flex-col gap-1">
         <label className="text-xs text-stone-400 uppercase tracking-wider">System prompt</label>
         <textarea
@@ -100,6 +138,7 @@ export default function Options({ instanceId }: UIProps) {
           onChange={(e) => setSystemPrompt(e.target.value)}
         />
       </div>
+
       <FileSystem className="border-none p-0" handleOpen={handleOpen} files={testFiles} />
     </div>
   )
