@@ -3,7 +3,8 @@ import { useEffect, useRef } from 'react'
 import { ActivePlugin, RendererProps } from 'src/types/plugins'
 import { ClaudePoiesisState } from '../store'
 
-const MAX_SCALE = 8
+// Neither axis may stretch more than MAX_SCALE times the other axis's natural fill factor
+const MAX_SCALE = 4
 
 function drawMask(canvas: HTMLCanvasElement, word: string) {
   const ctx = canvas.getContext('2d')
@@ -28,9 +29,12 @@ function drawMask(canvas: HTMLCanvasElement, word: string) {
   const textW = metrics.width
   const textH = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
 
-  // Independent x/y scale factors to fill render area, each capped at MAX_SCALE
-  const scaleX = Math.min(renderW / textW, MAX_SCALE)
-  const scaleY = Math.min(renderH / textH, MAX_SCALE)
+  const rawScaleX = renderW / textW
+  const rawScaleY = renderH / textH
+
+  // Cap each axis so neither can exceed MAX_SCALE times the other's natural fill factor
+  const scaleX = Math.min(rawScaleX, rawScaleY * MAX_SCALE)
+  const scaleY = Math.min(rawScaleY, rawScaleX * MAX_SCALE)
 
   // Center the scaled text box within the render area
   const tx = pad + (renderW - textW * scaleX) / 2
