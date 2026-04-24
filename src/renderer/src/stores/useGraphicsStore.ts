@@ -13,8 +13,17 @@ export type MixerParams = {
 const defaultParams = {
   alpha: 1,
   zIndex: 0,
-  blendMode: 'source-over' as BlendMode,
+  blendMode: 'source-over' as BlendMode
+}
+
+const graphicsDefaultParams = {
+  ...defaultParams,
   enabled: true
+}
+
+const editorDefaultParams = {
+  ...defaultParams,
+  enabled: false
 }
 
 interface GraphicsState {
@@ -71,13 +80,13 @@ export const useGraphicsStore = create<GraphicsState>((set, get) => ({
     const source = {
       id,
       canvas,
-      ...defaultParams,
+      ...graphicsDefaultParams,
       ...initParams
     }
     compositorRef?.addSource(source)
     const newGraphics = {
       ...graphics,
-      [id]: { ...defaultParams, ...initParams }
+      [id]: { ...graphicsDefaultParams, ...initParams }
     }
     set({ graphics: newGraphics })
   },
@@ -86,7 +95,7 @@ export const useGraphicsStore = create<GraphicsState>((set, get) => ({
     const { editors } = get()
     const newEditors = {
       ...editors,
-      [id]: { ...defaultParams, ...initParams }
+      [id]: { ...editorDefaultParams, ...initParams }
     }
     set({ editors: newEditors })
   },
