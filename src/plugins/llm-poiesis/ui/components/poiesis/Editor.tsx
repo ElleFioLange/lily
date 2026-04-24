@@ -18,37 +18,6 @@ function sleep(ms: number) {
 
 type SendResult = { success: true; content: string } | { success: false; error: string }
 
-async function sendToLocal(
-  baseUrl: string,
-  messages: { role: string; content: string }[],
-  systemPrompt: string,
-  maxTokens: number
-): Promise<SendResult> {
-  try {
-    const res = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'local-model',
-        max_tokens: maxTokens,
-        messages: [
-          ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-          ...messages
-        ]
-      })
-    })
-
-    if (!res.ok) return { success: false, error: `LM Studio error: ${res.status} ${res.statusText}` }
-
-    const data = await res.json()
-    const content = data.choices?.[0]?.message?.content
-    if (!content) return { success: false, error: 'No content in response' }
-    return { success: true, content }
-  } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to reach local model' }
-  }
-}
-
 export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
   const conversationRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
@@ -120,11 +89,16 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
         model: 'claude-sonnet-4-6',
         maxTokens: 128
       })
-      result = r.success && r.content
-        ? { success: true, content: r.content }
-        : { success: false, error: r.error ?? 'Unknown error' }
+      result =
+        r.success && r.content
+          ? { success: true, content: r.content }
+          : { success: false, error: r.error ?? 'Unknown error' }
     } else {
-      result = await sendToLocal(localModelUrl, apiMessages, systemPrompt, 128)
+      const r = await window.api.llm.sendLocal(localModelUrl, apiMessages, systemPrompt, 128)
+      result =
+        r.success && r.content
+          ? { success: true, content: r.content }
+          : { success: false, error: r.error ?? 'Unknown error' }
     }
 
     setIsWaitingForResponse(false)

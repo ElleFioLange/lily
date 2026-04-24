@@ -193,6 +193,14 @@ interface LilyAPI {
   claude: {
     sendMessage: (params: ClaudeSendMessageParams) => Promise<ClaudeSendMessageResult>
   }
+  llm: {
+    sendLocal: (
+      baseUrl: string,
+      messages: { role: string; content: string }[],
+      systemPrompt: string,
+      maxTokens: number
+    ) => Promise<ClaudeSendMessageResult>
+  }
 }
 
 declare global {
