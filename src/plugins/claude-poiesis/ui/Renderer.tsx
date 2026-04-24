@@ -27,7 +27,10 @@ function drawMask(canvas: HTMLCanvasElement, word: string, font: string) {
   ctx.font = `bold ${baseFontSize}px ${font}`
   const metrics = ctx.measureText(word)
   const textW = metrics.width
-  const textH = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
+  // Use font-wide ascent/descent so the box height is stable across all characters
+  const ascent = metrics.fontBoundingBoxAscent
+  const descent = metrics.fontBoundingBoxDescent
+  const textH = ascent + descent
 
   const rawScaleX = renderW / textW
   const rawScaleY = renderH / textH
@@ -36,9 +39,9 @@ function drawMask(canvas: HTMLCanvasElement, word: string, font: string) {
   const scaleX = Math.min(rawScaleX, rawScaleY * MAX_SCALE)
   const scaleY = Math.min(rawScaleY, rawScaleX * MAX_SCALE)
 
-  // Center the scaled text box within the render area
+  // Center the scaled text box within the render area; baseline is ascent below the box top
   const tx = pad + (renderW - textW * scaleX) / 2
-  const ty = pad + (renderH - textH * scaleY) / 2 + metrics.actualBoundingBoxAscent * scaleY
+  const ty = pad + (renderH - textH * scaleY) / 2 + ascent * scaleY
 
   ctx.globalCompositeOperation = 'destination-out'
   ctx.fillStyle = 'rgba(255, 255, 255, 1)'
