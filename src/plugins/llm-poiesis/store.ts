@@ -103,7 +103,7 @@ export const createLLMPoiesisStore = (instanceId: string) => {
     setResponseFont: (responseFont) => set({ responseFont }),
 
     // LLM provider
-    llmProvider: 'claude',
+    llmProvider: 'local',
     localModelUrl: 'http://localhost:1234/v1',
     setLLMProvider: (llmProvider) => set({ llmProvider }),
     setLocalModelUrl: (localModelUrl) => set({ localModelUrl }),
