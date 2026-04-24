@@ -705,4 +705,45 @@ function setupIPCHandlers(): void {
       return await claudeClient.sendMessage(params)
     }
   )
+
+  // Local LLM (LM Studio / OpenAI-compatible) Handler
+  // ============================================================================
+  ipcMain.handle(
+    'llm:sendLocal',
+    async (
+      _,
+      baseUrl: string,
+      messages: { role: string; content: string }[],
+      systemPrompt: string,
+      maxTokens: number
+    ): Promise<ClaudeSendMessageResult> => {
+      try {
+        const url = `${baseUrl}/chat/completions`
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'local-model',
+            max_tokens: maxTokens,
+            messages: [
+              ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+              ...messages
+            ]
+          })
+        })
+
+        if (!res.ok) {
+          return { success: false, error: `LM Studio returned ${res.status} ${res.statusText} from ${url}` }
+        }
+
+        const data = await res.json()
+        const content = data.choices?.[0]?.message?.content
+        if (!content) return { success: false, error: 'No content in LM Studio response' }
+        return { success: true, content }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        return { success: false, error: `Failed to reach local model at ${baseUrl}: ${msg}` }
+      }
+    }
+  )
 }

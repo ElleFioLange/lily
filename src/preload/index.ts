@@ -315,6 +315,19 @@ const api = {
      */
     sendMessage: (params: ClaudeSendMessageParams): Promise<ClaudeSendMessageResult> =>
       ipcRenderer.invoke('claude:sendMessage', params)
+  },
+
+  // ============================================================================
+  // Local LLM API (LM Studio / OpenAI-compatible)
+  // ============================================================================
+  llm: {
+    sendLocal: (
+      baseUrl: string,
+      messages: { role: string; content: string }[],
+      systemPrompt: string,
+      maxTokens: number
+    ): Promise<ClaudeSendMessageResult> =>
+      ipcRenderer.invoke('llm:sendLocal', baseUrl, messages, systemPrompt, maxTokens)
   }
 }
 

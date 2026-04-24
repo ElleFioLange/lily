@@ -1,7 +1,7 @@
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { useEffect, useRef } from 'react'
 import { ActivePlugin, RendererProps } from 'src/types/plugins'
-import { ClaudePoiesisState } from '../store'
+import { LLMPoiesisState } from '../store'
 
 // Neither axis may stretch more than MAX_SCALE times the other axis's natural fill factor
 const MAX_SCALE = 4
@@ -59,7 +59,7 @@ function drawMask(canvas: HTMLCanvasElement, word: string, font: string) {
 export default function Renderer({ instanceId, ...props }: RendererProps) {
   const previewRef = useRef<HTMLCanvasElement>(null)
   const { getInstance } = usePluginsStore()
-  const instance = getInstance(instanceId) as ActivePlugin<ClaudePoiesisState>
+  const instance = getInstance(instanceId) as ActivePlugin<LLMPoiesisState>
   const { maskCanvas, maskWord, maskFont } = instance.useStore()
 
   // Redraw mask canvas whenever the displayed word or font changes

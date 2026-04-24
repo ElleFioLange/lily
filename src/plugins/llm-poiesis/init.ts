@@ -1,8 +1,8 @@
 import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
-import { createPoiesisStore } from './store'
+import { createLLMPoiesisStore } from './store'
 
 export default function init(instanceId: string) {
-  const usePoiesisStore = createPoiesisStore(instanceId)
+  const usePoiesisStore = createLLMPoiesisStore(instanceId)
   const { addEditorSource, addGraphicsSource } = useGraphicsStore.getState()
 
   addEditorSource({ id: instanceId })

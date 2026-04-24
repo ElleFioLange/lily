@@ -2,7 +2,8 @@ import { useRef, useEffect } from 'react'
 import { EditorView } from '@codemirror/view'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { ActivePlugin } from '@plugins/utils'
-import { ClaudePoiesisState } from '@plugins/claude-poiesis/store'
+import { LLMPoiesisState } from '@plugins/llm-poiesis/store'
+import { ClaudeMessage } from 'src/types/claude'
 
 type PoiesisEditorProps = {
   instanceId: string
@@ -15,13 +16,15 @@ function sleep(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms))
 }
 
+type SendResult = { success: true; content: string } | { success: false; error: string }
+
 export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
   const conversationRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const animationCancelRef = useRef(false)
 
   const { getInstance } = usePluginsStore()
-  const instance = getInstance(instanceId) as ActivePlugin<ClaudePoiesisState>
+  const instance = getInstance(instanceId) as ActivePlugin<LLMPoiesisState>
   const {
     draft,
     conversation,
@@ -29,18 +32,20 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
     setConversation,
     setMaskWord,
     setMaskFont,
-    isWaitingForClaude,
-    setIsWaitingForClaude,
+    isWaitingForResponse,
+    setIsWaitingForResponse,
     artistFont,
-    claudeFont,
-    systemPrompt
+    responseFont,
+    systemPrompt,
+    llmProvider,
+    localModelUrl
   } = instance.useStore()
 
   useEffect(() => {
     conversationRef.current?.scrollTo({ top: conversationRef.current?.scrollHeight })
   }, [conversation])
 
-  const animateClaudeWords = async (words: string[]) => {
+  const animateResponseWords = async (words: string[]) => {
     animationCancelRef.current = false
 
     for (const word of words) {
@@ -56,7 +61,6 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
   }
 
   const handleSend = async () => {
-    // Cancel any in-flight Claude word animation
     animationCancelRef.current = true
 
     const artistMessage = {
@@ -70,41 +74,55 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
     setConversation(newConversation)
     setDraft('')
     setMaskWord('')
-    setIsWaitingForClaude(true)
+    setIsWaitingForResponse(true)
 
-    const result = await window.api.claude.sendMessage({
-      messages: newConversation.map(({ content, speaker }) => ({
-        content,
-        role: speaker === 'artist' ? 'user' : 'assistant'
-      })),
-      system: systemPrompt,
-      model: 'claude-sonnet-4-6',
-      maxTokens: 128
-    })
+    const apiMessages: ClaudeMessage[] = newConversation.map(({ content, speaker }) => ({
+      content,
+      role: speaker === 'artist' ? 'user' : ('assistant' as const)
+    }))
 
-    setIsWaitingForClaude(false)
+    let result: SendResult
+    if (llmProvider === 'claude') {
+      const r = await window.api.claude.sendMessage({
+        messages: apiMessages,
+        system: systemPrompt,
+        model: 'claude-sonnet-4-6',
+        maxTokens: 128
+      })
+      result =
+        r.success && r.content
+          ? { success: true, content: r.content }
+          : { success: false, error: r.error ?? 'Unknown error' }
+    } else {
+      const r = await window.api.llm.sendLocal(localModelUrl, apiMessages, systemPrompt, 128)
+      result =
+        r.success && r.content
+          ? { success: true, content: r.content }
+          : { success: false, error: r.error ?? 'Unknown error' }
+    }
 
-    if (result.success && result.content) {
-      const claudeMessage = {
-        speaker: 'claude' as const,
+    setIsWaitingForResponse(false)
+
+    if (result.success) {
+      const responseMessage = {
+        speaker: 'response' as const,
         content: result.content,
         timestamp: new Date()
       }
 
-      setConversation([...newConversation, claudeMessage])
+      setConversation([...newConversation, responseMessage])
 
-      // Animate Claude's response word by word using Claude's font
-      setMaskFont(claudeFont)
+      setMaskFont(responseFont)
       const words = result.content.split(' ').filter((w) => w.length > 0)
-      animateClaudeWords(words)
-    } else if (result.error) {
-      console.error('Claude API error:', result.error)
+      animateResponseWords(words)
+    } else {
+      console.error('LLM error:', result.error)
     }
   }
 
   const handleDraftChange = (value: string) => {
     setDraft(value)
-    if (!isWaitingForClaude) {
+    if (!isWaitingForResponse) {
       setMaskFont(artistFont)
       const words = value.split(' ')
       setMaskWord(words[words.length - 1])
@@ -122,7 +140,7 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
           className="min-h-8 max-h-32 p-2 border border-stone-100 outline-none resize-none"
           style={{ fontFamily: artistFont }}
           value={draft}
-          disabled={isWaitingForClaude}
+          disabled={isWaitingForResponse}
           onKeyDown={(e) => {
             if (e.metaKey && e.key === 'Enter') {
               e.preventDefault()
@@ -139,12 +157,14 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
         className="w-full h-min max-h-3/5 overflow-auto outline-none relative text-2xl grid grid-cols-[minmax(64px,20%)_1fr_1fr_minmax(64px,20%)] auto-rows-min gap-4"
       >
         {conversation.map((message, idx) => {
-          if (message.speaker === 'claude')
+          if (message.speaker === 'response')
             return (
-              <div className="grid grid-cols-subgrid col-span-4 " key={message.content + idx}>
+              <div className="grid grid-cols-subgrid col-span-4" key={message.content + idx}>
                 <div />
                 <div />
-                <div className="bg-stone-950/50 p-2" style={{ fontFamily: claudeFont }}>{message.content}</div>
+                <div className="bg-stone-950/50 p-2" style={{ fontFamily: responseFont }}>
+                  {message.content}
+                </div>
                 <div />
               </div>
             )
@@ -152,7 +172,9 @@ export default function PoiesisEditor({ instanceId }: PoiesisEditorProps) {
             return (
               <div className="grid grid-cols-subgrid col-span-4" key={message.content + idx}>
                 <div />
-                <div className="bg-stone-950/50 p-2" style={{ fontFamily: artistFont }}>{message.content}</div>
+                <div className="bg-stone-950/50 p-2" style={{ fontFamily: artistFont }}>
+                  {message.content}
+                </div>
                 <div />
                 <div />
               </div>

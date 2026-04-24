@@ -10,10 +10,10 @@ import Monitor from './ui/Monitor'
 import Options from './ui/Options'
 import Renderer from './ui/Renderer'
 
-import { createPoiesisStore, ClaudePoiesisState } from './store'
+import { createLLMPoiesisStore, LLMPoiesisState } from './store'
 import cleanup from './cleanup'
 
-const ClaudePoiesisPlugin: PluginDefinition<ClaudePoiesisState> = {
+const LLMPoiesisPlugin: PluginDefinition<LLMPoiesisState> = {
   manifest: manifest as PluginManifest,
 
   init,
@@ -25,7 +25,7 @@ const ClaudePoiesisPlugin: PluginDefinition<ClaudePoiesisState> = {
   Options,
   Renderer,
 
-  createStore: createPoiesisStore
+  createStore: createLLMPoiesisStore
 }
 
-export default ClaudePoiesisPlugin
+export default LLMPoiesisPlugin
