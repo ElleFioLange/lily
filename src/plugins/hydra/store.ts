@@ -30,6 +30,7 @@ export interface HydraState extends PluginState {
   setIsValid: (isValid: boolean) => void
   setError: (error: string | null) => void
   newShader: () => void
+  openShader: (content: string, path: string) => void
 }
 
 export const createHydraStore = (instanceId: string) => {
@@ -66,6 +67,11 @@ export const createHydraStore = (instanceId: string) => {
         isValid: true,
         error: null
       })
+    },
+
+    openShader: (content, path) => {
+      const name = path.split('/').at(-1)?.replace(/\.[^.]+$/, '') ?? path
+      set({ shader: content, shaderPath: path, shaderName: name, isValid: true, error: null })
     },
 
     setError: (error) => set({ error })

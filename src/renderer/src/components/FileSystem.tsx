@@ -10,8 +10,8 @@ export type FileData = {
 export interface FileSystemProps extends HTMLProps<HTMLDivElement> {
   files: Record<string, FileData>
   handleOpen: () => void
-  handleSave: () => void
-  handleSaveAs: () => void
+  handleSave?: () => void
+  handleSaveAs?: () => void
 }
 
 export default function FileSystem({
