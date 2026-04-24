@@ -24,6 +24,22 @@ export interface ClaudePoiesisState extends PluginState {
   setTriggerAnimationFlag: (triggerAnimationFlag: boolean) => void
   setScrollPercentage: (scrollPercentage: number) => void
 
+  // Mask renderer
+  maskCanvas: HTMLCanvasElement | null
+  maskWord: string
+  maskFont: string
+  isWaitingForClaude: boolean
+  setMaskCanvas: (canvas: HTMLCanvasElement) => void
+  setMaskWord: (word: string) => void
+  setMaskFont: (font: string) => void
+  setIsWaitingForClaude: (waiting: boolean) => void
+
+  // Fonts
+  artistFont: string
+  claudeFont: string
+  setArtistFont: (font: string) => void
+  setClaudeFont: (font: string) => void
+
   // Config
   config: string
   parsedConfig: ConfigurationJSON | null
@@ -37,6 +53,10 @@ export interface ClaudePoiesisState extends PluginState {
   newConfig: () => void
   setConfigPath: (path: string | null) => void
   setConfigName: (name: string | null) => void
+
+  // System prompt
+  systemPrompt: string
+  setSystemPrompt: (prompt: string) => void
 
   // Workspace open surface
   openSurface: 'poiesis' | 'config'
@@ -62,6 +82,22 @@ export const createPoiesisStore = (instanceId: string) => {
     setTriggerAnimationFlag: (triggerAnimationFlag) => set({ triggerAnimationFlag }),
 
     setScrollPercentage: (scrollPercentage) => set({ scrollPercentage }),
+
+    // Mask renderer
+    maskCanvas: null,
+    maskWord: '',
+    maskFont: 'sans-serif',
+    isWaitingForClaude: false,
+    setMaskCanvas: (maskCanvas) => set({ maskCanvas }),
+    setMaskWord: (maskWord) => set({ maskWord }),
+    setMaskFont: (maskFont) => set({ maskFont }),
+    setIsWaitingForClaude: (isWaitingForClaude) => set({ isWaitingForClaude }),
+
+    // Fonts
+    artistFont: 'sans-serif',
+    claudeFont: 'sans-serif',
+    setArtistFont: (artistFont) => set({ artistFont }),
+    setClaudeFont: (claudeFont) => set({ claudeFont }),
 
     // Config
     config: '',
@@ -180,6 +216,11 @@ export const createPoiesisStore = (instanceId: string) => {
     setConfigPath: (configPath) => set({ configPath }),
 
     setConfigName: (configName) => set({ configName }),
+
+    // System prompt
+    systemPrompt:
+      'You are playing a character named Madeleine. You are a companion to a musical performance. You are embodied on stage as a female mannequinn wearing a long black wool skirt, a cream sleeveless vest, and a womens business jacket. I, the performer, am having a conversation with you as part of the performance. Respond in in short, sharply written sentences. NO MORE THAN 2 SENTENCES. KEEP IT SHORT. Your main goal is to ask questions to prompt insight from me as a performer. Topics will be range from art to artificial intelligence to politics to culture to gender and much more.',
+    setSystemPrompt: (systemPrompt) => set({ systemPrompt }),
 
     // Workspace open surface
     openSurface: 'poiesis' as 'poiesis', // Holy shit what the hell

@@ -1,3 +1,6 @@
+import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
+
 export default function cleanup(instanceId: string) {
-  console.log('Need to implement poiesis plugin cleanup function')
+  const { removeSource } = useGraphicsStore.getState()
+  removeSource(`${instanceId}-mask`)
 }
