@@ -11,7 +11,7 @@ export default function init(instanceId: string) {
   maskCanvas.width = 1920
   maskCanvas.height = 1080
 
-  addGraphicsSource({ id: `${instanceId}-mask`, canvas: maskCanvas })
+  addGraphicsSource({ id: instanceId, canvas: maskCanvas })
   usePoiesisStore.getState().setMaskCanvas(maskCanvas)
 
   return usePoiesisStore
