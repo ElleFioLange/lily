@@ -24,6 +24,14 @@ export interface ClaudePoiesisState extends PluginState {
   setTriggerAnimationFlag: (triggerAnimationFlag: boolean) => void
   setScrollPercentage: (scrollPercentage: number) => void
 
+  // Mask renderer
+  maskCanvas: HTMLCanvasElement | null
+  maskWord: string
+  isWaitingForClaude: boolean
+  setMaskCanvas: (canvas: HTMLCanvasElement) => void
+  setMaskWord: (word: string) => void
+  setIsWaitingForClaude: (waiting: boolean) => void
+
   // Config
   config: string
   parsedConfig: ConfigurationJSON | null
@@ -62,6 +70,14 @@ export const createPoiesisStore = (instanceId: string) => {
     setTriggerAnimationFlag: (triggerAnimationFlag) => set({ triggerAnimationFlag }),
 
     setScrollPercentage: (scrollPercentage) => set({ scrollPercentage }),
+
+    // Mask renderer
+    maskCanvas: null,
+    maskWord: '',
+    isWaitingForClaude: false,
+    setMaskCanvas: (maskCanvas) => set({ maskCanvas }),
+    setMaskWord: (maskWord) => set({ maskWord }),
+    setIsWaitingForClaude: (isWaitingForClaude) => set({ isWaitingForClaude }),
 
     // Config
     config: '',

@@ -8,6 +8,7 @@ import process from './process'
 import Workspace from './ui/Workspace'
 import Monitor from './ui/Monitor'
 import Options from './ui/Options'
+import Renderer from './ui/Renderer'
 
 import { createPoiesisStore, ClaudePoiesisState } from './store'
 import cleanup from './cleanup'
@@ -22,6 +23,7 @@ const ClaudePoiesisPlugin: PluginDefinition<ClaudePoiesisState> = {
   Workspace,
   Monitor,
   Options,
+  Renderer,
 
   createStore: createPoiesisStore
 }
