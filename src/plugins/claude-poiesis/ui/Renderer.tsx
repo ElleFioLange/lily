@@ -12,7 +12,7 @@ function drawMask(canvas: HTMLCanvasElement, word: string) {
   if (!word) return
 
   ctx.globalCompositeOperation = 'source-over'
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
   // Scale font so text spans full canvas width
