@@ -1,0 +1,19 @@
+#!/bin/sh
+# .git/hooks/post-checkout
+
+[ "$3" = "1" ] || exit 0
+
+WORKTREE_ROOT=$(pwd)
+COMMON_DIR=$(git rev-parse --git-common-dir)
+
+# --git-common-dir returns the *main* repo's .git regardless of where we are
+MAIN_REPO=$(dirname "$COMMON_DIR")
+
+# Skip if we're already in the main repo
+[ "$MAIN_REPO" = "$WORKTREE_ROOT" ] && exit 0
+
+# Symlink node_modules if missing
+if [ ! -e "$WORKTREE_ROOT/node_modules" ] && [ -d "$MAIN_REPO/node_modules" ]; then
+  ln -s "$MAIN_REPO/node_modules" "$WORKTREE_ROOT/node_modules"
+  echo "[hook] Symlinked node_modules → $MAIN_REPO/node_modules"
+fi
