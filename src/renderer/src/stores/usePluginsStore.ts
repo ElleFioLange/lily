@@ -1,6 +1,7 @@
 import { PluginDefinition, ActivePlugin } from '@plugins/utils'
 import { create } from 'zustand'
 import { v4 as uuid } from 'uuid'
+import { useGraphicsStore } from './useGraphicsStore'
 
 interface PluginsManagerState {
   registered: Record<string, PluginDefinition>
@@ -10,7 +11,7 @@ interface PluginsManagerState {
   registerPlugin: (plugin: PluginDefinition) => void
   loadPlugin: (pluginId: string) => void
   unloadPlugin: (instanceId: string) => void
-  getInstance: (instanceId: string) => ActivePlugin
+  getInstance: (instanceId: string) => ActivePlugin | undefined
   setFocused: (focused: string | null) => void
 }
 
@@ -58,6 +59,7 @@ export const usePluginsStore = create<PluginsManagerState>((set, get) => ({
     const { active, focused } = get()
     const instance = active[instanceId]
     instance.cleanup(instanceId)
+    useGraphicsStore.getState().removeSource(instanceId)
     const newActive = { ...active }
     delete newActive[instanceId]
 
@@ -72,9 +74,7 @@ export const usePluginsStore = create<PluginsManagerState>((set, get) => ({
 
   getInstance: (instanceId) => {
     const { active } = get()
-    const plugin = active[instanceId]
-    if (plugin === undefined) throw new Error('No plugin instance found with id ' + instanceId)
-    return plugin
+    return active[instanceId]
   },
 
   setFocused: (focused) => set({ focused })
