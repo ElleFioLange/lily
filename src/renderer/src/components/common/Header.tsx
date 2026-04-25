@@ -1,5 +1,5 @@
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
-import { ReactNode } from 'react'
+import { ReactNode, useCallback } from 'react'
 
 export type HeaderProps = {
   title: string
@@ -10,19 +10,34 @@ export type HeaderProps = {
 // basic solution causes problems with overflow: visible for the indicator https://stackoverflow.com/questions/6421966/css-overflow-x-visible-and-overflow-y-hidden-causing-scrollbar-issue
 
 export default function Header({ title, children }: HeaderProps) {
-  const { active, focused, setFocused } = usePluginsStore()
+  const { active, focused, setFocused, unloadPlugin } = usePluginsStore()
+
+  const handleClose = useCallback(
+    (e: React.MouseEvent, instanceId: string) => {
+      e.stopPropagation()
+      unloadPlugin(instanceId)
+    },
+    [unloadPlugin]
+  )
 
   return (
     <div className="w-full h-8 bg-stone-900 border-b border-stone-700 flex p-1 z-10">
       <span className="shrink-0 px-4 text-base">{title.toUpperCase()}</span>
       <div className="grow flex gap-3 overflow-y-visible no-scrollbar">
         {Object.values(active).map(({ instanceId, manifest: { name } }) => (
-          <div className="relative" key={instanceId}>
+          <div className="relative group flex items-center gap-1" key={instanceId}>
             <button
               className={`text-xs border-none bg-transparent ${instanceId === focused ? 'cursor-default' : 'hover:underline'}`}
               onClick={() => setFocused(instanceId)}
             >
               {name}
+            </button>
+            <button
+              className="text-xs border-none bg-transparent opacity-0 group-hover:opacity-100 text-stone-400 hover:text-stone-100 leading-none px-0.5 -mt-px"
+              onClick={(e) => handleClose(e, instanceId)}
+              title="Close plugin"
+            >
+              ×
             </button>
             {instanceId === focused && (
               <svg

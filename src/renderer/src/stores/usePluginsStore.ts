@@ -55,12 +55,19 @@ export const usePluginsStore = create<PluginsManagerState>((set, get) => ({
   },
 
   unloadPlugin: (instanceId) => {
-    const { active } = get()
+    const { active, focused } = get()
     const instance = active[instanceId]
     instance.cleanup(instanceId)
     const newActive = { ...active }
     delete newActive[instanceId]
-    set({ active: newActive })
+
+    let newFocused = focused
+    if (focused === instanceId) {
+      const remaining = Object.keys(newActive)
+      newFocused = remaining.length > 0 ? remaining[remaining.length - 1] : null
+    }
+
+    set({ active: newActive, focused: newFocused })
   },
 
   getInstance: (instanceId) => {
