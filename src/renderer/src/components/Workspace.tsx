@@ -40,6 +40,7 @@ export default function Workspace() {
   const { active, focused } = usePluginsStore()
 
   const focusedSurface = useMemo(() => {
+    console.log(focused, 'from workspace')
     return Object.values(active).find(({ instanceId }) => instanceId === focused)
   }, [active, focused])
 
@@ -54,13 +55,11 @@ export default function Workspace() {
         ) : (
           <>
             {/* Renderer layers (no interaction) */}
-            {Object.values(active).map(({ instanceId, Renderer }) =>
-              Renderer ? (
-                <div key={instanceId} className="absolute size-full pointer-events-none">
-                  <Renderer instanceId={instanceId} />
-                </div>
-              ) : null
-            )}
+            {focusedSurface && focused && focusedSurface.Renderer ? (
+              <div className="absolute size-full pointer-events-none">
+                <focusedSurface.Renderer instanceId={focused} />
+              </div>
+            ) : null}
 
             {/* Plugin main layers (interactable) */}
             {focusedSurface.Workspace ? (
