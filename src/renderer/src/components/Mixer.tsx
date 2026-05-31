@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
 import Header from './common/Header'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
@@ -8,11 +9,33 @@ type SourceControlProps = {
   enabled: boolean
   setAlpha: (alpha: number) => void
   setEnabled: (enabled: boolean) => void
+  onDragStart: () => void
+  onDragOver: (e: React.DragEvent) => void
+  onDrop: () => void
 }
 
-function SourceControl({ name, alpha, enabled, setAlpha, setEnabled }: SourceControlProps) {
+function SourceControl({
+  name,
+  alpha,
+  enabled,
+  setAlpha,
+  setEnabled,
+  onDragStart,
+  onDragOver,
+  onDrop
+}: SourceControlProps) {
   return (
-    <div className="grid grid-cols-[72px_auto] gap-2">
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={(e) => {
+        e.preventDefault()
+        onDragOver(e)
+      }}
+      onDrop={onDrop}
+      className="grid grid-cols-[12px_72px_auto] gap-2 items-center cursor-grab active:cursor-grabbing"
+    >
+      <span className="text-stone-500 select-none">⠿</span>
       <span
         className={`cursor-pointer ${enabled ? 'hover:line-through' : 'line-through'}`}
         onClick={() => setEnabled(!enabled)}
@@ -32,8 +55,29 @@ function SourceControl({ name, alpha, enabled, setAlpha, setEnabled }: SourceCon
 }
 
 export default function Mixer() {
-  const { editors, graphics, updateParams } = useGraphicsStore()
+  const { editors, graphics, editorsOrder, graphicsOrder, updateParams, reorderSource } =
+    useGraphicsStore()
   const { getInstance } = usePluginsStore()
+  const dragIndex = useRef<{ type: 'graphics' | 'editors'; index: number } | null>(null)
+
+  function makeDragHandlers(type: 'graphics' | 'editors', index: number) {
+    return {
+      onDragStart: () => {
+        dragIndex.current = { type, index }
+      },
+      onDragOver: () => {},
+      onDrop: () => {
+        if (
+          dragIndex.current &&
+          dragIndex.current.type === type &&
+          dragIndex.current.index !== index
+        ) {
+          reorderSource(type, dragIndex.current.index, index)
+        }
+        dragIndex.current = null
+      }
+    }
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -46,34 +90,36 @@ export default function Mixer() {
           <button>preset 2</button>
         </div>
         <span className="font-bold my-1 text-sm">EDITORS</span>
-        {Object.entries(editors).map(([id, { alpha, enabled }]) => {
+        {editorsOrder.map((id, index) => {
+          const params = editors[id]
           const plugin = getInstance(id)
-          if (plugin === undefined) return null
-          const name = plugin.manifest.name
+          if (!params || !plugin) return null
           return (
             <SourceControl
               key={id}
-              name={name}
-              alpha={alpha || 0}
-              enabled={enabled || false}
+              name={plugin.manifest.name}
+              alpha={params.alpha ?? 0}
+              enabled={params.enabled ?? false}
               setAlpha={(alpha) => updateParams(id, 'editors', { alpha })}
               setEnabled={(enabled) => updateParams(id, 'editors', { enabled })}
+              {...makeDragHandlers('editors', index)}
             />
           )
         })}
         <span className="font-bold my-1 text-sm">GRAPHICS</span>
-        {Object.entries(graphics).map(([id, { alpha, enabled }]) => {
+        {graphicsOrder.map((id, index) => {
+          const params = graphics[id]
           const plugin = getInstance(id)
-          if (plugin === undefined) return null
-          const name = plugin.manifest.name
+          if (!params || !plugin) return null
           return (
             <SourceControl
               key={id}
-              name={name}
-              alpha={alpha || 0}
-              enabled={enabled || false}
+              name={plugin.manifest.name}
+              alpha={params.alpha ?? 0}
+              enabled={params.enabled ?? false}
               setAlpha={(alpha) => updateParams(id, 'graphics', { alpha })}
               setEnabled={(enabled) => updateParams(id, 'graphics', { enabled })}
+              {...makeDragHandlers('graphics', index)}
             />
           )
         })}
