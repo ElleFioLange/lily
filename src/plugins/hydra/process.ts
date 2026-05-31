@@ -46,6 +46,28 @@ import { ActivePlugin } from '@plugins/utils'
 //   return hydraParams
 // }
 
+// TODO Add poiesis interpretation for hydra
+
+// For running the shader to monitor specific hydra output layers
+export async function processMonitor({
+  shader,
+  hydra
+}: {
+  shader: string
+  hydra: HydraState['hydra']
+}) {
+  console.log(shader, 'shader from processMonitor')
+  const synth = hydra.synth
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
+
+  // Create function with all Hydra methods in scope
+  const evalFunc = new AsyncFunction(...Object.keys(synth), 'synth', 'loadScript', shader)
+  evalFunc(...Object.values(synth), synth, loadScript)
+  console.log('Shader evaluated successfully for monitor')
+}
+
 export default async function process(
   instanceId: string,
   _inputs: { poiesis: string; config: ConfigurationJSON }[]
@@ -62,4 +84,5 @@ export default async function process(
   const evalFunc = new AsyncFunction(...Object.keys(synth), 'synth', 'loadScript', shader)
   evalFunc(...Object.values(synth), synth, loadScript)
   console.log('Shader evaluated successfully')
+  document.dispatchEvent(new CustomEvent('hydra-process'))
 }

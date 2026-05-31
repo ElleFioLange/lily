@@ -70,7 +70,11 @@ export const createHydraStore = (instanceId: string) => {
     },
 
     openShader: (content, path) => {
-      const name = path.split('/').at(-1)?.replace(/\.[^.]+$/, '') ?? path
+      const name =
+        path
+          .split('/')
+          .at(-1)
+          ?.replace(/\.[^.]+$/, '') ?? path
       set({ shader: content, shaderPath: path, shaderName: name, isValid: true, error: null })
     },
 
