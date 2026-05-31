@@ -44,7 +44,12 @@ export default function Options({ instanceId }: UIProps) {
     if (result.success && result.path) {
       const { setShaderPath, setShaderName } = instance.useStore.getState()
       setShaderPath(result.path)
-      setShaderName(result.path.split('/').at(-1)?.replace(/\.[^.]+$/, '') ?? result.path)
+      setShaderName(
+        result.path
+          .split('/')
+          .at(-1)
+          ?.replace(/\.[^.]+$/, '') ?? result.path
+      )
     }
   }
 

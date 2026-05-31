@@ -1,6 +1,6 @@
 import { ConfigurationJSON } from 'src/types/config'
 import loadScript from '@renderer/utils/loadScript'
-import { keyRegex } from '@renderer/utils/parseInput'
+// import { keyRegex } from '@renderer/utils/parseInput'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { HydraState } from './store'
 import { ActivePlugin } from '@plugins/utils'
