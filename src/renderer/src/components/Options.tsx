@@ -6,9 +6,11 @@ export default function Options() {
   const instance = focused !== null ? getInstance(focused) : null
 
   return (
-    <div>
+    <div className="flex flex-col h-full">
       <Header title="OPTIONS" />
-      {instance && instance.Options ? <instance.Options instanceId={focused!} /> : null}
+      <div className="flex-1 overflow-y-auto no-scrollbar">
+        {instance && instance.Options ? <instance.Options instanceId={focused!} /> : null}
+      </div>
     </div>
   )
 }

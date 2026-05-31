@@ -36,10 +36,10 @@ export default function Mixer() {
   const { getInstance } = usePluginsStore()
 
   return (
-    <>
+    <div className="flex flex-col h-full">
       <Header title="MIXER" />
 
-      <div className="max-h-full px-4 pt-2 pb-0 [&::last-child]:mb-4 overflow-auto no-scrollbar text-xs flex flex-col gap-1 *:align-center font-neon">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 pt-2 pb-8 text-xs flex flex-col gap-1 *:align-center font-neon">
         <span className="font-bold my-1 text-sm">PRESETS</span>
         <div className="flex gap-2 overflow-auto">
           <button>preset 1</button>
@@ -78,6 +78,6 @@ export default function Mixer() {
           )
         })}
       </div>
-    </>
+    </div>
   )
 }
