@@ -1,5 +1,8 @@
 import { PluginState } from 'src/types/plugins'
 import { create } from 'zustand'
+import { SliderWidget } from './replMap'
+
+export type { SliderWidget }
 
 export interface StrudelState extends PluginState {
   code: string
@@ -8,6 +11,7 @@ export interface StrudelState extends PluginState {
   bpm: number
   error: string | null
   isLoading: boolean
+  widgets: SliderWidget[]
 
   setCode: (code: string) => void
   setPoiesis: (poiesis: string) => void
@@ -15,6 +19,7 @@ export interface StrudelState extends PluginState {
   setBpm: (bpm: number) => void
   setError: (error: string | null) => void
   setIsLoading: (isLoading: boolean) => void
+  setWidgets: (widgets: SliderWidget[]) => void
 }
 
 export const createStrudelStore = (instanceId: string) => {
@@ -26,12 +31,14 @@ export const createStrudelStore = (instanceId: string) => {
     bpm: 120,
     error: null,
     isLoading: false,
+    widgets: [],
 
     setCode: (code) => set({ code }),
     setPoiesis: (poiesis) => set({ poiesis }),
     setIsPlaying: (isPlaying) => set({ isPlaying }),
     setBpm: (bpm) => set({ bpm }),
     setError: (error) => set({ error }),
-    setIsLoading: (isLoading) => set({ isLoading })
+    setIsLoading: (isLoading) => set({ isLoading }),
+    setWidgets: (widgets) => set({ widgets })
   }))
 }
