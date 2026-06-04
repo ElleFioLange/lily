@@ -1,16 +1,27 @@
-import { webaudioRepl } from '@strudel/webaudio'
+import { webaudioRepl, registerSynthSounds } from '@strudel/webaudio'
 import { transpiler } from '@strudel/transpiler'
-import { defaultPrebake } from '@strudel/web'
+import { evalScope } from '@strudel/core'
 import { getSharedAudioContext } from './audioContext'
 
 type StrudelRepl = ReturnType<typeof webaudioRepl>
 
 const repls = new Map<string, StrudelRepl>()
-let prebakePromise: Promise<void | null> | null = null
+let prebakePromise: Promise<void> | null = null
 
-export async function ensurePrebaked(): Promise<void | null> {
+export async function ensurePrebaked(): Promise<void> {
   if (!prebakePromise) {
-    prebakePromise = defaultPrebake()
+    prebakePromise = (async () => {
+      // Register built-in synth sounds (sine, square, sawtooth, triangle, etc.)
+      // and load all strudel modules into globalThis so user code can call note(), sound(), etc.
+      // Importing directly (not via defaultPrebake) avoids potential Vite module duplication.
+      registerSynthSounds()
+      await evalScope(
+        import('@strudel/core'),
+        import('@strudel/mini'),
+        import('@strudel/tonal'),
+        import('@strudel/webaudio')
+      )
+    })()
   }
   return prebakePromise
 }
