@@ -20,6 +20,7 @@ import type { AudioDevice, AudioCaptureStatus } from '../types/audio'
 import 'dotenv/config'
 import { getClaudeClient } from './claude/client'
 import type { ClaudeSendMessageParams, ClaudeSendMessageResult } from '../types/claude'
+import { getSyphonManager } from './syphon/client'
 
 // Initialize OSC server and client
 const oscServer = getOSCServer({ port: 5460 })
@@ -33,6 +34,9 @@ const settingsManager = getSettingsManager()
 
 // Initialize Claude API client
 const claudeClient = getClaudeClient()
+
+// Initialize Syphon manager (macOS only)
+const syphonManager = getSyphonManager()
 
 let mainWindowRef: BrowserWindow | null = null
 let settingsWindowRef: BrowserWindow | null = null
@@ -293,6 +297,10 @@ app.whenReady().then(async () => {
   // Initialize Claude API client
   claudeClient.init()
 
+  // Initialize Syphon (macOS only)
+  syphonManager.init()
+  initializeSyphonStreaming()
+
   // Initialize OSC communication
   initializeOSC()
 
@@ -330,6 +338,7 @@ app.on('before-quit', () => {
   cameraServer.stop()
   const audioCapture = getAudifyCapture()
   audioCapture.stop()
+  syphonManager.cleanup()
 })
 
 // Initialize OSC communication
@@ -429,6 +438,22 @@ function initializeAudioStreaming(): void {
   })
 
   console.log('Audio capture streaming initialized')
+}
+
+/**
+ * Initialize Syphon frame streaming (macOS only)
+ * Forwards Syphon frames and server list changes to renderer process
+ */
+function initializeSyphonStreaming(): void {
+  syphonManager.on('frame', (payload) => {
+    mainWindowRef?.webContents.send('syphon:frame', payload)
+  })
+
+  syphonManager.on('servers-changed', (servers) => {
+    mainWindowRef?.webContents.send('syphon:servers-changed', servers)
+  })
+
+  console.log('Syphon streaming initialized')
 }
 
 /**
@@ -686,6 +711,23 @@ function setupIPCHandlers(): void {
   })
 
   // ============================================================================
+  // Syphon Handlers (macOS only)
+  // ============================================================================
+  ipcMain.handle('syphon:list-servers', async () => {
+    return syphonManager.getServers()
+  })
+
+  ipcMain.handle('syphon:connect', async (_, instanceId: string, serverUUID: string) => {
+    const success = syphonManager.connect(instanceId, serverUUID)
+    return { success }
+  })
+
+  ipcMain.handle('syphon:disconnect', async (_, instanceId: string) => {
+    syphonManager.disconnect(instanceId)
+    return { success: true }
+  })
+
+  // ============================================================================
   // Settings Handlers
   // ============================================================================
   ipcMain.handle('settings:get', async (): Promise<Settings> => {
@@ -733,7 +775,10 @@ function setupIPCHandlers(): void {
         })
 
         if (!res.ok) {
-          return { success: false, error: `LM Studio returned ${res.status} ${res.statusText} from ${url}` }
+          return {
+            success: false,
+            error: `LM Studio returned ${res.status} ${res.statusText} from ${url}`
+          }
         }
 
         const data = await res.json()
