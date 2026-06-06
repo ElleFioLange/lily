@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Lily is an Electron application for live visual performance. It features a plugin-based architecture for graphics synthesis (Hydra), text processing (Poiesis), and OSC communication. Built with React, TypeScript, and Vite using the electron-vite build system.
+Lily is an Electron application for live visual performance. It features a plugin-based architecture for graphics synthesis (Hydra), text processing (Poiesis), Ableton Live control, and OSC communication. Built with React, TypeScript, and Vite using the electron-vite build system.
 
 ### Core Architecture
 
@@ -12,6 +12,18 @@ Lily is an Electron application for live visual performance. It features a plugi
 2. **Surfaces** - Built-in system plugins (Poiesis, Config) in `src/renderer/src/surfaces/`
 3. **Compositor** - Alpha-blends multiple canvas sources into performance output
 4. **Performance Window** - React Portal child window for projector output
+
+### Bundled Plugins (`src/plugins/`)
+
+- **hydra** - Hydra graphics synthesis (graphics output)
+- **ableton** - Ableton Live control. Today this drives Live via a bundled Max for Live
+  device (`maxdevice/lily-controller.amxd`) over OSC; `process.ts` scans Poiesis text for
+  `keyword(...)` patterns and emits `/set/clip|track/active` messages. UI components are
+  still stubs. See `docs/ABLETON_EXTENSION.md` for the planned migration to the official
+  Ableton Extensions SDK.
+- **llm-poiesis** - LLM-assisted Poiesis text processing
+- **utils** - Shared plugin helpers and types (`PluginDefinition`, `PluginManifest`). Plugins
+  import these from `'../utils'`.
 
 ### Electron Process Architecture
 
@@ -333,7 +345,7 @@ if (result.success) {
 6. Export in `index.ts`:
 
    ```typescript
-   import { PluginDefinition } from '../helpers'
+   import { PluginDefinition } from '../utils'
    import manifest from './manifest.json'
    // ... imports
 
