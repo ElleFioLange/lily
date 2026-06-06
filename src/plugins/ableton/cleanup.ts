@@ -1,3 +1,5 @@
+import { removeLiveStore } from './store'
+
 export default function cleanup(instanceId: string) {
-  console.log('Clean up Ableton plugin')
+  removeLiveStore(instanceId)
 }

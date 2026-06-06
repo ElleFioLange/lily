@@ -1,36 +1,47 @@
 // Ableton Live Project Store
 import { create } from 'zustand'
+import { UseStore } from 'src/types/plugins'
 
 // ============================================================================
 // Live Store Interface
 // ============================================================================
 
-type LiveProject = Record<string, any>
-type LiveProjectBuffer = Record<number, string>
+type LiveProjectBuffer = Record<string, string>
 
 export interface LiveState {
   instanceId: string
-  // State
   liveProjectBuffer: LiveProjectBuffer
-  liveProject: LiveProject
+  liveProject: LiveProject | Record<string, never>
 
-  // Actions
   setLiveProjectBuffer: (buffer: LiveProjectBuffer) => void
   setLiveProject: (state: LiveProject) => void
 }
 
 // ============================================================================
-// Live Store Implementation
+// Store Registry (idempotent — init.ts and Monitor.tsx share the same instance)
 // ============================================================================
 
-export const createLiveStore = (instanceId: string) => {
-  return create<LiveState>((set) => ({
+const storeRegistry = new Map<string, UseStore<LiveState>>()
+
+export const createLiveStore = (instanceId: string): UseStore<LiveState> => {
+  if (storeRegistry.has(instanceId)) return storeRegistry.get(instanceId)!
+
+  const store = create<LiveState>((set) => ({
     instanceId,
-    // Initial state
     liveProjectBuffer: {},
     liveProject: {},
 
-    setLiveProjectBuffer: (buffer: LiveProjectBuffer) => set({ liveProjectBuffer: buffer }),
+    setLiveProjectBuffer: (buffer) => set({ liveProjectBuffer: buffer }),
     setLiveProject: (state) => set({ liveProject: state })
   }))
+
+  storeRegistry.set(instanceId, store)
+  return store
+}
+
+export const getLiveStore = (instanceId: string): UseStore<LiveState> | undefined =>
+  storeRegistry.get(instanceId)
+
+export const removeLiveStore = (instanceId: string): void => {
+  storeRegistry.delete(instanceId)
 }
