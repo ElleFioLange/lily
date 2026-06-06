@@ -7,6 +7,8 @@
  *   - Dedupe to Session: collects unique arrangement clips per track and lays
  *                        them into Session view from the first empty scene,
  *                        autonamed. Non-destructive; audio best-effort.
+ *   - Reconstruct to Session: rebuilds the arrangement as a labeled,
+ *                        energy-colored Session grid (one scene per section).
  *   - Show in Lily     : (also on clips) pushes the clicked object's identity
  *                        to the Lily app over OSC so its Ableton monitor pane
  *                        can highlight it.

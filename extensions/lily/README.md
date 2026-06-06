@@ -4,7 +4,10 @@ On-command tools for Live, built on the Ableton Extensions SDK. Companion to the
 app; see [`../../docs/ABLETON_EXTENSION.md`](../../docs/ABLETON_EXTENSION.md) for the
 capabilities/limits these are built on.
 
-Right-click any track in Live to run either tool (both analyze/act on the whole Set):
+It also runs an **always-on localhost bridge** that gives the Lily app a read path
+into the Set (see *Bridge* below).
+
+Right-click any track in Live to run the tools (Show in Lily is also on clips):
 
 ### Lily: Mark Inflections
 Analyzes the **arrangement** and drops locators at structural inflection points.
@@ -34,6 +37,28 @@ with each track's representative clip for that section (most-overlapping clip).
   keywords later.
 - Launching a reconstructed scene recalls that section's layout.
 
+### Lily: Show in Lily
+Pushes the right-clicked **track or clip** to the Lily app so its Ableton monitor
+pane can highlight it.
+- Sends OSC `/lily/select` to Lily (`127.0.0.1:5460`) with one JSON string arg:
+  `{ type, name, maxPath, trackName, trackPath, clipKind?, inArrangement? }`.
+- Also exposed at `GET /selection` on the bridge (for when Lily launches later).
+- `maxPath` uses the same Max/LOM grammar as `/snapshot`, so highlighting is a
+  path-equality match. Arrangement clips fall back to their track's path.
+
+## Bridge
+
+Always-on HTTP server at `http://127.0.0.1:7879` — the Lily app's read path:
+
+```bash
+curl -s http://127.0.0.1:7879/snapshot   # full project tree, maxPath on every node
+curl -s http://127.0.0.1:7879/selection  # last "Show in Lily" payload
+```
+
+`/snapshot` re-serializes the Set on every request — Lily's **Refresh** is just this
+fetch. Device-parameter *values* are excluded (async in the SDK); the snapshot is
+structural/sync only. See `src/snapshot.ts` for the SDK→LOM path mapping.
+
 ## Setup & run
 
 SDK/CLI beta tarballs are gitignored (`vendor/`, confidential). One-time:
@@ -60,15 +85,23 @@ npm start           # builds + launches the host; menu items appear on right-cli
 # stop:  pkill -f ExtensionHostNodeModule
 ```
 
-### Dev test harness (opt-in)
+Wait for `[lily] activated` + `[lily] bridge on http://127.0.0.1:7879` in the output.
 
-To trigger the commands from outside Live (e.g. `curl`) instead of right-clicking,
-start with `LILY_DEV_HARNESS=1`. It exposes `http://127.0.0.1:7879` with `/mark`,
-`/dedupe`, and `/state`. Off by default — production runs from the context menu only.
+**Troubleshooting — repeating `Failed to process receive queue, closing connection`:**
+Live's extension socket went stale (usually after the host was killed/restarted, or a
+second host is running). Quit `npm start`, toggle **Preferences → Extensions →
+Developer Mode** off/on (or restart Live), then `npm start` again.
+
+### Dev command triggers (opt-in)
+
+The bridge routes (`/snapshot`, `/selection`) are always on. To additionally trigger
+the commands from outside Live (e.g. `curl`) instead of right-clicking, start with
+`LILY_DEV_HARNESS=1`. Off by default — production fires commands from the context
+menu only.
 
 ```bash
 LILY_DEV_HARNESS=1 npm start
-curl -s http://127.0.0.1:7879/state    # inspect cue points + session clips
+curl -s http://127.0.0.1:7879/state       # inspect cue points + session clips
 curl -s http://127.0.0.1:7879/mark        # run Mark Inflections
 curl -s http://127.0.0.1:7879/dedupe      # run Dedupe to Session
 curl -s http://127.0.0.1:7879/reconstruct # run Reconstruct to Session

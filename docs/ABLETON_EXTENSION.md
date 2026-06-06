@@ -1,12 +1,13 @@
 # Ableton Extensions SDK — Integration Notes
 
-Working notes for integrating Lily with the official **Ableton Extensions SDK**
-(`@ableton-extensions/sdk`, `1.0.0-beta.0`). This documents what the SDK can/can't
-do and how it could replace or augment Lily's current Max-for-Live + OSC pipeline.
+How Lily integrates with the official **Ableton Extensions SDK**
+(`@ableton-extensions/sdk`, `1.0.0-beta.0`): what the SDK can/can't do, what Lily
+actually ships on it, and what was prototyped and parked.
 
-> Status: planning / research. Nothing here is wired into the app yet. The current
-> Live integration still goes through `src/plugins/ableton/maxdevice/lily-controller.amxd`
-> + OSC (see `docs/OSC.md`).
+> Status: **in use.** The extension lives at `extensions/lily/` (tools + bridge,
+> see below). The *live performance* path (firing clips, transport) still goes
+> through `src/plugins/ableton/maxdevice/lily-controller.amxd` + OSC (`docs/OSC.md`)
+> — the SDK cannot do that part by design.
 
 ## TL;DR
 
@@ -14,26 +15,103 @@ do and how it could replace or augment Lily's current Max-for-Live + OSC pipelin
   Full npm ecosystem, full `fs`, full network access.
 - It is **command- and pull-based**: you read/modify the Live Set when a command fires.
   There are **no change events / observers** — you cannot live-mirror Live state.
-- It **cannot** do automation, MIDI mapping/learn, or transport (play/stop/record). It
-  **can** set a device parameter value one-shot, create/delete/edit tracks·clips·devices,
-  render audio from the arrangement, and import files into the project.
-- Best fit for Lily: **on-command content generation + rendering** (e.g. "Generate with
-  Suno → import clip"), plus a **snapshot project tree** to power the Ableton Explorer UI.
+- It **cannot** do automation, MIDI mapping/learn, transport, or clip/scene launch. It
+  **can** read the whole data model, set a device parameter one-shot, create/delete/edit
+  tracks·clips·devices, render audio from the arrangement, and import files.
+- Lily uses it for: **on-command arrangement tools** (right-click), and a **localhost
+  bridge** that hands the Lily app a path-annotated snapshot of the Set plus
+  "Show in Lily" selection pushes.
+
+## What's in use today (`extensions/lily/`)
+
+### Right-click tools (context menu on tracks; Show in Lily also on clips)
+
+- **Lily: Mark Inflections** — drops `✦` locators at structural section boundaries.
+- **Lily: Dedupe to Session** — unique arrangement clips → Session grid, non-destructive.
+- **Lily: Reconstruct to Session** — arrangement → labeled, energy-colored Session grid.
+- **Lily: Show in Lily** — pushes the clicked track/clip's identity to the Lily app
+  (see *Selection push* below).
+
+Details + setup: [`extensions/lily/README.md`](../extensions/lily/README.md).
+
+### The bridge — Lily's read path
+
+The extension runs an **always-on localhost HTTP server** on `127.0.0.1:7879`:
+
+| Route | What |
+|---|---|
+| `GET /snapshot` | Full project tree, re-serialized per request — this is the Lily UI's **Refresh**. |
+| `GET /selection` | Last *Show in Lily* payload (`{ selection: null }` until first use). |
+| `/mark` `/dedupe` `/reconstruct` `/state` | Dev-only command triggers, opt-in via `LILY_DEV_HARNESS=1`. |
+
+**Every node in `/snapshot` carries its canonical Max/LOM path** (`maxPath`). The SDK
+exposes objects but not their LiveAPI paths, so `snapshot.ts` reconstructs them from
+array indices while walking the tree — these are exactly the paths
+`lily-controller.amxd` resolves via `new LiveAPI(path)` and `process.ts` emits over OSC:
+
+| SDK | LOM path component |
+|---|---|
+| `song.tracks[i]` | `live_set tracks i` |
+| `song.returnTracks[i]` | `live_set return_tracks i` |
+| `song.mainTrack` | `live_set master_track` |
+| `track.clipSlots[j]` (+ `.clip`) | `… clip_slots j` (+ ` clip`) |
+| `track.devices[k]` | `… devices k` |
+| `device.parameters[p]` | `… parameters p` |
+| `track.mixer` (volume/panning/sends) | `… mixer_device volume` / `panning` / `sends i` |
+
+Returns/master emit `clipSlots: []` (addressing `master_track clip_slots N` is invalid).
+Verified against a real 18-track Set: 2573 path checks, 43 clips kind-tagged midi/audio.
+
+### Selection push — "Show in Lily"
+
+The context action resolves the clicked object by `handle.id`, derives its `maxPath`
+(same grammar as the snapshot), and delivers a JSON payload two ways:
+
+1. **OSC push** to Lily's existing server (`127.0.0.1:5460`), address `/lily/select`,
+   one JSON string arg — Lily side: `window.api.osc.on('/lily/select', …)`.
+2. **`GET /selection`** on the bridge (for when Lily launches after the click).
+
+```json
+{
+  "type": "clip",
+  "name": "Verse",
+  "maxPath": "live_set tracks 0 clip_slots 2 clip",
+  "trackName": "Bass",
+  "trackPath": "live_set tracks 0",
+  "clipKind": "midi"
+}
+```
+
+Arrangement clips have no session-slot path → `maxPath` falls back to the track,
+flagged `inArrangement: true`. The monitor pane highlights by matching `maxPath`
+against its snapshot tree. OSC encoding is a minimal in-repo string encoder
+(`osc.ts`, no deps), verified against the `osc` package Lily's server uses.
+
+### SDK gotchas hit in practice
+
+- **`bigint` numerics.** Several numeric getters (clip `color`/times, param
+  `min`/`max`/`defaultValue`, `tempo`, scene signature, cue `time`) return `bigint` at
+  runtime despite `.d.ts` saying `number` — `JSON.stringify` throws on them.
+  `snapshot.ts` coerces via `Number()`; the bridge adds a bigint-safe replacer.
+- **Param *values* are async** (`getValue()` is a Promise) — kept out of the structural
+  snapshot; read on demand for a focused selection only.
+- **One dev host at a time / stale handshake.** A repeating
+  `Failed to process receive queue, closing connection` loop on startup means Live's
+  extension socket is stale (usually after the host was killed/restarted). Fix: quit
+  your `npm start`, toggle **Preferences → Extensions → Developer Mode** off/on (or
+  restart Live), then `npm start` again and wait for `[lily] activated`.
+- **`Track.mixer`**, not `mixerDevice` — the SDK property names differ from LOM
+  components in several places (see the mapping table above).
 
 ## Prerequisites & dev loop
 
 - **Ableton Live Beta** (from Centercode) — the SDK only runs against the Beta build.
-- **Node.js ≥ 24.14.1**.
-- Enable **Developer Mode**: Live → Preferences → Extensions. This lets you own the
-  Extension Host so `npm start` rebuilds + hot-reloads the extension without restarting Live.
-- Scaffold a new extension:
-  ```bash
-  mkdir lily-ext && cd lily-ext
-  npx file:/path/to/extensions-sdk-1.0.0-beta.0/ableton-create-extension-1.0.0-beta.0.tgz
-  npm start   # builds + launches the Extension Host (reads EXTENSION_HOST_PATH from .env)
-  ```
-- Logs (incl. `console.*` and uncaught stack traces): `ExtensionHost.txt`
-  - macOS: `~/Library/Preferences/Ableton/Live x.x.x/ExtensionHost.txt`
+- **Node.js ≥ 24.14.1** (repo `.nvmrc` is 24). The host itself runs Ableton's bundled
+  Node; your local Node only matters for the build.
+- Enable **Developer Mode**: Live → Preferences → Extensions, then from
+  `extensions/lily/`: `npm start` (builds + launches the host; menu items appear on
+  right-click). Logs incl. `console.*`:
+  `~/Library/Preferences/Ableton/Live x.x.x/ExtensionHost.txt`.
 
 ## Extension shape
 
@@ -42,18 +120,14 @@ import { initialize, type ActivationContext } from "@ableton-extensions/sdk"
 
 export function activate(activation: ActivationContext) {
   const context = initialize(activation, "1.0.0")
-
-  context.commands.registerCommand("lily.doThing", (arg: unknown) => { /* ... */ })
-
-  context.ui.registerContextMenuAction(
-    "AudioTrack.ArrangementSelection", // scope
-    "Lily: Do Thing",                  // menu label
-    "lily.doThing",                    // commandId
-  )
+  context.commands.registerCommand("lily.doThing", (handleOrArg: unknown) => { /* ... */ })
+  context.ui.registerContextMenuAction("AudioTrack", "Lily: Do Thing", "lily.doThing")
 }
 ```
 
 `manifest.json`: `{ name, author, entry: "dist/extension.js", version, minimumApiVersion: "1.0.0" }`.
+The command receives the right-clicked object's `Handle` (`{ id: bigint }`); resolve it
+with `context.getObjectFromHandle(handle, DataModelObject)` and branch via `instanceof`.
 
 ## Capability map (`context.*`)
 
@@ -67,190 +141,124 @@ export function activate(activation: ActivationContext) {
 ### Locators (`CuePoint`) — Arrangement timeline markers
 - `song.cuePoints` → `CuePoint[]` (sync read). Each: `time` (beats, **read-only**),
   `name` (get / **set**).
-- `await song.createCuePoint(time)` — `time` is a **number (beats) only**. There is no
-  name parameter and no string overload at either layer. Name it in a second step:
-  ```ts
-  const cp = await song.createCuePoint(8) // at beat 8
-  cp.name = "Drop"                        // name is the only writable field
-  ```
-- `await song.deleteCuePoint(cp)`.
-- `time` has no setter — to **move** a locator, delete + recreate (+ rename) at the new beat.
+- `await song.createCuePoint(time)` — beats only, no name param; name in a second step.
+- `time` has no setter — to **move** a locator, delete + recreate (+ rename).
 
 ### Tracks (`Track` / `AudioTrack` / `MidiTrack`)
 - Read/write: `name`, `mute`, `solo`, `arm` (read: `mutedViaSolo`, `groupTrack`)
-- Children: `clipSlots`, `takeLanes`, `arrangementClips`, `devices`, `mixerDevice`
+- Children: `clipSlots`, `takeLanes`, `arrangementClips`, `devices`, `mixer`
 - Edit: `createMidiClip(start,dur)`, `createAudioClip({filePath,...})`,
   `insertDevice(name, index)`, `deleteDevice()`, `duplicateDevice()`,
   `deleteClip()`, `clearClipsInRange(start,end)`, `createTakeLane()`
 
 ### Clips
-- `Clip`: `name` (get/**set**), `color` (get/**set** — packed RGB int, e.g. `0xFF0000`),
-  `muted` (get/**set**), `looping` (get/**set**), `startTime`, `endTime`, `duration`,
-  `startMarker`, `endMarker`, `loopStart`, `loopEnd`
+- `Clip`: `name` (get/**set**), `color` (get/**set** — packed RGB int), `muted`,
+  `looping`, `startTime`, `endTime`, `duration`, `startMarker`, `endMarker`,
+  `loopStart`, `loopEnd`
 - `AudioClip`: `filePath`, `warping`, `warpMode` (get/**set**), `warpMarkers`
 - `MidiClip`: `notes` (get/**set** — full note-list read/write)
 - `ClipSlot`: `clip`, `createMidiClip(length)`, `createAudioClip({filePath,...})`, `deleteClip()`
 
 ### Scenes (`Scene`) — Session view rows
-- `song.scenes` → `Scene[]` (sync read). Each: `name` (get / **set**), `tempo`,
-  `signatureNumerator`, `signatureDenominator` (all read-only).
-- `await song.createScene(index)`, `await song.deleteScene(scene)`,
-  `await song.duplicateScene(scene)`.
+- `song.scenes` → `Scene[]`. Each: `name` (get / **set**), `tempo`,
+  `signatureNumerator/Denominator` (read-only).
 - **Scene/track slots are parallel-indexed:** `track.clipSlots[i]` is the slot in
-  scene `i`. There's no `Scene.clipSlots` — iterate tracks at index `i` to read/build a row.
-- You **can rename scenes** (great for labeling Session rows by section), but **cannot**
-  set a scene's tempo/time-signature, and **cannot launch** a scene (no transport).
-- Pairs with the two ideas: after `Dedupe to Session`, name the filled scenes after the
-  `Mark Inflections` sections to reconstruct a labeled Session-view map of the arrangement.
+  scene `i`. There's no `Scene.clipSlots`.
+- You **can rename scenes**, but **cannot** set scene tempo/time-signature and
+  **cannot launch** a scene (no transport).
 
 ### Devices & parameters
 - `Device`: `name`, `parameters`
-- `DeviceParameter`: `name`, `internalMin`, `internalMax`, `defaultValue`, `isQuantized`,
-  `valueItems`, `getInternalValue()`, **`setInternalValue(value)`** (one-shot set — *not*
-  automation, *not* mapping)
-- Mixer: `mixerDevice.volume`, `.panning`, `.sends` (each is a `DeviceParameter`)
+- `DeviceParameter`: `name`, `min`, `max`, `defaultValue`, `isQuantized`, `valueItems`,
+  `getValue()` (async), **`setValue(value)`** (one-shot set — *not* automation, *not* mapping)
+- Mixer: `track.mixer.volume`, `.panning`, `.sends` (each a `DeviceParameter`)
 - Racks: `RackDevice.chains`, `insertChain()`; `DrumRack`, `DrumChain.receivingNote`;
   `Simpler.sample` / `replaceSample(filePath)`
 
-### `resources` — audio & files  ⭐ key for generation workflows
+### `resources` — audio & files
 - `renderPreFxAudio(track, startBeat, endBeat) → Promise<string>` — renders a WAV (pre-FX)
   of a track over a beat range to the extension's temp dir.
 - `importIntoProject(filePath) → Promise<string>` — copies a file into the Live project
   folder; **use the returned path** in subsequent calls.
 
 ### `ui`
-- `registerContextMenuAction(scope, title, commandId) → unregister fn`. Scopes:
+- `registerContextMenuAction(scope, title, commandId)`. Scopes:
   `AudioClip`, `AudioTrack`, `ClipSlot`, `DrumRack`, `MidiClip`, `MidiTrack`, `Sample`,
   `Scene`, `Simpler`, `ClipSlotSelection`, `AudioTrack.ArrangementSelection`,
-  `MidiTrack.ArrangementSelection`. The command receives the triggered object's `Handle`
-  (or a selection) as its first arg.
+  `MidiTrack.ArrangementSelection`.
 - `showModalDialog(url, w, h) → Promise<string>` — webview from `file:`/`data:`/`https:`/
-  `http://localhost`. The page returns a result by posting
-  `{ method: "close_and_send", params: [resultString] }` to the host.
-  **This is how a Lily React UI can render inside Live.**
+  `http://localhost`; page returns a result via `close_and_send`.
 - `withinProgressDialog(text, {progress}, async (update, abortSignal) => {...})` — progress
-  bar + cancellation for long-running ops.
+  bar + cancellation. **Always `.catch`** — an unhandled rejection crashes the host.
 
 ### `environment`
-- `storageDirectory` — persistent per-extension dir (good for **API keys / config**)
-- `tempDirectory` — scratch (may be cleared between sessions)
-- `language` — ISO 639-1, e.g. `"EN"`
+- `storageDirectory` (persistent per-extension dir — API keys/config),
+  `tempDirectory` (scratch), `language`.
 
 ### `commands` & transactions
 - `commands.registerCommand(id, cb)` / `executeCommand(id, ...args)`
 - `context.withinTransaction(fn)` — batch edits into one undoable transaction
 - `context.getObjectFromHandle(handle, Type)` — resolve a `Handle` to a typed object
-  (pass `DataModelObject` + `instanceof` when the type is unknown)
 
 ## Limitations (what to design around)
 
 | Want | Possible? | Notes |
 |------|-----------|-------|
-| Read tracks/clips/devices/params | ✅ | But snapshot-only (no events) |
-| Set a knob/param to a value | ✅ | `setInternalValue` — one-shot, not recorded |
+| Read tracks/clips/devices/params | ✅ | Snapshot-only (no events) |
+| Set a knob/param to a value | ✅ | `setValue` — one-shot, not recorded |
 | Create clips/tracks/scenes/devices | ✅ | Batch with `withinTransaction` |
-| Locators (create/delete/rename) | ✅ | `CuePoint`; `time` is read-only (can't move — delete+recreate) |
-| Scenes (create/delete/duplicate/rename) | ✅ | `Scene.name` get/set; tempo & time-sig read-only; **no launch** |
+| Locators (create/delete/rename) | ✅ | `time` read-only (move = delete+recreate) |
+| Scenes (create/delete/duplicate/rename) | ✅ | tempo & time-sig read-only; **no launch** |
 | Render stems / import audio | ✅ | `renderPreFxAudio` + `importIntoProject` |
-| Call external APIs (Suno, etc.) | ✅ | Full Node `fetch`/npm |
-| **Fire / launch a clip or scene** | ❌ | No `ClipSlot.fire()` / `Scene.fire()` — data only |
-| **Transport play/stop/record** | ❌ | No transport at all; no playhead, no `isPlaying` |
+| Call external APIs | ✅ | Full Node `fetch`/npm |
+| **Fire / launch a clip or scene** | ❌ | No `fire()` anywhere — data only |
+| **Transport play/stop/record** | ❌ | No transport, no playhead, no `isPlaying` |
 | Write/record automation envelopes | ❌ | Not in the API |
 | MIDI map / "learn" a control | ❌ | Not in the API |
 | Subscribe to "Live changed" events | ❌ | Pull-based; re-read on command/poll |
-| Live-mirror project state for a UI | ⚠️ | Only via polling / refresh-on-command |
+| Live-mirror project state for a UI | ⚠️ | Polling / refresh-on-command only |
 
-**Implication for Lily:** the SDK is **not a control surface** — it cannot launch clips, control transport, write automation, or map controls. It is a **data-model, offline-render, and UI-command** API. It shines for generation and project-manipulation commands, not live triggering.
+**Implication:** the SDK is **not a control surface**. It is a data-model,
+offline-render, and UI-command API.
 
 ### Division of labor: Extensions SDK vs. Max for Live / OSC
 
-Because the SDK has no clip-launch or transport, the *live performance* path must stay on a
-different channel. Keep the two concerns split:
+- **Extensions SDK** (`extensions/lily/`) → the **offline / structural / read** side:
+  snapshot bridge, selection push, arrangement tools, (future) generation/rendering.
+- **Max for Live + OSC** (`lily-controller.amxd`) → the **live** side: firing
+  clips/scenes, transport, real-time keyword triggering. The classic Live Object Model
+  is reachable from M4L but **not** from the Extensions SDK.
 
-- **Extensions SDK** → the **offline / generative / structural** side: watcher snapshot
-  (tracks, devices, clips, locators), Suno-style "generate → import clip," batch edits,
-  stem rendering, renaming/organizing.
-- **Max for Live + OSC** (`src/plugins/ableton/maxdevice/lily-controller.amxd`) → the
-  **live** side: firing clips/scenes, transport, real-time triggering. The classic Live
-  Object Model (`clip_slot.fire()`, transport) is reachable from M4L / Remote Scripts but
-  **not** from the Extensions SDK.
+The two meet at the **`maxPath`**: the bridge tells Lily *what exists and how to
+address it*; Lily's keyword pipeline sends those same paths back over OSC for the M4L
+controller to *act on live*.
 
-## How it maps to Lily
+## Prototyped & parked
 
-### Ableton Explorer (Figma: Tracks → Devices → Parameters columns)
-Direct read of `song.tracks → track.devices → device.parameters`. Because there are no
-change events, treat it as a **snapshot refreshed on demand** (a Refresh action, or re-read
-each time a command runs) rather than a live mirror.
+- **`extensions/watcher-spike/`** — standalone feasibility test, superseded by the
+  built-in bridge. What it proved (still the basis of the design): data-model reads
+  work from a **free-running background timer** outside any command; structural reads
+  are sync and cheap; snapshot diffing works; an extension can host a localhost server.
+  A future live-updating Explorer would poll + diff exactly like this (~1–2s structural
+  tick + on-demand value reads); the current bridge is pull-only (`/snapshot` per
+  request) because that's all the monitor pane needs today.
+- **"Generate with Suno"** (render selection → external API → import clip) — mapped out,
+  never built. The capability path (`renderPreFxAudio` → `fetch` → `importIntoProject` →
+  `createAudioClip`) remains valid if revived.
+- **Embedding Lily UI in Live** via `ui.showModalDialog("http://localhost:…")` — not
+  pursued; the bridge + OSC push into the standalone Lily app won out.
 
-### "Generate with Suno" (the strong hackathon path)
-Mirrors the bundled `strip-silence` example almost 1:1:
+## Next steps
 
-```
-right-click clip / arrangement selection
-  → registerContextMenuAction → command
-  → ui.withinProgressDialog(...)
-      → (optional) resources.renderPreFxAudio(selection) as a conditioning input
-      → fetch Suno API (key from environment.storageDirectory)
-      → download generated WAV to tempDirectory
-      → resources.importIntoProject(wavPath)
-      → track.createAudioClip({ filePath }) / clipSlot.createAudioClip(...)
-```
-
-No automation/knobs/mapping involved — it sidesteps every limitation above.
-
-## Watcher bridge (polling) — ✅ VALIDATED
-
-The SDK has no change events, so a live-updating view (e.g. the Ableton Explorer)
-must **poll + diff**. The open question was whether the data model can be read from a
-**free-running background timer** (outside a command callback). A standalone spike
-(`extensions/watcher-spike/`) confirmed it works.
-
-**What the spike proved (against Live 12 Beta, a real 8-track Set):**
-- ✅ A `setInterval` in `activate` reads `song` / `tracks` / `devices` / `clipSlots`
-  every 1s, **outside any command** — no errors, ticks steady at 1s.
-- ✅ Structural reads (`name`, `mute`, `solo`, `arm`, device names, clip names) are
-  **synchronous and cheap**.
-- ✅ Snapshot **diffing** (serialize + compare) emits only on change.
-- ✅ The extension can **host a localhost HTTP server** (`127.0.0.1:7878`) that an
-  external process consumes — verified with `curl` (this is the Lily-facing half,
-  proven without touching Lily).
-- The host runs under Ableton's **bundled Node 24.14.1** (`…/ExtensionHost/node`), so
-  the local toolchain Node only matters for the build step.
-
-**Still true (design around these):**
-- Device parameter **values** are async (`getInternalValue` is callback-based) — keep
-  them out of the structural poll; read them on-demand for the focused track/device.
-- Polling is a snapshot — transient changes between ticks are missed; no transport /
-  automation / playhead.
-
-**Recommended shape:** two-tier polling — a ~1–2s structural poll (sync props, full
-diff) plus an on-demand focused value poll for whatever the Explorer has selected —
-pushed to Lily over WS/HTTP. See the spike for a working reference.
-
-## Integration architectures (extension ↔ Lily)
-
-1. **Bridge (extension hosts a localhost server).** The extension runs an HTTP/WS server
-   in Node; Lily connects to read the project tree (powers the Explorer) and to issue
-   generate/render commands. Could replace the Max-for-Live + OSC **read** path.
-
-2. **Embed (Lily UI inside Live).** `ui.showModalDialog("http://localhost:<lily-port>/...")`
-   loads Lily's React UI inside Live's modal; the page posts results back. Good for the Suno
-   generate panel specifically.
-
-3. **Augment (keep OSC, add extension).** Leave today's Max/OSC keyword pipeline alone and
-   add the extension only for generation/rendering. Lowest-risk for a hackathon demo.
-
-## Open questions / next steps
-
-- Decide bridge vs. embed vs. augment (default: **augment** for the first demo).
-- Where the extension lives — likely `extensions/lily-ext/` in this repo (its own
-  `package.json`, builds to `dist/extension.js`).
-- Confirm Suno API contract (endpoint, async job polling, conditioning inputs).
-- Define the Lily↔extension message schema if going the bridge route.
+- Lily-side monitor pane: highlight on `/lily/select`, Refresh via `GET /snapshot`
+  (in progress).
+- Arrangement-clip paths (`… arrangement_clips i`) in the snapshot if the monitor
+  needs them (currently arrangement clips resolve to their track).
+- On-demand parameter *value* reads (focused selection) — likely a bridge route that
+  awaits `getValue()` for one device.
 
 ## References (in the SDK distribution)
 
 - `docs/` — rendered guide (Getting Started, Essentials, Design, Development)
-- `examples/strip-silence` — render + arrangement selection + progress dialog (closest template)
-- `examples/{context-menu,modal-dialog,progress-dialog,audio-clips,warpMode,arrangementselection}`
+- `examples/strip-silence` — render + arrangement selection + progress dialog
 - `ableton-extensions-sdk-1.0.0-beta.0.tgz` → `dist/index.d.mts` (full typed API surface)
