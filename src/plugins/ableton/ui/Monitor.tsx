@@ -1,9 +1,7 @@
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
-import { useState } from 'react'
-import { ActivePlugin, UIProps } from 'src/types/plugins'
+import { UIProps, ActivePlugin } from 'src/types/plugins'
 import { AbletonState } from '../store'
 
-// Converts an Ableton color integer to a CSS hex string
 function abletonColorToHex(color: number): string {
   return `#${((color >>> 0) & 0xffffff).toString(16).padStart(6, '0')}`
 }
@@ -61,32 +59,31 @@ function Row({
 }
 
 export default function Monitor({ instanceId }: UIProps) {
-  const { getInstance } = usePluginsStore()
-  const instance = getInstance(instanceId) as ActivePlugin<AbletonState>
+  const instance = usePluginsStore((s) => s.getInstance(instanceId)) as ActivePlugin<AbletonState>
+
   const abletonProject = instance.useStore((state) => state.abletonProject) as
     | AbletonProject
     | Record<string, never>
+  const selectedTrack = instance.useStore((state) => state.selectedTrack)
+  const selectedDevice = instance.useStore((state) => state.selectedDevice)
+  const selectedParam = instance.useStore((state) => state.selectedParam)
 
-  const [selectedTrack, setSelectedTrack] = useState<AbletonTrack | null>(null)
-  const [selectedDevice, setSelectedDevice] = useState<AbletonDevice | null>(null)
+  const { setSelectedTrack, setSelectedDevice, setSelectedParam } =
+    instance.useStore.getState()
 
   const tracks = (abletonProject as AbletonProject).track_data_arr ?? []
   const isEmpty = tracks.length === 0
-
   const clips = selectedTrack?.clip_slots_data?.filter((s) => s.has_clip) ?? []
   const devices = selectedTrack?.device_data ?? []
   const params = selectedDevice?.parameters ?? []
-
-  function selectTrack(track: AbletonTrack) {
-    setSelectedTrack(track)
-    setSelectedDevice(null)
-  }
 
   return (
     <div className="flex flex-row h-full overflow-hidden text-sm font-mono bg-stone-950">
       {/* Column 1: Tracks */}
       <div className="flex flex-col w-52 border-r border-stone-700 shrink-0">
-        <ColumnHeader onRefresh={() => window.api.osc.send('/get-state', [])}>Tracks</ColumnHeader>
+        <ColumnHeader onRefresh={() => window.api.osc.send('/get-state', [])}>
+          Tracks
+        </ColumnHeader>
         <div className="overflow-y-auto flex-1">
           {isEmpty ? (
             <div className="px-3 py-4 text-stone-500 text-xs">No project loaded</div>
@@ -95,7 +92,7 @@ export default function Monitor({ instanceId }: UIProps) {
               <Row
                 key={track.id}
                 selected={selectedTrack?.id === track.id}
-                onClick={() => selectTrack(track)}
+                onClick={() => setSelectedTrack(track)}
               >
                 <span
                   className="w-2 h-2 rounded-full shrink-0"
@@ -118,7 +115,6 @@ export default function Monitor({ instanceId }: UIProps) {
               <>
                 <SectionLabel>Clips</SectionLabel>
                 {clips.map((slot) => {
-                  console.log(slot, 'slot')
                   const clip = slot.clip_data
                   if (clip)
                     return (
@@ -175,9 +171,12 @@ export default function Monitor({ instanceId }: UIProps) {
               params.map((param) => (
                 <div
                   key={param.id}
-                  className={`flex items-center justify-between px-3 py-1.5 gap-2 ${
-                    param.is_enabled ? 'text-stone-300' : 'text-stone-600'
-                  }`}
+                  onClick={() => setSelectedParam(selectedParam?.id === param.id ? null : param)}
+                  className={`flex items-center justify-between px-3 py-1.5 gap-2 cursor-pointer select-none ${
+                    selectedParam?.id === param.id
+                      ? 'bg-stone-600'
+                      : 'hover:bg-stone-800'
+                  } ${param.is_enabled ? 'text-stone-300' : 'text-stone-600'}`}
                 >
                   <span className="truncate">{param.name}</span>
                   <span className="text-stone-400 shrink-0 text-right min-w-16">
