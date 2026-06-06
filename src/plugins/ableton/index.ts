@@ -10,9 +10,9 @@ import Workspace from './ui/Workspace'
 import Monitor from './ui/Monitor'
 import Options from './ui/Options'
 
-import { createLiveStore, LiveState } from './store'
+import { createAbletonStore, AbletonState } from './store'
 
-const AbletonPlugin: PluginDefinition<LiveState> = {
+const AbletonPlugin: PluginDefinition<AbletonState> = {
   manifest: manifest as PluginManifest,
 
   init,
@@ -23,7 +23,7 @@ const AbletonPlugin: PluginDefinition<LiveState> = {
   Monitor,
   Options,
 
-  createStore: createLiveStore
+  createStore: createAbletonStore
 }
 
 export default AbletonPlugin

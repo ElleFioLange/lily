@@ -39,11 +39,12 @@ const process: PluginDefinition['process'] = (_instanceId, inputs) => {
             }
           })
         }
-        window.api.osc.send(`/set/${type}/${value ? 'active' : 'inactive'}`, [path])
+        window.api.osc.send('/control', [type, value ? 'active' : 'inactive', path])
       } else {
-        window.api.osc.send(`/set/${type}/${object}`, [rawPath, value])
+        window.api.osc.send('/control', [type, object, rawPath, value])
       }
     })
+    // return messages
   }
 }
 

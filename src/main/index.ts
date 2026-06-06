@@ -743,7 +743,10 @@ function setupIPCHandlers(): void {
         })
 
         if (!res.ok) {
-          return { success: false, error: `LM Studio returned ${res.status} ${res.statusText} from ${url}` }
+          return {
+            success: false,
+            error: `LM Studio returned ${res.status} ${res.statusText} from ${url}`
+          }
         }
 
         const data = await res.json()

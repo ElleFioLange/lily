@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { ActivePlugin, UIProps } from 'src/types/plugins'
-import { LiveState } from '../store'
+import { AbletonState } from '../store'
 import { LiveDevice, LiveTrack } from '../bridge'
 import { colorStyle } from './colors'
 
@@ -117,7 +117,7 @@ function TrackColumn({
 
 export default function Monitor({ instanceId }: UIProps) {
   const { getInstance } = usePluginsStore()
-  const instance = getInstance(instanceId) as ActivePlugin<LiveState>
+  const instance = getInstance(instanceId) as ActivePlugin<AbletonState>
   const { snapshot, liveTracks, refreshing, refreshError, selection, selectionSeq, refresh } =
     instance.useStore()
 
