@@ -2,6 +2,7 @@ import type { Clip, ExtensionContext, Track } from "@ableton-extensions/sdk";
 import { LILY_TAG, densityColor } from "./util.js";
 import { computeSections, type Section } from "./sections.js";
 import { recreateInSlot } from "./placeClip.js";
+import { poeticName } from "./naming.js";
 
 type Ctx = ExtensionContext<"1.0.0">;
 type Song = Ctx["application"]["song"];
@@ -57,17 +58,19 @@ async function run(ctx: Ctx, update: (t: string, p?: number) => Promise<void>): 
     const sec = sections[s]!;
     const sceneIdx = base + s;
     const color = densityColor(sec.trackCount, maxTrackCount);
+    const energy01 = maxTrackCount > 0 ? sec.trackCount / maxTrackCount : 0;
 
     const scene = song.scenes[sceneIdx];
     if (scene) scene.name = `${LILY_TAG} ${sec.label}`;
 
-    for (const track of tracks) {
+    for (let ti = 0; ti < tracks.length; ti++) {
+      const track = tracks[ti]!;
       const rep = representativeClip(track, sec);
       if (!rep) continue;
       const slot = track.clipSlots[sceneIdx];
       if (!slot) continue;
       try {
-        await recreateInSlot(slot, rep, track.name, color);
+        await recreateInSlot(slot, rep, poeticName(energy01, ti, sec.index), color);
         placed++;
       } catch (e) {
         failed++;

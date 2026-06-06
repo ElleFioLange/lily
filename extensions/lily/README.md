@@ -28,6 +28,10 @@ section, each scene named after the section (`✦ Build 3 (7 trk)`) and its row 
 with each track's representative clip for that section (most-overlapping clip).
 - Combines the analysis of *Mark Inflections* with the placement of *Dedupe to Session*.
 - Appends fresh scenes (non-destructive); **idempotent** — clears its own `✦` scenes first.
+- Clips are **colored by section energy** (blue=sparse → red=full) and **autonamed**
+  evocatively (`Hushed Ember` → `Blazing Ember`): noun = track identity, adjective =
+  section energy. The word pools in `naming.ts` are a placeholder — swap them for Poiesis
+  keywords later.
 - Launching a reconstructed scene recalls that section's layout.
 
 ## Setup & run
