@@ -12,6 +12,7 @@ export interface AbletonState {
   instanceId: string
   abletonProjectBuffer: AbletonProjectBuffer
   abletonProject: AbletonProject | Record<string, never>
+  isLoading: boolean
 
   // Selection state — shared between Monitor and Workspace
   selectedTrack: AbletonTrack | null
@@ -22,6 +23,7 @@ export interface AbletonState {
 
   setAbletonProjectBuffer: (buffer: AbletonProjectBuffer) => void
   setAbletonProject: (state: AbletonProject) => void
+  setIsLoading: (loading: boolean) => void
   setSelectedTrack: (track: AbletonTrack | null) => void
   setSelectedClipSlot: (slot: AbletonClipSlot | null) => void
   setSelectedDevice: (device: AbletonDevice | null) => void
@@ -34,6 +36,7 @@ export const createAbletonStore = (instanceId: string): UseStore<AbletonState> =
     instanceId,
     abletonProjectBuffer: {},
     abletonProject: {},
+    isLoading: false,
 
     selectedTrack: null,
     selectedClipSlot: null,
@@ -42,7 +45,8 @@ export const createAbletonStore = (instanceId: string): UseStore<AbletonState> =
     selectedKeyword: null,
 
     setAbletonProjectBuffer: (buffer) => set({ abletonProjectBuffer: buffer }),
-    setAbletonProject: (state) => set({ abletonProject: state }),
+    setAbletonProject: (state) => set({ abletonProject: state, isLoading: false }),
+    setIsLoading: (isLoading) => set({ isLoading }),
 
     setSelectedTrack: (selectedTrack) =>
       set({ selectedTrack, selectedClipSlot: null, selectedDevice: null, selectedParam: null }),

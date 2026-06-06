@@ -3,6 +3,7 @@ import { createAbletonStore } from './store'
 export default function init(instanceId: string) {
   const useAbletonStore = createAbletonStore(instanceId)
 
+  useAbletonStore.getState().setIsLoading(true)
   window.api.osc.send('/get-state', [])
 
   window.api.osc.onMessage((message) => {
@@ -21,7 +22,7 @@ export default function init(instanceId: string) {
     if (msgIdx === total) {
       const chunks = Object.values(newBuffer)
       if (chunks.length !== Number(total)) chunks.push(data)
-      setAbletonProject(JSON.parse(chunks.join('')))
+      setAbletonProject(JSON.parse(chunks.join(''))) // also clears isLoading
       setAbletonProjectBuffer({})
     }
   })

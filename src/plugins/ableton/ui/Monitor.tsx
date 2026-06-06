@@ -64,13 +64,19 @@ export default function Monitor({ instanceId }: UIProps) {
   const abletonProject = instance.useStore((s) => s.abletonProject) as
     | AbletonProject
     | Record<string, never>
+  const isLoading = instance.useStore((s) => s.isLoading)
   const selectedTrack = instance.useStore((s) => s.selectedTrack)
   const selectedClipSlot = instance.useStore((s) => s.selectedClipSlot)
   const selectedDevice = instance.useStore((s) => s.selectedDevice)
   const selectedParam = instance.useStore((s) => s.selectedParam)
 
-  const { setSelectedTrack, setSelectedClipSlot, setSelectedDevice, setSelectedParam } =
+  const { setSelectedTrack, setSelectedClipSlot, setSelectedDevice, setSelectedParam, setIsLoading } =
     instance.useStore.getState()
+
+  function refresh() {
+    setIsLoading(true)
+    window.api.osc.send('/get-state', [])
+  }
 
   const tracks = (abletonProject as AbletonProject).track_data_arr ?? []
   const isEmpty = tracks.length === 0
@@ -82,9 +88,20 @@ export default function Monitor({ instanceId }: UIProps) {
     <div className="flex flex-row h-full overflow-hidden text-sm font-mono bg-stone-950">
       {/* Column 1: Tracks */}
       <div className="flex flex-col w-52 border-r border-stone-700 shrink-0">
-        <ColumnHeader onRefresh={() => window.api.osc.send('/get-state', [])}>Tracks</ColumnHeader>
+        <ColumnHeader onRefresh={refresh}>
+          <span>Tracks</span>
+          {isLoading && (
+            <span className="ml-2 w-2.5 h-2.5 rounded-full border border-stone-500 border-t-transparent animate-spin inline-block" />
+          )}
+        </ColumnHeader>
+        {isLoading && isEmpty && (
+          <div className="px-3 py-4 flex items-center gap-2 text-stone-500 text-xs">
+            <span className="w-2.5 h-2.5 rounded-full border border-stone-500 border-t-transparent animate-spin shrink-0" />
+            Fetching project state…
+          </div>
+        )}
         <div className="overflow-y-auto flex-1">
-          {isEmpty ? (
+          {!isLoading && isEmpty ? (
             <div className="px-3 py-4 text-stone-500 text-xs">No project loaded</div>
           ) : (
             tracks.map((track) => (
