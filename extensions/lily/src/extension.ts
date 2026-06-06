@@ -52,7 +52,11 @@ export function activate(activation: ActivationContext) {
         // Full project tree with a Max/LOM path on every node — the read path
         // that powers keyword→target wiring. See snapshot.ts.
         const song = context.application.song;
-        res.end(JSON.stringify(serializeSong(song), null, 2));
+        // Safety net: serializeSong coerces bigint numerics, but guard the
+        // boundary too so an unconverted field can't 500 the route.
+        res.end(
+          JSON.stringify(serializeSong(song), (_k, v) => (typeof v === "bigint" ? Number(v) : v), 2)
+        );
       } else if (url.startsWith("/state")) {
         const song = context.application.song;
         res.end(

@@ -36,6 +36,11 @@ import {
 
 type V = "1.0.0";
 
+// Several SDK numeric getters return `bigint` at runtime (their .d.ts says
+// `number`). JSON.stringify can't serialize bigint and consumers expect
+// numbers, so coerce every numeric field through this.
+const num = (v: number): number => Number(v);
+
 export type TrackKind = "track" | "return" | "master";
 export type ClipKind = "midi" | "audio" | "clip";
 
@@ -120,10 +125,10 @@ function serializeParam(p: DeviceParameter<V>, maxPath: string): ParamNode {
   return {
     name: p.name,
     maxPath,
-    min: p.min,
-    max: p.max,
+    min: num(p.min),
+    max: num(p.max),
     isQuantized: p.isQuantized,
-    defaultValue: p.defaultValue
+    defaultValue: num(p.defaultValue)
   };
 }
 
@@ -146,12 +151,12 @@ function serializeClip(c: Clip<V>, maxPath: string): ClipNode {
     name: c.name,
     maxPath,
     kind: clipKindOf(c),
-    color: c.color,
+    color: num(c.color),
     looping: c.looping,
     muted: c.muted,
-    startTime: c.startTime,
-    endTime: c.endTime,
-    duration: c.duration
+    startTime: num(c.startTime),
+    endTime: num(c.endTime),
+    duration: num(c.duration)
   };
 }
 
@@ -198,7 +203,7 @@ function serializeTrack(t: Track<V>, maxPath: string, kind: TrackKind): TrackNod
 export function serializeSong(song: Song<V>): ProjectSnapshot {
   return {
     maxPath: "live_set",
-    tempo: song.tempo,
+    tempo: num(song.tempo),
     tracks: song.tracks.map((t, i) => serializeTrack(t, `live_set tracks ${i}`, "track")),
     returnTracks: song.returnTracks.map((t, i) =>
       serializeTrack(t, `live_set return_tracks ${i}`, "return")
@@ -207,14 +212,14 @@ export function serializeSong(song: Song<V>): ProjectSnapshot {
     scenes: song.scenes.map((s, i) => ({
       name: s.name,
       maxPath: `live_set scenes ${i}`,
-      tempo: s.tempo,
-      signatureNumerator: s.signatureNumerator,
-      signatureDenominator: s.signatureDenominator
+      tempo: num(s.tempo),
+      signatureNumerator: num(s.signatureNumerator),
+      signatureDenominator: num(s.signatureDenominator)
     })),
     cuePoints: song.cuePoints.map((c, i) => ({
       name: c.name,
       maxPath: `live_set cue_points ${i}`,
-      time: c.time
+      time: num(c.time)
     }))
   };
 }
