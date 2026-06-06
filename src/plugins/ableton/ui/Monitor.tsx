@@ -1,14 +1,14 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { ActivePlugin, UIProps } from 'src/types/plugins'
 import { LiveState } from '../store'
-import { LiveTrack } from '../bridge'
+import { LiveDevice, LiveTrack } from '../bridge'
 import { colorStyle } from './colors'
 
 // Session-style monitor of the open Live Set, read from the extension bridge.
-// One column per track: name header, clips, then devices. "Show in Lily" in
-// Live highlights the matching node here (left-border accent + a brief pulse)
-// and foregrounds the app.
+// One column per track: name header, clips, then devices (expandable to their
+// parameters). "Show in Lily" in Live highlights the matching node here
+// (left-border accent + a brief pulse) and foregrounds the app.
 
 const ROW = 'px-2 py-0.5 truncate border-l-4'
 
@@ -16,6 +16,46 @@ const ROW = 'px-2 py-0.5 truncate border-l-4'
  *  push, re-keying the animation so a repeat selection pulses again. */
 const highlight = (selected: boolean) =>
   selected ? 'border-stone-100 animate-select-pulse' : 'border-transparent'
+
+function DeviceRow({
+  device,
+  selectedPath,
+  nodeKey
+}: {
+  device: LiveDevice
+  selectedPath: string | null
+  nodeKey: (id: string) => string
+}) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div
+        key={nodeKey(device.id)}
+        onClick={() => setOpen((o) => !o)}
+        className={`${ROW} ${highlight(device.id === selectedPath)} bg-stone-800 text-stone-300 cursor-pointer flex items-center gap-1`}
+        title={device.id}
+      >
+        <span className="shrink-0 w-3 text-[10px] opacity-70">{open ? '▾' : '▸'}</span>
+        <span className="truncate">◆ {device.name}</span>
+        <span className="ml-auto shrink-0 text-[10px] text-stone-500">
+          {device.parameters.length}
+        </span>
+      </div>
+
+      {open &&
+        device.parameters.map((p) => (
+          <div
+            key={nodeKey(p.id)}
+            className={`${ROW} ${highlight(p.id === selectedPath)} ml-3 bg-stone-900 text-stone-400`}
+            title={`${p.min}–${p.max}${p.isQuantized ? ' · quantized' : ''} · default ${p.defaultValue} · ${p.id}`}
+          >
+            ◇ {p.name}
+          </div>
+        ))}
+    </div>
+  )
+}
 
 function TrackColumn({
   track,
@@ -31,7 +71,9 @@ function TrackColumn({
     selectedPath !== null &&
     (track.id === selectedPath ||
       track.clips.some((c) => c.id === selectedPath) ||
-      track.devices.some((d) => d.id === selectedPath))
+      track.devices.some(
+        (d) => d.id === selectedPath || d.parameters.some((p) => p.id === selectedPath)
+      ))
 
   useEffect(() => {
     if (containsSelection) ref.current?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
@@ -64,13 +106,7 @@ function TrackColumn({
           </div>
         ))}
         {track.devices.map((d) => (
-          <div
-            key={nodeKey(d.id)}
-            className={`${ROW} ${highlight(d.id === selectedPath)} bg-stone-800 text-stone-300`}
-            title={d.id}
-          >
-            ◆ {d.name}
-          </div>
+          <DeviceRow key={d.id} device={d} selectedPath={selectedPath} nodeKey={nodeKey} />
         ))}
       </div>
     </div>
