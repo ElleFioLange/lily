@@ -20,6 +20,9 @@ export interface HydraState extends PluginState {
   isValid: boolean
   error: string | null
 
+  // Monitor
+  monitorsEnabled: boolean
+
   // Setters
   setHydra: (hydra: HydraInstance) => void
   setCanvas: (canvas: HTMLCanvasElement) => void
@@ -29,6 +32,7 @@ export interface HydraState extends PluginState {
   setShaderName: (name: string | null) => void
   setIsValid: (isValid: boolean) => void
   setError: (error: string | null) => void
+  setMonitorsEnabled: (enabled: boolean) => void
   newShader: () => void
   openShader: (content: string, path: string) => void
 }
@@ -44,6 +48,7 @@ export const createHydraStore = (instanceId: string) => {
     shaderName: 'new-shader',
     isValid: true,
     error: null,
+    monitorsEnabled: false,
 
     setHydra: (hydra) => set({ hydra }),
 
@@ -78,6 +83,8 @@ export const createHydraStore = (instanceId: string) => {
       set({ shader: content, shaderPath: path, shaderName: name, isValid: true, error: null })
     },
 
-    setError: (error) => set({ error })
+    setError: (error) => set({ error }),
+
+    setMonitorsEnabled: (monitorsEnabled) => set({ monitorsEnabled })
   }))
 }

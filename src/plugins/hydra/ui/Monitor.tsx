@@ -37,14 +37,31 @@ function OutputMonitor({ shader, layer }: { shader: string; layer: number }) {
 export default function Monitor({ instanceId, ...props }: UIProps) {
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<HydraState>
-  const { shader } = instance.useStore()
+  const { shader, monitorsEnabled, setMonitorsEnabled } = instance.useStore()
   return (
-    <div className="size-full flex gap-4 p-8 overflow-auto" {...props}>
-      {Array(4)
-        .fill('monitor-layer')
-        .map((_, i) => (
-          <OutputMonitor shader={shader} layer={i} key={i} />
-        ))}
+    <div className="size-full flex flex-col" {...props}>
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-stone-800">
+        <label className="text-xs text-stone-400 flex items-center gap-2 cursor-pointer select-none">
+          <div
+            className={`w-8 h-4 rounded-full relative transition-colors ${monitorsEnabled ? 'bg-stone-400' : 'bg-stone-700'}`}
+            onClick={() => setMonitorsEnabled(!monitorsEnabled)}
+          >
+            <div
+              className={`absolute top-0.5 w-3 h-3 rounded-full bg-stone-100 transition-transform ${monitorsEnabled ? 'translate-x-4' : 'translate-x-0.5'}`}
+            />
+          </div>
+          monitors
+        </label>
+      </div>
+      {monitorsEnabled && (
+        <div className="flex-1 flex gap-4 p-8 overflow-auto">
+          {Array(4)
+            .fill('monitor-layer')
+            .map((_, i) => (
+              <OutputMonitor shader={shader} layer={i} key={i} />
+            ))}
+        </div>
+      )}
     </div>
   )
 }
