@@ -1,0 +1,12 @@
+.DS_Store
+node_modules/
+dist/
+
+# Ableton Extensions SDK beta tarballs — confidential, do NOT commit (see README)
+vendor/
+
+*.log
+*.ablx
+*.tsbuildinfo
+
+.env

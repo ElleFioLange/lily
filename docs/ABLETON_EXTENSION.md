@@ -64,6 +64,18 @@ export function activate(activation: ActivationContext) {
   `duplicateTrack()`, `createScene()`, `deleteScene()`, `duplicateScene()`,
   `createCuePoint()`, `deleteCuePoint()`
 
+### Locators (`CuePoint`) — Arrangement timeline markers
+- `song.cuePoints` → `CuePoint[]` (sync read). Each: `time` (beats, **read-only**),
+  `name` (get / **set**).
+- `await song.createCuePoint(time)` — `time` is a **number (beats) only**. There is no
+  name parameter and no string overload at either layer. Name it in a second step:
+  ```ts
+  const cp = await song.createCuePoint(8) // at beat 8
+  cp.name = "Drop"                        // name is the only writable field
+  ```
+- `await song.deleteCuePoint(cp)`.
+- `time` has no setter — to **move** a locator, delete + recreate (+ rename) at the new beat.
+
 ### Tracks (`Track` / `AudioTrack` / `MidiTrack`)
 - Read/write: `name`, `mute`, `solo`, `arm` (read: `mutedViaSolo`, `groupTrack`)
 - Children: `clipSlots`, `takeLanes`, `arrangementClips`, `devices`, `mixerDevice`
@@ -72,11 +84,24 @@ export function activate(activation: ActivationContext) {
   `deleteClip()`, `clearClipsInRange(start,end)`, `createTakeLane()`
 
 ### Clips
-- `Clip`: `name`, `startTime`, `endTime`, `duration`, `startMarker`, `endMarker`,
-  `looping`, `loopStart`, `loopEnd`, `color`, `muted`
+- `Clip`: `name` (get/**set**), `color` (get/**set** — packed RGB int, e.g. `0xFF0000`),
+  `muted` (get/**set**), `looping` (get/**set**), `startTime`, `endTime`, `duration`,
+  `startMarker`, `endMarker`, `loopStart`, `loopEnd`
 - `AudioClip`: `filePath`, `warping`, `warpMode` (get/**set**), `warpMarkers`
 - `MidiClip`: `notes` (get/**set** — full note-list read/write)
 - `ClipSlot`: `clip`, `createMidiClip(length)`, `createAudioClip({filePath,...})`, `deleteClip()`
+
+### Scenes (`Scene`) — Session view rows
+- `song.scenes` → `Scene[]` (sync read). Each: `name` (get / **set**), `tempo`,
+  `signatureNumerator`, `signatureDenominator` (all read-only).
+- `await song.createScene(index)`, `await song.deleteScene(scene)`,
+  `await song.duplicateScene(scene)`.
+- **Scene/track slots are parallel-indexed:** `track.clipSlots[i]` is the slot in
+  scene `i`. There's no `Scene.clipSlots` — iterate tracks at index `i` to read/build a row.
+- You **can rename scenes** (great for labeling Session rows by section), but **cannot**
+  set a scene's tempo/time-signature, and **cannot launch** a scene (no transport).
+- Pairs with the two ideas: after `Dedupe to Session`, name the filled scenes after the
+  `Mark Inflections` sections to reconstruct a labeled Session-view map of the arrangement.
 
 ### Devices & parameters
 - `Device`: `name`, `parameters`
@@ -101,8 +126,8 @@ export function activate(activation: ActivationContext) {
   (or a selection) as its first arg.
 - `showModalDialog(url, w, h) → Promise<string>` — webview from `file:`/`data:`/`https:`/
   `http://localhost`. The page returns a result by posting
-  `{ method: "close_and_send", params: [resultString] }` to the host. **This is how a Lily
-  React UI can render inside Live.**
+  `{ method: "close_and_send", params: [resultString] }` to the host.
+  **This is how a Lily React UI can render inside Live.**
 - `withinProgressDialog(text, {progress}, async (update, abortSignal) => {...})` — progress
   bar + cancellation for long-running ops.
 
@@ -123,17 +148,32 @@ export function activate(activation: ActivationContext) {
 |------|-----------|-------|
 | Read tracks/clips/devices/params | ✅ | But snapshot-only (no events) |
 | Set a knob/param to a value | ✅ | `setInternalValue` — one-shot, not recorded |
+| Create clips/tracks/scenes/devices | ✅ | Batch with `withinTransaction` |
+| Locators (create/delete/rename) | ✅ | `CuePoint`; `time` is read-only (can't move — delete+recreate) |
+| Scenes (create/delete/duplicate/rename) | ✅ | `Scene.name` get/set; tempo & time-sig read-only; **no launch** |
+| Render stems / import audio | ✅ | `renderPreFxAudio` + `importIntoProject` |
+| Call external APIs (Suno, etc.) | ✅ | Full Node `fetch`/npm |
+| **Fire / launch a clip or scene** | ❌ | No `ClipSlot.fire()` / `Scene.fire()` — data only |
+| **Transport play/stop/record** | ❌ | No transport at all; no playhead, no `isPlaying` |
 | Write/record automation envelopes | ❌ | Not in the API |
 | MIDI map / "learn" a control | ❌ | Not in the API |
-| Transport play/stop/record | ❌ | Not in the API |
-| Subscribe to "Live changed" events | ❌ | Pull-based; re-read on command |
+| Subscribe to "Live changed" events | ❌ | Pull-based; re-read on command/poll |
 | Live-mirror project state for a UI | ⚠️ | Only via polling / refresh-on-command |
-| Render stems / import audio | ✅ | `renderPreFxAudio` + `importIntoProject` |
-| Create clips/tracks/scenes/devices | ✅ | Batch with `withinTransaction` |
-| Call external APIs (Suno, etc.) | ✅ | Full Node `fetch`/npm |
 
-**Implication for Lily:** the SDK is not a control surface for *live* mixing. It shines for
-**generation + project-manipulation commands** invoked from a menu or from Lily.
+**Implication for Lily:** the SDK is **not a control surface** — it cannot launch clips, control transport, write automation, or map controls. It is a **data-model, offline-render, and UI-command** API. It shines for generation and project-manipulation commands, not live triggering.
+
+### Division of labor: Extensions SDK vs. Max for Live / OSC
+
+Because the SDK has no clip-launch or transport, the *live performance* path must stay on a
+different channel. Keep the two concerns split:
+
+- **Extensions SDK** → the **offline / generative / structural** side: watcher snapshot
+  (tracks, devices, clips, locators), Suno-style "generate → import clip," batch edits,
+  stem rendering, renaming/organizing.
+- **Max for Live + OSC** (`src/plugins/ableton/maxdevice/lily-controller.amxd`) → the
+  **live** side: firing clips/scenes, transport, real-time triggering. The classic Live
+  Object Model (`clip_slot.fire()`, transport) is reachable from M4L / Remote Scripts but
+  **not** from the Extensions SDK.
 
 ## How it maps to Lily
 
