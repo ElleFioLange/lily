@@ -118,17 +118,20 @@ export default function Monitor({ instanceId }: UIProps) {
               <>
                 <SectionLabel>Clips</SectionLabel>
                 {clips.map((slot) => {
-                  const clip = slot.clip_data!
-                  return (
-                    <Row key={slot.id}>
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                          clip.is_playing ? 'bg-green-400' : 'bg-stone-600'
-                        }`}
-                      />
-                      <span className="truncate">{clip.name || 'Untitled'}</span>
-                    </Row>
-                  )
+                  console.log(slot, 'slot')
+                  const clip = slot.clip_data
+                  if (clip)
+                    return (
+                      <Row key={slot.id}>
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                            clip.is_playing ? 'bg-green-400' : 'bg-stone-600'
+                          }`}
+                        />
+                        <span className="truncate">{clip.name || 'Untitled'}</span>
+                      </Row>
+                    )
+                  else return null
                 })}
               </>
             )}
