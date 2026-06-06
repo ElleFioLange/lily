@@ -17,7 +17,7 @@ function log(msg) {
   post(msg + '\n')
 }
 
-function bang() {}
+function bang() { /* no-op: required for Max js object compatibility */ }
 
 // Entry point — receives all /control payloads as a list message
 function list() {
