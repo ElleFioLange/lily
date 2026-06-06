@@ -4,7 +4,7 @@ declare interface AbletonSchema {
   absent: string | number | boolean
 }
 
-declare interface LiveDeviceParameter {
+declare interface AbletonDeviceParameter {
   id: number
   name: string
   original_name: string
@@ -19,7 +19,7 @@ declare interface LiveDeviceParameter {
   parent: number
 }
 
-declare interface LiveDevice {
+declare interface AbletonDevice {
   id: number
   name: string
   class_display_name: string
@@ -29,10 +29,10 @@ declare interface LiveDevice {
   device_type: string
   can_have_chains: boolean
   can_have_drum_pads: boolean
-  parameters: LiveDeviceParameter[]
+  parameters: AbletonDeviceParameter[]
 }
 
-declare interface LiveClip {
+declare interface AbletonClip {
   id: number
   name: string
   is_playing: boolean
@@ -45,17 +45,17 @@ declare interface LiveClip {
   color_index: number
 }
 
-declare interface LiveClipSlot {
+declare interface AbletonClipSlot {
   id: number
   has_clip: boolean
-  clip_data: LiveClip | null
+  clip_data: AbletonClip | null
   is_playing: boolean
   is_recording: boolean
   is_triggered: boolean
   parent: number
 }
 
-declare interface LiveTrack {
+declare interface AbletonTrack {
   id: number
   name: string
   color: number
@@ -66,16 +66,16 @@ declare interface LiveTrack {
   is_foldable: boolean
   is_grouped: boolean
   is_visible: boolean
-  clip_slots_data?: LiveClipSlot[]
-  device_data: LiveDevice[]
+  clip_slots_data?: AbletonClipSlot[]
+  device_data: AbletonDevice[]
 }
 
-declare interface LiveProject {
+declare interface AbletonProject {
   id: number
   name: string
   tempo: number
   is_playing: boolean
-  track_data_arr: LiveTrack[]
-  return_track_data_arr: LiveTrack[]
-  master_data: LiveTrack
+  track_data_arr: AbletonTrack[]
+  return_track_data_arr: AbletonTrack[]
+  master_data: AbletonTrack
 }

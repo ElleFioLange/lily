@@ -1,6 +1,7 @@
+import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { useState } from 'react'
-import { UIProps } from 'src/types/plugins'
-import { getLiveStore } from '../store'
+import { ActivePlugin, UIProps } from 'src/types/plugins'
+import { AbletonState } from '../store'
 
 // Converts an Ableton color integer to a CSS hex string
 function abletonColorToHex(color: number): string {
@@ -45,20 +46,24 @@ function Row({
 }
 
 export default function Monitor({ instanceId }: UIProps) {
-  const useStore = getLiveStore(instanceId)!
-  const liveProject = useStore((state) => state.liveProject) as LiveProject | Record<string, never>
+  const { getInstance } = usePluginsStore()
+  const instance = getInstance(instanceId) as ActivePlugin<AbletonState>
+  console.log(instance, instanceId, 'instance info ableton monitor')
+  const abletonProject = instance.useStore((state) => state.abletonProject) as
+    | AbletonProject
+    | Record<string, never>
 
-  const [selectedTrack, setSelectedTrack] = useState<LiveTrack | null>(null)
-  const [selectedDevice, setSelectedDevice] = useState<LiveDevice | null>(null)
+  const [selectedTrack, setSelectedTrack] = useState<AbletonTrack | null>(null)
+  const [selectedDevice, setSelectedDevice] = useState<AbletonDevice | null>(null)
 
-  const tracks = (liveProject as LiveProject).track_data_arr ?? []
+  const tracks = (abletonProject as AbletonProject).track_data_arr ?? []
   const isEmpty = tracks.length === 0
 
   const clips = selectedTrack?.clip_slots_data?.filter((s) => s.has_clip) ?? []
   const devices = selectedTrack?.device_data ?? []
   const params = selectedDevice?.parameters ?? []
 
-  function selectTrack(track: LiveTrack) {
+  function selectTrack(track: AbletonTrack) {
     setSelectedTrack(track)
     setSelectedDevice(null)
   }
