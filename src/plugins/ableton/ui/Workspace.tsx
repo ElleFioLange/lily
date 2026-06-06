@@ -724,9 +724,15 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
   const [expanded, setExpanded] = useState(false)
   const [poemText, setPoemText] = useState('')
 
-  const allKeywords = Object.keys(parsedConfig ?? {})
-  const connectedKeywords = allKeywords.filter((k) => parsedConfig![k]?.ableton)
-  const unconnectedKeywords = allKeywords.filter((k) => !parsedConfig![k]?.ableton)
+  // Pending keywords live only in local state until they get a valid connection
+  const [pendingKeywords, setPendingKeywords] = useState<string[]>([])
+
+  const configKeywords = Object.keys(parsedConfig ?? {})
+  const connectedKeywords = configKeywords.filter((k) => parsedConfig![k]?.ableton)
+  const unconnectedKeywords = [
+    ...configKeywords.filter((k) => !parsedConfig![k]?.ableton),
+    ...pendingKeywords.filter((k) => !configKeywords.includes(k))
+  ]
 
   function addKeyword(word: string) {
     const clean = word
@@ -735,9 +741,9 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
       .replace(/[^a-z0-9_]/g, '')
     if (!clean || !poiesisEntry) return
     const current = poiesisEntry.useStore.getState().parsedConfig ?? {}
-    if (current[clean]) return
-    const updated = { ...current, [clean]: {} }
-    poiesisEntry.useStore.getState().setConfig(jsyaml.dump(updated, { indent: 2, lineWidth: -1 }))
+    if (current[clean] || pendingKeywords.includes(clean)) return
+    // Don't write to config yet — only add to local pending list
+    setPendingKeywords((prev) => [...prev, clean])
   }
 
   function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -769,18 +775,20 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
   }
 
   function handleSaveConnection(entry: ConfigurationKey) {
-    if (!selectedKeyword || !poiesisEntry) return
+    if (!selectedKeyword || !poiesisEntry || !entry.ableton) return
     const current = poiesisEntry.useStore.getState().parsedConfig ?? {}
     writeConfig({ ...current, [selectedKeyword]: entry })
+    setPendingKeywords((prev) => prev.filter((k) => k !== selectedKeyword))
   }
 
   function handleRemoveConnection() {
     if (!selectedKeyword || !poiesisEntry) return
     const current = poiesisEntry.useStore.getState().parsedConfig ?? {}
-    const entry = { ...current[selectedKeyword] }
-    delete entry.ableton
-    delete entry.args
-    writeConfig({ ...current, [selectedKeyword]: entry })
+    const updated = { ...current }
+    delete updated[selectedKeyword]
+    writeConfig(updated)
+    // Move back to pending so the keyword stays visible but unwritten
+    setPendingKeywords((prev) => (prev.includes(selectedKeyword) ? prev : [...prev, selectedKeyword]))
   }
 
   const hasSelection = !!(selectedTrack || selectedDevice || selectedParam || selectedClipSlot)
@@ -834,7 +842,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
             </div>
           )}
 
-          {allKeywords.length === 0 && (
+          {connectedKeywords.length === 0 && unconnectedKeywords.length === 0 && (
             <p className="text-stone-600 text-xs">No keywords yet</p>
           )}
         </div>
