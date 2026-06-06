@@ -63,6 +63,7 @@ type PluginManifest = {
   author: string
   version: string
   outputTypes: ('audio' | 'graphics' | 'editor')[]
+  allowMultiple: boolean
 }
 
 type PluginDefinition<StoreType> = {
@@ -307,7 +308,8 @@ if (result.success) {
      "repo": "",
      "author": "your-name",
      "version": "1.0.0",
-     "outputTypes": ["graphics"]
+     "outputTypes": ["graphics"],
+     "allowMultiple": true
    }
    ```
 3. Create store factory in `store.ts`:

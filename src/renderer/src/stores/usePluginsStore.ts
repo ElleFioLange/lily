@@ -39,6 +39,14 @@ export const usePluginsStore = create<PluginsManagerState>((set, get) => ({
     const plugin = registered[pluginId]
     if (plugin === undefined) throw new Error('No plugin registered with id ' + pluginId)
 
+    if (!plugin.manifest.allowMultiple) {
+      const alreadyActive = Object.values(active).some((p) => p.manifest.id === pluginId)
+      if (alreadyActive) {
+        console.warn(`[PluginsStore] Plugin "${pluginId}" does not allow multiple instances`)
+        return
+      }
+    }
+
     const instanceId = uuid()
     const useStore = plugin.init(instanceId)
 

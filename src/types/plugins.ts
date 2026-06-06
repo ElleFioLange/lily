@@ -17,6 +17,7 @@ export type PluginManifest = {
   author: string
   version: string
   outputTypes: ('audio' | 'graphics' | 'editor')[]
+  allowMultiple: boolean
 }
 
 export type UIProps = {
