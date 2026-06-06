@@ -1,12 +1,20 @@
 /**
  * Lily — Ableton Live extension.
  *
- * Two on-command tools (right-click any track):
+ * On-command tools (right-click any track):
  *   - Mark Inflections : analyzes the arrangement and drops locators at section
  *                        boundaries + risers/fills (4/4, structural pass).
  *   - Dedupe to Session: collects unique arrangement clips per track and lays
  *                        them into Session view from the first empty scene,
  *                        autonamed. Non-destructive; audio best-effort.
+ *   - Show in Lily     : (also on clips) pushes the clicked object's identity
+ *                        to the Lily app over OSC so its Ableton monitor pane
+ *                        can highlight it.
+ *
+ * Always-on localhost bridge (Lily's read path, http://127.0.0.1:7879):
+ *   GET /snapshot  — full project tree, a Max/LOM path on every node
+ *                    (re-serialized per request — this is Lily's "Refresh")
+ *   GET /selection — last "Show in Lily" payload (null until first use)
  *
  * See ../../docs/ABLETON_EXTENSION.md for capabilities/limits this is built on.
  */
@@ -15,7 +23,13 @@ import * as http from "node:http";
 import { registerMarkInflections } from "./markInflections.js";
 import { registerDedupeToSession } from "./dedupeToSession.js";
 import { registerReconstructToSession } from "./reconstructToSession.js";
+import { registerShowInLily, type SelectionPayload } from "./showInLily.js";
 import { serializeSong } from "./snapshot.js";
+import { sendOscStrings } from "./osc.js";
+
+const BRIDGE_PORT = 7879;
+/** Lily's OSC server (src/main/index.ts — Electron receives on 5460). */
+const LILY_OSC_PORT = 5460;
 
 export function activate(activation: ActivationContext) {
   const context = initialize(activation, "1.0.0");
@@ -24,40 +38,43 @@ export function activate(activation: ActivationContext) {
   registerDedupeToSession(context);
   registerReconstructToSession(context);
 
-  // --- DEV TEST HARNESS (opt-in) ---------------------------------------------
-  // Off by default. Set LILY_DEV_HARNESS=1 to expose an HTTP server that fires
-  // the commands from outside Live (curl) and inspects state — handy for testing
-  // without right-clicking. In production the commands run from the track context
-  // menu and this server isn't started.
-  if (process.env.LILY_DEV_HARNESS !== "1") {
-    console.log("[lily] activated — Mark Inflections + Dedupe to Session registered");
-    return;
-  }
+  // --- Show in Lily: context menu → OSC push + bridge state ------------------
+  let latestSelection: SelectionPayload | null = null;
+  registerShowInLily(context, (sel) => {
+    latestSelection = sel;
+    // One JSON string arg; Lily side: window.api.osc.on('/lily/select', ...)
+    sendOscStrings("/lily/select", [JSON.stringify(sel)], LILY_OSC_PORT);
+  });
 
-  const PORT = 7879;
+  // --- Localhost bridge -------------------------------------------------------
+  // /snapshot + /selection are always on (Lily's read path). The command-trigger
+  // routes are a dev convenience, opt-in via LILY_DEV_HARNESS=1 so production
+  // can't fire commands over HTTP.
+  const devHarness = process.env.LILY_DEV_HARNESS === "1";
+  const bigintSafe = (_k: string, v: unknown) => (typeof v === "bigint" ? Number(v) : v);
+
   const server = http.createServer((req, res) => {
     res.setHeader("content-type", "application/json");
+    res.setHeader("access-control-allow-origin", "*"); // Lily renderer fetches from a file:// origin
     const url = req.url ?? "/";
     try {
-      if (url.startsWith("/mark")) {
-        context.commands.executeCommand("lily.markInflections");
-        res.end(JSON.stringify({ ok: true, ran: "markInflections" }));
-      } else if (url.startsWith("/dedupe")) {
-        context.commands.executeCommand("lily.dedupeToSession");
-        res.end(JSON.stringify({ ok: true, ran: "dedupeToSession" }));
-      } else if (url.startsWith("/reconstruct")) {
-        context.commands.executeCommand("lily.reconstructToSession");
-        res.end(JSON.stringify({ ok: true, ran: "reconstructToSession" }));
-      } else if (url.startsWith("/snapshot")) {
+      if (url.startsWith("/snapshot")) {
         // Full project tree with a Max/LOM path on every node — the read path
         // that powers keyword→target wiring. See snapshot.ts.
         const song = context.application.song;
-        // Safety net: serializeSong coerces bigint numerics, but guard the
-        // boundary too so an unconverted field can't 500 the route.
-        res.end(
-          JSON.stringify(serializeSong(song), (_k, v) => (typeof v === "bigint" ? Number(v) : v), 2)
-        );
-      } else if (url.startsWith("/state")) {
+        res.end(JSON.stringify(serializeSong(song), bigintSafe, 2));
+      } else if (url.startsWith("/selection")) {
+        res.end(JSON.stringify({ selection: latestSelection }, bigintSafe, 2));
+      } else if (devHarness && url.startsWith("/mark")) {
+        context.commands.executeCommand("lily.markInflections");
+        res.end(JSON.stringify({ ok: true, ran: "markInflections" }));
+      } else if (devHarness && url.startsWith("/dedupe")) {
+        context.commands.executeCommand("lily.dedupeToSession");
+        res.end(JSON.stringify({ ok: true, ran: "dedupeToSession" }));
+      } else if (devHarness && url.startsWith("/reconstruct")) {
+        context.commands.executeCommand("lily.reconstructToSession");
+        res.end(JSON.stringify({ ok: true, ran: "reconstructToSession" }));
+      } else if (devHarness && url.startsWith("/state")) {
         const song = context.application.song;
         res.end(
           JSON.stringify(
@@ -76,22 +93,28 @@ export function activate(activation: ActivationContext) {
                 session: t.clipSlots.map((s) => s.clip?.name ?? null).filter(Boolean),
               })),
             },
-            null,
+            bigintSafe,
             2,
           ),
         );
       } else {
         res.statusCode = 404;
-        res.end(JSON.stringify({ error: "try /mark /dedupe /reconstruct /snapshot /state" }));
+        const routes = devHarness
+          ? "/snapshot /selection /mark /dedupe /reconstruct /state"
+          : "/snapshot /selection";
+        res.end(JSON.stringify({ error: `try ${routes}` }));
       }
     } catch (e) {
       res.statusCode = 500;
       res.end(JSON.stringify({ error: String(e) }));
     }
   });
-  server.on("error", (e) => console.log("[lily] harness error", e));
-  server.listen(PORT, "127.0.0.1", () => console.log(`[lily] dev harness on http://127.0.0.1:${PORT} (/mark /dedupe /state)`));
-  // --- end dev harness -------------------------------------------------------
+  server.on("error", (e) => console.log("[lily] bridge error", e));
+  server.listen(BRIDGE_PORT, "127.0.0.1", () =>
+    console.log(
+      `[lily] bridge on http://127.0.0.1:${BRIDGE_PORT} (/snapshot /selection${devHarness ? " + dev: /mark /dedupe /reconstruct /state" : ""})`,
+    ),
+  );
 
-  console.log("[lily] activated — Mark Inflections + Dedupe to Session registered");
+  console.log("[lily] activated — Mark Inflections, Dedupe, Reconstruct, Show in Lily registered");
 }
