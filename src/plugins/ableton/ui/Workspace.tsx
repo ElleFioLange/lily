@@ -1,3 +1,4 @@
+import jsyaml from 'js-yaml'
 import { useEffect, useMemo, useState } from 'react'
 import type { PoiesisState } from '@renderer/surfaces/poiesis/store'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
@@ -735,7 +736,8 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     if (!clean || !poiesisEntry) return
     const current = poiesisEntry.useStore.getState().parsedConfig ?? {}
     if (current[clean]) return
-    poiesisEntry.useStore.getState().setParsedConfig({ ...current, [clean]: {} })
+    const updated = { ...current, [clean]: {} }
+    poiesisEntry.useStore.getState().setConfig(jsyaml.dump(updated, { indent: 2, lineWidth: -1 }))
   }
 
   function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -762,10 +764,14 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     if (!val) setExpanded(false)
   }
 
+  function writeConfig(updated: ConfigurationJSON) {
+    poiesisEntry!.useStore.getState().setConfig(jsyaml.dump(updated, { indent: 2, lineWidth: -1 }))
+  }
+
   function handleSaveConnection(entry: ConfigurationKey) {
     if (!selectedKeyword || !poiesisEntry) return
     const current = poiesisEntry.useStore.getState().parsedConfig ?? {}
-    poiesisEntry.useStore.getState().setParsedConfig({ ...current, [selectedKeyword]: entry })
+    writeConfig({ ...current, [selectedKeyword]: entry })
   }
 
   function handleRemoveConnection() {
@@ -774,7 +780,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     const entry = { ...current[selectedKeyword] }
     delete entry.ableton
     delete entry.args
-    poiesisEntry.useStore.getState().setParsedConfig({ ...current, [selectedKeyword]: entry })
+    writeConfig({ ...current, [selectedKeyword]: entry })
   }
 
   const hasSelection = !!(selectedTrack || selectedDevice || selectedParam || selectedClipSlot)
@@ -872,10 +878,18 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
       {/* ── Middle: Connection form ── */}
       <div className="flex flex-col w-72 border-r border-stone-700 shrink-0">
         <ColumnHeader>
-          {showForm && selectedKeyword ? `"${selectedKeyword}"` : 'Connection'}
+          <span className={!poiesisEntry ? 'text-stone-600' : ''}>
+            {showForm && selectedKeyword ? `"${selectedKeyword}"` : 'Connection'}
+          </span>
         </ColumnHeader>
         <div className="flex-1 overflow-y-auto">
-          {showForm ? (
+          {!poiesisEntry ? (
+            <div className="h-full flex items-center justify-center p-4">
+              <p className="text-stone-600 text-xs text-center">
+                Load a Poiesis plugin to create keyword connections
+              </p>
+            </div>
+          ) : showForm ? (
             <ConnectionForm
               key={formKey}
               keyword={selectedKeyword!}
