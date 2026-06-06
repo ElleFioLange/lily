@@ -15,6 +15,7 @@ import * as http from "node:http";
 import { registerMarkInflections } from "./markInflections.js";
 import { registerDedupeToSession } from "./dedupeToSession.js";
 import { registerReconstructToSession } from "./reconstructToSession.js";
+import { serializeSong } from "./snapshot.js";
 
 export function activate(activation: ActivationContext) {
   const context = initialize(activation, "1.0.0");
@@ -47,6 +48,11 @@ export function activate(activation: ActivationContext) {
       } else if (url.startsWith("/reconstruct")) {
         context.commands.executeCommand("lily.reconstructToSession");
         res.end(JSON.stringify({ ok: true, ran: "reconstructToSession" }));
+      } else if (url.startsWith("/snapshot")) {
+        // Full project tree with a Max/LOM path on every node — the read path
+        // that powers keyword→target wiring. See snapshot.ts.
+        const song = context.application.song;
+        res.end(JSON.stringify(serializeSong(song), null, 2));
       } else if (url.startsWith("/state")) {
         const song = context.application.song;
         res.end(
@@ -72,7 +78,7 @@ export function activate(activation: ActivationContext) {
         );
       } else {
         res.statusCode = 404;
-        res.end(JSON.stringify({ error: "try /mark /dedupe /reconstruct /state" }));
+        res.end(JSON.stringify({ error: "try /mark /dedupe /reconstruct /snapshot /state" }));
       }
     } catch (e) {
       res.statusCode = 500;
