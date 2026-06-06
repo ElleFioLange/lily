@@ -65,4 +65,5 @@ declare interface AbletonProject {
   id: number
   track_data_arr: AbletonTrack[]
   return_track_data_arr: AbletonTrack[]
+  master_track: AbletonTrack
 }

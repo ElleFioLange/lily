@@ -138,6 +138,9 @@ function bang() {
     parent: song.id
   }))
 
-  const data = JSON.stringify({ id: song.id, track_data_arr, return_track_data_arr })
+  const master_track_api = new LiveAPI('live_set master_track')
+  const master_track = { ...serialize_track(master_track_api.id), parent: song.id }
+
+  const data = JSON.stringify({ id: song.id, track_data_arr, return_track_data_arr, master_track })
   break_into_packets(data).forEach((packet) => outlet(0, packet))
 }
