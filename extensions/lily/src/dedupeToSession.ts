@@ -1,6 +1,6 @@
-import type { ClipSlot, ExtensionContext, Track } from "@ableton-extensions/sdk";
-import { AudioClip, Clip, MidiClip } from "@ableton-extensions/sdk";
-import { clipContentLength, clipKey } from "./util.js";
+import type { Clip, ExtensionContext, Track } from "@ableton-extensions/sdk";
+import { clipKey } from "./util.js";
+import { recreateInSlot } from "./placeClip.js";
 
 type Ctx = ExtensionContext<"1.0.0">;
 type Song = Ctx["application"]["song"];
@@ -13,40 +13,6 @@ function firstEmptyScene(song: Song): number {
     if (tracks.every((t) => (t.clipSlots[i]?.clip ?? null) === null)) return i;
   }
   return song.scenes.length;
-}
-
-/** Recreate a source arrangement clip in a session slot. Best-effort for audio. */
-async function recreateInSlot(slot: ClipSlot<"1.0.0">, source: Clip<"1.0.0">, name: string): Promise<void> {
-  if (source instanceof MidiClip) {
-    const clip = await slot.createMidiClip(clipContentLength(source));
-    clip.notes = source.notes;
-    clip.name = name;
-    clip.color = source.color;
-    return;
-  }
-
-  if (source instanceof AudioClip) {
-    let clip: AudioClip<"1.0.0">;
-    try {
-      // Carry the trim/warp/loop across via loopSettings.
-      clip = await slot.createAudioClip({
-        filePath: source.filePath,
-        isWarped: source.warping,
-        loopSettings: {
-          looping: source.warping ? source.looping : false,
-          startMarker: source.startMarker,
-          endMarker: source.endMarker,
-          loopStart: source.loopStart,
-          loopEnd: source.loopEnd,
-        },
-      });
-    } catch {
-      // Fallback: drop the whole file untrimmed rather than fail the clip.
-      clip = await slot.createAudioClip({ filePath: source.filePath });
-    }
-    clip.name = name;
-    clip.color = source.color;
-  }
 }
 
 /** Unique clips for one track, in arrangement order, first occurrence wins. */

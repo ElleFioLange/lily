@@ -22,6 +22,14 @@ Collects **unique** arrangement clips per track and lays them into **Session vie
 - MIDI is reproduced faithfully (notes copied); **audio is best-effort** — trim/warp/loop
   carry across via `loopSettings`, falling back to the untrimmed file if Live rejects it.
 
+### Lily: Reconstruct to Session
+Rebuilds the arrangement as a **labeled Session grid**: one scene per inflection
+section, each scene named after the section (`✦ Build 3 (7 trk)`) and its row filled
+with each track's representative clip for that section (most-overlapping clip).
+- Combines the analysis of *Mark Inflections* with the placement of *Dedupe to Session*.
+- Appends fresh scenes (non-destructive); **idempotent** — clears its own `✦` scenes first.
+- Launching a reconstructed scene recalls that section's layout.
+
 ## Setup & run
 
 SDK/CLI beta tarballs are gitignored (`vendor/`, confidential). One-time:
@@ -57,6 +65,7 @@ start with `LILY_DEV_HARNESS=1`. It exposes `http://127.0.0.1:7879` with `/mark`
 ```bash
 LILY_DEV_HARNESS=1 npm start
 curl -s http://127.0.0.1:7879/state    # inspect cue points + session clips
-curl -s http://127.0.0.1:7879/mark     # run Mark Inflections
-curl -s http://127.0.0.1:7879/dedupe   # run Dedupe to Session
+curl -s http://127.0.0.1:7879/mark        # run Mark Inflections
+curl -s http://127.0.0.1:7879/dedupe      # run Dedupe to Session
+curl -s http://127.0.0.1:7879/reconstruct # run Reconstruct to Session
 ```

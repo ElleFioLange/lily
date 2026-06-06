@@ -14,12 +14,14 @@ import { initialize, type ActivationContext } from "@ableton-extensions/sdk";
 import * as http from "node:http";
 import { registerMarkInflections } from "./markInflections.js";
 import { registerDedupeToSession } from "./dedupeToSession.js";
+import { registerReconstructToSession } from "./reconstructToSession.js";
 
 export function activate(activation: ActivationContext) {
   const context = initialize(activation, "1.0.0");
 
   registerMarkInflections(context);
   registerDedupeToSession(context);
+  registerReconstructToSession(context);
 
   // --- DEV TEST HARNESS (opt-in) ---------------------------------------------
   // Off by default. Set LILY_DEV_HARNESS=1 to expose an HTTP server that fires
@@ -42,6 +44,9 @@ export function activate(activation: ActivationContext) {
       } else if (url.startsWith("/dedupe")) {
         context.commands.executeCommand("lily.dedupeToSession");
         res.end(JSON.stringify({ ok: true, ran: "dedupeToSession" }));
+      } else if (url.startsWith("/reconstruct")) {
+        context.commands.executeCommand("lily.reconstructToSession");
+        res.end(JSON.stringify({ ok: true, ran: "reconstructToSession" }));
       } else if (url.startsWith("/state")) {
         const song = context.application.song;
         res.end(
@@ -49,6 +54,7 @@ export function activate(activation: ActivationContext) {
             {
               tempo: song.tempo,
               sceneCount: song.scenes.length,
+              scenes: song.scenes.map((s) => s.name),
               cuePoints: song.cuePoints.map((c) => ({
                 name: c.name,
                 beat: c.time,
@@ -66,7 +72,7 @@ export function activate(activation: ActivationContext) {
         );
       } else {
         res.statusCode = 404;
-        res.end(JSON.stringify({ error: "try /mark /dedupe /state" }));
+        res.end(JSON.stringify({ error: "try /mark /dedupe /reconstruct /state" }));
       }
     } catch (e) {
       res.statusCode = 500;
