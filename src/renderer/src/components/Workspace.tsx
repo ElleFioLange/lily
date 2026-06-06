@@ -6,12 +6,20 @@ import { useMemo, useState } from 'react'
 
 function AddPlugin() {
   const [open, setOpen] = useState(false)
-  const { registered, loadPlugin } = usePluginsStore()
+  const { registered, active, loadPlugin } = usePluginsStore()
+
+  const availablePlugins = useMemo(() => {
+    const activePluginIds = new Set(Object.values(active).map((p) => p.manifest.id))
+    return Object.values(registered).filter(
+      (plugin) => plugin.manifest.allowMultiple || !activePluginIds.has(plugin.manifest.id)
+    )
+  }, [registered, active])
+
   return (
     <div className="relative mt-1">
       {open ? (
         <ul className="w-40 absolute text-xs">
-          {Object.values(registered).map((plugin) => (
+          {availablePlugins.map((plugin) => (
             <li
               className="top-0 left-0 w-full text-left block"
               key={plugin.manifest.id}
