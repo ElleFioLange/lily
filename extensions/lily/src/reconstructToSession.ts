@@ -1,4 +1,5 @@
-import type { Clip, ExtensionContext, Track } from "@ableton-extensions/sdk";
+import type { ClipSlot, ExtensionContext, NoteDescription, Track } from "@ableton-extensions/sdk";
+import { Clip, MidiClip } from "@ableton-extensions/sdk";
 import { LILY_TAG, densityColor } from "./util.js";
 import { computeSections, type Section } from "./sections.js";
 import { recreateInSlot } from "./placeClip.js";
@@ -8,11 +9,18 @@ type Ctx = ExtensionContext<"1.0.0">;
 type Song = Ctx["application"]["song"];
 const log = (...a: unknown[]) => console.log("[lily:reconstruct]", ...a);
 
-/** The clip on this track with the most overlap into the section, or null. */
-function representativeClip(track: Track<"1.0.0">, sec: Section): Clip<"1.0.0"> | null {
-  let best: Clip<"1.0.0"> | null = null;
-  let bestOverlap = 0;
-  for (const c of track.arrangementClips) {
+/** Clips on this track overlapping the section, in time order. */
+function clipsInSection(track: Track<"1.0.0">, sec: Section): Clip<"1.0.0">[] {
+  return track.arrangementClips
+    .filter((c) => c.startTime < sec.endBeats && c.endTime > sec.startBeats)
+    .sort((a, b) => a.startTime - b.startTime);
+}
+
+/** The clip with the most overlap into the section (audio fallback). */
+function maxOverlapClip(clips: Clip<"1.0.0">[], sec: Section): Clip<"1.0.0"> {
+  let best = clips[0]!;
+  let bestOverlap = -Infinity;
+  for (const c of clips) {
     const overlap = Math.min(c.endTime, sec.endBeats) - Math.max(c.startTime, sec.startBeats);
     if (overlap > bestOverlap) {
       bestOverlap = overlap;
@@ -20,6 +28,33 @@ function representativeClip(track: Track<"1.0.0">, sec: Section): Clip<"1.0.0"> 
     }
   }
   return best;
+}
+
+/**
+ * Consolidate several MIDI clips into one section-length clip: union their notes,
+ * shifted from clip-local time to section-local time. Keeps the fill *and* the loop
+ * (assumes note times are relative to clip start — true for unwarped/startMarker-0).
+ */
+async function placeMergedMidi(
+  slot: ClipSlot<"1.0.0">,
+  clips: MidiClip<"1.0.0">[],
+  sec: Section,
+  name: string,
+  color: number,
+): Promise<void> {
+  const length = sec.endBeats - sec.startBeats;
+  const notes: NoteDescription[] = [];
+  for (const c of clips) {
+    const offset = c.startTime - sec.startBeats;
+    for (const n of c.notes) {
+      const startTime = n.startTime + offset;
+      if (startTime >= 0 && startTime < length) notes.push({ ...n, startTime });
+    }
+  }
+  const clip = await slot.createMidiClip(length);
+  clip.notes = notes;
+  clip.name = name;
+  clip.color = color;
 }
 
 /** Delete scenes from a previous reconstruction (tagged), so re-running is idempotent. */
@@ -65,12 +100,21 @@ async function run(ctx: Ctx, update: (t: string, p?: number) => Promise<void>): 
 
     for (let ti = 0; ti < tracks.length; ti++) {
       const track = tracks[ti]!;
-      const rep = representativeClip(track, sec);
-      if (!rep) continue;
+      const overlapping = clipsInSection(track, sec);
+      if (overlapping.length === 0) continue;
       const slot = track.clipSlots[sceneIdx];
       if (!slot) continue;
+      const name = poeticName(energy01, ti, sec.index);
       try {
-        await recreateInSlot(slot, rep, poeticName(energy01, ti, sec.index), color);
+        if (overlapping.length === 1) {
+          await recreateInSlot(slot, overlapping[0]!, name, color);
+        } else if (overlapping.every((c) => c instanceof MidiClip)) {
+          // Multiple MIDI clips (e.g. loop + fill) → merge into one section clip.
+          await placeMergedMidi(slot, overlapping as MidiClip<"1.0.0">[], sec, name, color);
+        } else {
+          // Audio/mixed: can't merge files without a render-bounce — use the dominant clip.
+          await recreateInSlot(slot, maxOverlapClip(overlapping, sec), name, color);
+        }
         placed++;
       } catch (e) {
         failed++;
