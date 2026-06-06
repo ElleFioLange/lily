@@ -70,7 +70,8 @@
 }
 
 @layer utilities {
+  /* Delay lets the foreground/scroll settle before the flash draws the eye. */
   .animate-select-pulse {
-    animation: select-pulse 700ms ease-out;
+    animation: select-pulse 700ms ease-out 350ms;
   }
 }

@@ -10,7 +10,9 @@ import { colorStyle } from './colors'
 // parameters). "Show in Lily" in Live highlights the matching node here
 // (left-border accent + a brief pulse) and foregrounds the app.
 
-const ROW = 'px-2 py-0.5 truncate border-l-4'
+// shrink-0 matters: rows are flex children of a scrollable column — without it
+// they compress into slivers once a column has more content than fits.
+const ROW = 'px-2 py-0.5 truncate border-l-4 shrink-0'
 
 /** Steady accent + one-shot pulse for the selected node. `seq` changes per
  *  push, re-keying the animation so a repeat selection pulses again. */
@@ -29,7 +31,7 @@ function DeviceRow({
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 shrink-0">
       <div
         key={nodeKey(device.id)}
         onClick={() => setOpen((o) => !o)}
@@ -87,7 +89,7 @@ function TrackColumn({
     <div ref={ref} className="flex flex-col gap-1 w-36 shrink-0 min-h-0">
       <div
         key={nodeKey(track.id)}
-        className={`px-2 py-1 truncate font-bold border-l-4 ${highlight(track.id === selectedPath)}`}
+        className={`px-2 py-1 truncate font-bold border-l-4 shrink-0 ${highlight(track.id === selectedPath)}`}
         style={colorStyle(track.color)}
         title={track.id}
       >
