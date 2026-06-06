@@ -57,3 +57,20 @@
     scrollbar-width: none;
   }
 }
+
+/* "Show in Lily" selection pulse (Ableton monitor) — brief glow on the newly
+   active node, settling back to the steady left-border accent. */
+@keyframes select-pulse {
+  0% {
+    filter: brightness(2.2);
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+
+@layer utilities {
+  .animate-select-pulse {
+    animation: select-pulse 700ms ease-out;
+  }
+}

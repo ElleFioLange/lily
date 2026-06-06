@@ -29,6 +29,9 @@ export interface LiveState {
 
   // Last "Show in Lily" push from the extension (/lily/select)
   selection: SelectionPayload | null
+  /** Bumped on every push — lets the monitor re-run the highlight pulse even
+   *  when the same node is selected twice in a row. */
+  selectionSeq: number
 
   // Actions
   refresh: () => Promise<void>
@@ -47,6 +50,7 @@ export const createLiveStore = (instanceId: string) => {
     refreshing: false,
     refreshError: null,
     selection: null,
+    selectionSeq: 0,
 
     refresh: async () => {
       set({ refreshing: true, refreshError: null })
@@ -59,6 +63,6 @@ export const createLiveStore = (instanceId: string) => {
       }
     },
 
-    setSelection: (selection) => set({ selection })
+    setSelection: (selection) => set((s) => ({ selection, selectionSeq: s.selectionSeq + 1 }))
   }))
 }

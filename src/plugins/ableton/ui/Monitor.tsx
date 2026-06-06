@@ -7,12 +7,25 @@ import { colorStyle } from './colors'
 
 // Session-style monitor of the open Live Set, read from the extension bridge.
 // One column per track: name header, clips, then devices. "Show in Lily" in
-// Live highlights the matching node here (and foregrounds the app).
+// Live highlights the matching node here (left-border accent + a brief pulse)
+// and foregrounds the app.
 
 const ROW = 'px-2 py-0.5 truncate border-l-4'
-const highlight = (selected: boolean) => (selected ? 'border-stone-100' : 'border-transparent')
 
-function TrackColumn({ track, selectedPath }: { track: LiveTrack; selectedPath: string | null }) {
+/** Steady accent + one-shot pulse for the selected node. `seq` changes per
+ *  push, re-keying the animation so a repeat selection pulses again. */
+const highlight = (selected: boolean) =>
+  selected ? 'border-stone-100 animate-select-pulse' : 'border-transparent'
+
+function TrackColumn({
+  track,
+  selectedPath,
+  selectionSeq
+}: {
+  track: LiveTrack
+  selectedPath: string | null
+  selectionSeq: number
+}) {
   const ref = useRef<HTMLDivElement>(null)
   const containsSelection =
     selectedPath !== null &&
@@ -22,11 +35,16 @@ function TrackColumn({ track, selectedPath }: { track: LiveTrack; selectedPath: 
 
   useEffect(() => {
     if (containsSelection) ref.current?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
-  }, [containsSelection, selectedPath])
+  }, [containsSelection, selectedPath, selectionSeq])
+
+  // key={`${id}:${selectionSeq}`} on the selected node remounts it per push,
+  // restarting the CSS animation even when the same node is re-selected.
+  const nodeKey = (id: string) => (id === selectedPath ? `${id}:${selectionSeq}` : id)
 
   return (
     <div ref={ref} className="flex flex-col gap-1 w-36 shrink-0 min-h-0">
       <div
+        key={nodeKey(track.id)}
         className={`px-2 py-1 truncate font-bold border-l-4 ${highlight(track.id === selectedPath)}`}
         style={colorStyle(track.color)}
         title={track.id}
@@ -37,7 +55,7 @@ function TrackColumn({ track, selectedPath }: { track: LiveTrack; selectedPath: 
       <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar">
         {track.clips.map((c) => (
           <div
-            key={c.id}
+            key={nodeKey(c.id)}
             className={`${ROW} ${highlight(c.id === selectedPath)}`}
             style={colorStyle(c.color)}
             title={`${c.kind} · ${c.id}`}
@@ -47,7 +65,7 @@ function TrackColumn({ track, selectedPath }: { track: LiveTrack; selectedPath: 
         ))}
         {track.devices.map((d) => (
           <div
-            key={d.id}
+            key={nodeKey(d.id)}
             className={`${ROW} ${highlight(d.id === selectedPath)} bg-stone-800 text-stone-300`}
             title={d.id}
           >
@@ -62,7 +80,7 @@ function TrackColumn({ track, selectedPath }: { track: LiveTrack; selectedPath: 
 export default function Monitor({ instanceId }: UIProps) {
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<LiveState>
-  const { snapshot, liveTracks, refreshing, refreshError, selection, refresh } =
+  const { snapshot, liveTracks, refreshing, refreshError, selection, selectionSeq, refresh } =
     instance.useStore()
 
   const selectedPath = selection?.maxPath ?? null
@@ -103,7 +121,12 @@ export default function Monitor({ instanceId }: UIProps) {
       ) : (
         <div className="flex-1 min-h-0 overflow-x-auto flex gap-1 px-3 pb-2">
           {liveTracks.map((t) => (
-            <TrackColumn key={t.id} track={t} selectedPath={selectedPath} />
+            <TrackColumn
+              key={t.id}
+              track={t}
+              selectedPath={selectedPath}
+              selectionSeq={selectionSeq}
+            />
           ))}
         </div>
       )}
