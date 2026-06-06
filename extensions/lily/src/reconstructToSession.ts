@@ -1,5 +1,5 @@
 import type { Clip, ExtensionContext, Track } from "@ableton-extensions/sdk";
-import { LILY_TAG } from "./util.js";
+import { LILY_TAG, densityColor } from "./util.js";
 import { computeSections, type Section } from "./sections.js";
 import { recreateInSlot } from "./placeClip.js";
 
@@ -48,11 +48,15 @@ async function run(ctx: Ctx, update: (t: string, p?: number) => Promise<void>): 
   for (let i = 0; i < sections.length; i++) await song.createScene(song.scenes.length);
 
   const tracks = song.tracks;
+  // Color clips by section energy (blue=sparse → red=full), so the grid shows the arc.
+  const maxTrackCount = Math.max(...sections.map((s) => s.trackCount));
+
   let placed = 0;
   let failed = 0;
   for (let s = 0; s < sections.length; s++) {
     const sec = sections[s]!;
     const sceneIdx = base + s;
+    const color = densityColor(sec.trackCount, maxTrackCount);
 
     const scene = song.scenes[sceneIdx];
     if (scene) scene.name = `${LILY_TAG} ${sec.label}`;
@@ -63,7 +67,7 @@ async function run(ctx: Ctx, update: (t: string, p?: number) => Promise<void>): 
       const slot = track.clipSlots[sceneIdx];
       if (!slot) continue;
       try {
-        await recreateInSlot(slot, rep, track.name);
+        await recreateInSlot(slot, rep, track.name, color);
         placed++;
       } catch (e) {
         failed++;

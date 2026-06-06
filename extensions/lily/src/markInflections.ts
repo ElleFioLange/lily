@@ -22,14 +22,18 @@ export function registerMarkInflections(ctx: Ctx): void {
         await clearLilyMarkers(ctx);
 
         await update("Analyzing arrangement…", 40);
-        // One locator per section boundary (skip the Intro at bar 0).
-        const markers = computeSections(ctx).filter((s) => s.startBeats > 0);
-        log(`found ${markers.length} inflection point(s)`);
+        // One locator per section, including the Intro at 1.1.1 (beat 0).
+        const sections = computeSections(ctx);
+        log(`found ${sections.length} section(s)`);
 
-        await update(`Placing ${markers.length} marker(s)…`, 70);
-        for (const m of markers) {
-          const cp = await ctx.application.song.createCuePoint(m.startBeats);
-          cp.name = `${LILY_TAG} ${m.label}`;
+        await update(`Placing ${sections.length} marker(s)…`, 70);
+        for (const sec of sections) {
+          try {
+            const cp = await ctx.application.song.createCuePoint(sec.startBeats);
+            cp.name = `${LILY_TAG} ${sec.label}`;
+          } catch (e) {
+            log(`skip marker @ ${sec.startBeats}b: ${String(e)}`);
+          }
         }
         await update("Done", 100);
       })

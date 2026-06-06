@@ -11,12 +11,14 @@ export async function recreateInSlot(
   slot: ClipSlot<"1.0.0">,
   source: Clip<"1.0.0">,
   name: string,
+  /** Override the clip color; defaults to the source clip's color. */
+  color?: number,
 ): Promise<void> {
   if (source instanceof MidiClip) {
     const clip = await slot.createMidiClip(clipContentLength(source));
     clip.notes = source.notes;
     clip.name = name;
-    clip.color = source.color;
+    clip.color = color ?? source.color;
     return;
   }
 
@@ -38,6 +40,6 @@ export async function recreateInSlot(
       clip = await slot.createAudioClip({ filePath: source.filePath });
     }
     clip.name = name;
-    clip.color = source.color;
+    clip.color = color ?? source.color;
   }
 }
