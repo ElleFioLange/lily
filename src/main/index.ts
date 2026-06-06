@@ -359,6 +359,16 @@ async function initializeOSC(): Promise<void> {
       mainWindowRef?.webContents.send('osc:message', message)
     })
 
+    // "Show in Lily" from the Ableton extension: foreground the app so the
+    // monitor pane (which receives the same message via osc:message) is visible.
+    oscServer.on('/lily/select', () => {
+      if (!mainWindowRef) return
+      if (mainWindowRef.isMinimized()) mainWindowRef.restore()
+      mainWindowRef.show()
+      mainWindowRef.focus()
+      app.focus({ steal: true })
+    })
+
     // Example: Forward specific patterns
     // Uncomment and modify these examples for your use case:
     /*
