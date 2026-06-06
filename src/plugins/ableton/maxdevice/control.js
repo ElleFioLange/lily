@@ -43,25 +43,40 @@ function list() {
   }
 }
 
-function clip_active(path) {
+function clip(action, path) {
   var clip_slot = new LiveAPI(path)
-  clip_slot.call('fire')
+  if (action === 'active') clip_slot.call('fire')
+  else if (action === 'inactive') clip_slot.call('stop')
 }
 
-function clip_inactive(path) {
-  var clip_slot = new LiveAPI(path)
-  clip_slot.call('stop')
-}
-
-function track_active(path) {
+function track(action, path) {
   var track = new LiveAPI(path)
-  track.set('mute', 0)
+  if (action === 'active') track.set('mute', 0)
+  else if (action === 'inactive') track.set('mute', 1)
 }
 
-function track_inactive(path) {
-  var track = new LiveAPI(path)
-  track.set('mute', 1)
-}
+// function clip_active(path) {
+//   var clip_slot = new LiveAPI(path)
+//   log(clip_slot)
+//   clip_slot.call('fire')
+// }
+
+// function clip_inactive(path) {
+//   var clip_slot = new LiveAPI(path)
+//   clip_slot.call('stop')
+// }
+
+// function track_active(path) {
+//   var track = new LiveAPI(path)
+//   track.set('mute', 0)
+// }
+
+// function track_inactive(path) {
+//   var track = new LiveAPI(path)
+//   track.set('mute', 1)
+// }
+
+// TODO Handle param changes
 
 function set_param(path, value) {
   var obj = new LiveAPI(path)
