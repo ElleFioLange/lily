@@ -3,6 +3,8 @@ import { createAbletonStore } from './store'
 export default function init(instanceId: string) {
   const useAbletonStore = createAbletonStore(instanceId)
 
+  window.api.osc.send('/get-state', [])
+
   window.api.osc.onMessage((message) => {
     if (message.address !== '/send/state') return
 

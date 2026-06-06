@@ -8,10 +8,25 @@ function abletonColorToHex(color: number): string {
   return `#${((color >>> 0) & 0xffffff).toString(16).padStart(6, '0')}`
 }
 
-function ColumnHeader({ children }: { children: React.ReactNode }) {
+function ColumnHeader({
+  children,
+  onRefresh
+}: {
+  children: React.ReactNode
+  onRefresh?: () => void
+}) {
   return (
-    <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-stone-400 border-b border-stone-700 shrink-0">
-      {children}
+    <div className="flex items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wider text-stone-400 border-b border-stone-700 shrink-0">
+      <span>{children}</span>
+      {onRefresh && (
+        <button
+          onClick={onRefresh}
+          className="text-stone-500 hover:text-stone-300 transition-colors"
+          title="Refresh"
+        >
+          ↺
+        </button>
+      )}
     </div>
   )
 }
@@ -48,7 +63,6 @@ function Row({
 export default function Monitor({ instanceId }: UIProps) {
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<AbletonState>
-  console.log(instance, instanceId, 'instance info ableton monitor')
   const abletonProject = instance.useStore((state) => state.abletonProject) as
     | AbletonProject
     | Record<string, never>
@@ -72,7 +86,7 @@ export default function Monitor({ instanceId }: UIProps) {
     <div className="flex flex-row h-full overflow-hidden text-sm font-mono bg-stone-950">
       {/* Column 1: Tracks */}
       <div className="flex flex-col w-52 border-r border-stone-700 shrink-0">
-        <ColumnHeader>Tracks</ColumnHeader>
+        <ColumnHeader onRefresh={() => window.api.osc.send('/get-state', [])}>Tracks</ColumnHeader>
         <div className="overflow-y-auto flex-1">
           {isEmpty ? (
             <div className="px-3 py-4 text-stone-500 text-xs">No project loaded</div>
