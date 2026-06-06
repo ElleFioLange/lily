@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { PoiesisState } from '@renderer/surfaces/poiesis/store'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
-import { AbletonConfigurationKey, ConfigurationJSON, ConfigurationKey } from 'src/types/config'
+import {
+  AbletonConfigurationKey,
+  ArgPreset,
+  ConfigurationJSON,
+  ConfigurationKey,
+  KeyArgument
+} from 'src/types/config'
 import { ActivePlugin, WorkspaceProps } from 'src/types/plugins'
 import { AbletonState } from '../store'
 
@@ -21,74 +27,104 @@ function colorToRgba(color: number, alpha: number): string {
 }
 
 // ============================================================================
-// Helpers
+// Path + defaults helpers
 // ============================================================================
+
+function generateLivePath(
+  project: AbletonProject,
+  track: AbletonTrack,
+  clipSlot: AbletonClipSlot | null,
+  device: AbletonDevice | null,
+  param: AbletonDeviceParameter | null
+): string {
+  let trackIdx = project.track_data_arr.findIndex((t) => t.id === track.id)
+  let trackBase: string
+  if (trackIdx >= 0) {
+    trackBase = `live_set tracks ${trackIdx}`
+  } else {
+    trackIdx = project.return_track_data_arr?.findIndex((t) => t.id === track.id) ?? -1
+    trackBase = trackIdx >= 0 ? `live_set return_tracks ${trackIdx}` : 'live_set tracks 0'
+  }
+
+  if (clipSlot) {
+    const slotIdx = track.clip_slots_data?.findIndex((s) => s.id === clipSlot.id) ?? 0
+    return `${trackBase} clip_slots ${slotIdx} clip`
+  }
+
+  if (device) {
+    const devIdx = track.device_data.findIndex((d) => d.id === device.id)
+    const devBase = `${trackBase} devices ${devIdx}`
+    if (param) {
+      const paramIdx = device.parameters.findIndex((p) => p.id === param.id)
+      return `${devBase} parameters ${paramIdx}`
+    }
+    return devBase
+  }
+
+  return trackBase
+}
 
 function findTrackForConfig(
   abl: AbletonConfigurationKey,
   project: AbletonProject
 ): AbletonTrack | null {
-  const m = abl.path?.match(/^id (\d+)$/)
-  if (!m) return null
-  const id = parseInt(m[1])
-  const all = [...(project.track_data_arr ?? []), ...(project.return_track_data_arr ?? [])]
-  if (abl.type === 'track') return all.find((t) => t.id === id) ?? null
-  for (const track of all) {
-    for (const device of track.device_data ?? []) {
-      if (abl.type === 'device' && device.id === id) return track
-      if (abl.type === 'device_parameter' && device.parameters?.some((p) => p.id === id))
+  // Match both Live path ("live_set tracks 2 ...") and legacy id paths
+  const idMatch = abl.path?.match(/^id (\d+)$/)
+  if (idMatch) {
+    const id = parseInt(idMatch[1])
+    const all = [...(project.track_data_arr ?? []), ...(project.return_track_data_arr ?? [])]
+    if (abl.type === 'track') return all.find((t) => t.id === id) ?? null
+    for (const track of all) {
+      for (const device of track.device_data ?? []) {
+        if (abl.type === 'device' && device.id === id) return track
+        if (abl.type === 'device_parameter' && device.parameters?.some((p) => p.id === id))
+          return track
+      }
+      if (
+        abl.type === 'clip' &&
+        track.clip_slots_data?.some((s) => s.id === id || s.clip_data?.id === id)
+      )
         return track
     }
-    if (
-      abl.type === 'clip' &&
-      track.clip_slots_data?.some((s) => s.id === id || s.clip_data?.id === id)
-    )
-      return track
+    return null
   }
+
+  // Extract track index from Live path ("live_set tracks N ...")
+  const liveMatch = abl.path?.match(/live_set (?:return_)?tracks (\d+)/)
+  if (liveMatch) {
+    const idx = parseInt(liveMatch[1])
+    const isReturn = abl.path.includes('return_tracks')
+    const arr = isReturn ? project.return_track_data_arr : project.track_data_arr
+    return arr?.[idx] ?? null
+  }
+
   return null
 }
 
 function defaultsForSelection(
+  project: AbletonProject | null,
   track: AbletonTrack | null,
+  clipSlot: AbletonClipSlot | null,
   device: AbletonDevice | null,
   param: AbletonDeviceParameter | null
 ): AbletonConfigurationKey | null {
-  if (param)
-    return {
-      type: 'device_parameter',
-      path: `id ${param.id}`,
-      object: 'value',
-      present: param.max,
-      absent: param.min
-    }
-  if (device)
-    return {
-      type: 'device',
-      path: `id ${device.id}`,
-      object: 'active',
-      present: true,
-      absent: false
-    }
-  if (track)
-    return {
-      type: 'track',
-      path: `id ${track.id}`,
-      object: 'active',
-      present: true,
-      absent: false
-    }
-  return null
+  if (!track || !project) return null
+  const path = generateLivePath(project, track, clipSlot, device, param)
+  if (param) return { type: 'device_parameter', path, object: 'value', present: param.max, absent: param.min }
+  if (clipSlot) return { type: 'clip', path, object: 'active', present: true, absent: false }
+  if (device) return { type: 'device', path, object: 'active', present: true, absent: false }
+  return { type: 'track', path, object: 'active', present: true, absent: false }
 }
 
-function parseFormValue(val: string): boolean | number {
-  if (val === 'true') return true
-  if (val === 'false') return false
-  const n = parseFloat(val)
+function parseVal(s: string): boolean | number {
+  if (s === 'true') return true
+  if (s === 'false') return false
+  const n = parseFloat(s)
   return isNaN(n) ? false : n
 }
 
 // ============================================================================
-// Shared small components
+// Shared UI primitives
 // ============================================================================
 
 function ColumnHeader({ children }: { children: React.ReactNode }) {
@@ -101,7 +137,7 @@ function ColumnHeader({ children }: { children: React.ReactNode }) {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 flex-1">
       <label className="text-xs text-stone-500 uppercase tracking-wider">{label}</label>
       {children}
     </div>
@@ -109,7 +145,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inputCls =
-  'bg-stone-900 border border-stone-700 rounded px-2 py-1 text-xs text-stone-200 focus:outline-none focus:border-stone-500'
+  'bg-stone-900 border border-stone-700 rounded px-2 py-1 text-xs text-stone-200 focus:outline-none focus:border-stone-500 w-full'
 
 // ============================================================================
 // Keyword Pill
@@ -162,19 +198,141 @@ function KeywordPill({
 }
 
 // ============================================================================
+// Argument editor
+// ============================================================================
+
+function ArgEditor({
+  name,
+  arg,
+  onChange,
+  onRemove
+}: {
+  name: string
+  arg: KeyArgument
+  onChange: (a: KeyArgument) => void
+  onRemove: () => void
+}) {
+  const [newPreset, setNewPreset] = useState('')
+
+  function updateAbleton(type: KeyArgument['ableton']) {
+    onChange({ ...arg, ableton: type })
+  }
+
+  function updateDefault(val: string) {
+    onChange({ ...arg, default_value: { ...arg.default_value, ableton: parseVal(val) } })
+  }
+
+  function updatePreset(preset: string, val: string) {
+    onChange({
+      ...arg,
+      presets: { ...(arg.presets ?? {}), [preset]: { ...(arg.presets?.[preset] ?? {}), ableton: parseVal(val) } }
+    })
+  }
+
+  function removePreset(preset: string) {
+    const next = { ...(arg.presets ?? {}) }
+    delete next[preset]
+    onChange({ ...arg, presets: Object.keys(next).length ? next : undefined })
+  }
+
+  function addPreset() {
+    const name = newPreset.trim().replace(/\s+/g, '_')
+    if (!name) return
+    onChange({ ...arg, presets: { ...(arg.presets ?? {}), [name]: { ableton: 0 } } })
+    setNewPreset('')
+  }
+
+  return (
+    <div className="border border-stone-800 rounded p-2.5 flex flex-col gap-2.5">
+      <div className="flex items-center justify-between">
+        <span className="text-stone-200 text-xs font-mono">{name}</span>
+        <button onClick={onRemove} className="text-stone-600 hover:text-stone-400 text-sm leading-none">
+          ×
+        </button>
+      </div>
+
+      <div className="flex gap-2">
+        <Field label="Type">
+          <select
+            value={arg.ableton?.type ?? 'number'}
+            onChange={(e) =>
+              updateAbleton({ acts_on: 'path', type: e.target.value as 'number' | 'string' | 'boolean' })
+            }
+            className={inputCls}
+          >
+            <option value="number">number</option>
+            <option value="string">string</option>
+            <option value="boolean">boolean</option>
+          </select>
+        </Field>
+        <Field label="Default">
+          <input
+            type="text"
+            value={String(arg.default_value?.ableton ?? '')}
+            onChange={(e) => updateDefault(e.target.value)}
+            className={`${inputCls} font-mono`}
+          />
+        </Field>
+      </div>
+
+      {/* Presets */}
+      <div className="flex flex-col gap-1">
+        <p className="text-xs text-stone-600 uppercase tracking-wider">Presets</p>
+        {Object.entries(arg.presets ?? {}).map(([preset, val]) => (
+          <div key={preset} className="flex items-center gap-1">
+            <span className="text-stone-500 font-mono text-xs w-16 shrink-0 truncate">{preset}</span>
+            <span className="text-stone-700 text-xs">→</span>
+            <input
+              type="text"
+              value={String((val as ArgPreset).ableton ?? '')}
+              onChange={(e) => updatePreset(preset, e.target.value)}
+              className={`flex-1 ${inputCls} font-mono`}
+            />
+            <button
+              onClick={() => removePreset(preset)}
+              className="text-stone-600 hover:text-stone-400 text-sm leading-none px-0.5"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <div className="flex gap-1 pt-0.5">
+          <input
+            type="text"
+            value={newPreset}
+            onChange={(e) => setNewPreset(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addPreset()}
+            placeholder="preset name"
+            className={`flex-1 ${inputCls} font-mono`}
+          />
+          <button
+            onClick={addPreset}
+            className="text-stone-500 hover:text-stone-300 px-2 py-1 text-xs border border-stone-700 rounded transition-colors"
+          >
+            +
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
 // Connection Form
 // ============================================================================
 
 function ConnectionForm({
   keyword,
   existing,
-  defaults,
-  onSave
+  defaultAbleton,
+  onSave,
+  onRemove
 }: {
   keyword: string
-  existing: AbletonConfigurationKey | undefined
-  defaults: AbletonConfigurationKey | null
-  onSave: (cfg: AbletonConfigurationKey) => void
+  existing: ConfigurationKey | undefined
+  defaultAbleton: AbletonConfigurationKey | null
+  onSave: (entry: ConfigurationKey) => void
+  onRemove: () => void
 }) {
   const fallback: AbletonConfigurationKey = {
     type: 'track',
@@ -183,14 +341,40 @@ function ConnectionForm({
     present: true,
     absent: false
   }
-  const [form, setForm] = useState<AbletonConfigurationKey>(existing ?? defaults ?? fallback)
 
-  // Reset when keyword switches
-  useEffect(() => {
-    setForm(existing ?? defaults ?? fallback)
-  }, [keyword]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Form is keyed externally — no useEffect needed for reset
+  const [abl, setAbl] = useState<AbletonConfigurationKey>(
+    existing?.ableton ?? defaultAbleton ?? fallback
+  )
+  const [args, setArgs] = useState<Record<string, KeyArgument>>(existing?.args ?? {})
+  const [newArgName, setNewArgName] = useState('')
 
-  const isParam = form.type === 'device_parameter'
+  const isParam = abl.type === 'device_parameter'
+
+  function addArg() {
+    const clean = newArgName.trim().replace(/[^a-z0-9_]/g, '')
+    if (!clean || args[clean]) return
+    setArgs((a) => ({
+      ...a,
+      [clean]: { ableton: { acts_on: 'path', type: 'number' }, default_value: { ableton: 0 } }
+    }))
+    setNewArgName('')
+  }
+
+  function handleSave() {
+    const entry: ConfigurationKey = { ...(existing ?? {}) }
+    if (abl.path) {
+      entry.ableton = abl
+    } else {
+      delete entry.ableton
+    }
+    if (Object.keys(args).length > 0) {
+      entry.args = args
+    } else {
+      delete entry.args
+    }
+    onSave(entry)
+  }
 
   return (
     <div className="flex flex-col gap-4 p-3">
@@ -198,12 +382,11 @@ function ConnectionForm({
         Connecting <span className="text-stone-200 font-mono">{keyword}</span>
       </p>
 
+      {/* Ableton config */}
       <Field label="Type">
         <select
-          value={form.type}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, type: e.target.value as AbletonConfigurationKey['type'] }))
-          }
+          value={abl.type}
+          onChange={(e) => setAbl((f) => ({ ...f, type: e.target.value as AbletonConfigurationKey['type'] }))}
           className={inputCls}
         >
           <option value="track">Track</option>
@@ -216,20 +399,26 @@ function ConnectionForm({
       <Field label="Path">
         <input
           type="text"
-          value={form.path}
-          onChange={(e) => setForm((f) => ({ ...f, path: e.target.value }))}
+          value={abl.path}
+          onChange={(e) => setAbl((f) => ({ ...f, path: e.target.value }))}
           className={`${inputCls} font-mono`}
-          placeholder="id 12345"
+          placeholder="live_set tracks 0 clip_slots 0 clip"
         />
+        {defaultAbleton && defaultAbleton.path !== abl.path && (
+          <button
+            onClick={() => setAbl((f) => ({ ...f, path: defaultAbleton.path, type: defaultAbleton.type }))}
+            className="text-stone-600 hover:text-stone-400 text-xs text-left mt-0.5 font-mono"
+          >
+            ← {defaultAbleton.path}
+          </button>
+        )}
       </Field>
 
       {!isParam && (
         <Field label="Object">
           <select
-            value={form.object}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, object: e.target.value as 'active' | 'value' }))
-            }
+            value={abl.object}
+            onChange={(e) => setAbl((f) => ({ ...f, object: e.target.value as 'active' | 'value' }))}
             className={inputCls}
           >
             <option value="active">Active</option>
@@ -242,11 +431,11 @@ function ConnectionForm({
         <Field label="Present">
           <input
             type={isParam ? 'number' : 'text'}
-            value={String(form.present)}
+            value={String(abl.present)}
             onChange={(e) =>
-              setForm((f) => ({
+              setAbl((f) => ({
                 ...f,
-                present: isParam ? parseFloat(e.target.value) : parseFormValue(e.target.value)
+                present: isParam ? parseFloat(e.target.value) : parseVal(e.target.value)
               }))
             }
             className={`${inputCls} font-mono`}
@@ -255,11 +444,11 @@ function ConnectionForm({
         <Field label="Absent">
           <input
             type={isParam ? 'number' : 'text'}
-            value={String(form.absent)}
+            value={String(abl.absent)}
             onChange={(e) =>
-              setForm((f) => ({
+              setAbl((f) => ({
                 ...f,
-                absent: isParam ? parseFloat(e.target.value) : parseFormValue(e.target.value)
+                absent: isParam ? parseFloat(e.target.value) : parseVal(e.target.value)
               }))
             }
             className={`${inputCls} font-mono`}
@@ -267,21 +456,62 @@ function ConnectionForm({
         </Field>
       </div>
 
-      <button
-        onClick={() => onSave(form)}
-        className="px-3 py-1.5 bg-stone-600 hover:bg-stone-500 text-stone-100 text-xs rounded transition-colors"
-      >
-        {existing ? 'Update Connection' : 'Connect'}
-      </button>
+      {/* Arguments */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-stone-500 uppercase tracking-wider">Arguments</p>
+        </div>
 
-      {existing && (
+        {Object.entries(args).map(([name, arg]) => (
+          <ArgEditor
+            key={name}
+            name={name}
+            arg={arg}
+            onChange={(updated) => setArgs((a) => ({ ...a, [name]: updated }))}
+            onRemove={() =>
+              setArgs((a) => {
+                const next = { ...a }
+                delete next[name]
+                return next
+              })
+            }
+          />
+        ))}
+
+        <div className="flex gap-1">
+          <input
+            type="text"
+            value={newArgName}
+            onChange={(e) => setNewArgName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addArg()}
+            placeholder="argument name"
+            className={`flex-1 ${inputCls} font-mono`}
+          />
+          <button
+            onClick={addArg}
+            className="text-stone-500 hover:text-stone-300 px-2 py-1 text-xs border border-stone-700 rounded transition-colors"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2 pt-1">
         <button
-          onClick={() => onSave({ ...form, path: '' })}
-          className="px-3 py-1.5 bg-transparent border border-stone-700 hover:border-stone-500 text-stone-500 hover:text-stone-300 text-xs rounded transition-colors"
+          onClick={handleSave}
+          className="px-3 py-1.5 bg-stone-600 hover:bg-stone-500 text-stone-100 text-xs rounded transition-colors"
         >
-          Remove Connection
+          {existing?.ableton ? 'Update' : 'Connect'}
         </button>
-      )}
+        {existing?.ableton && (
+          <button
+            onClick={onRemove}
+            className="px-3 py-1.5 border border-stone-700 hover:border-stone-500 text-stone-500 hover:text-stone-300 text-xs rounded transition-colors"
+          >
+            Remove Connection
+          </button>
+        )}
+      </div>
     </div>
   )
 }
@@ -292,14 +522,16 @@ function ConnectionForm({
 
 function ObjectInfo({
   track,
+  clipSlot,
   device,
   param
 }: {
   track: AbletonTrack | null
+  clipSlot: AbletonClipSlot | null
   device: AbletonDevice | null
   param: AbletonDeviceParameter | null
 }) {
-  if (!track && !device && !param) {
+  if (!track && !device && !param && !clipSlot) {
     return (
       <div className="h-full flex items-center justify-center text-stone-600 text-xs p-4 text-center">
         Select an object in the Monitor
@@ -315,21 +547,49 @@ function ObjectInfo({
           <p className="text-stone-100 text-sm">{param.name}</p>
         </div>
         <div className="grid grid-cols-2 gap-3 text-xs">
-          {(
-            [
-              ['Value', param.display_value],
-              ['Range', `${param.min} – ${param.max}`],
-              ['Quantized', param.is_quantized ? 'Yes' : 'No'],
-              ['Enabled', param.is_enabled ? 'Yes' : 'No']
-            ] as [string, string][]
-          ).map(([label, val]) => (
-            <div key={label}>
-              <p className="text-stone-500">{label}</p>
-              <p className="text-stone-200 font-mono">{val}</p>
-            </div>
-          ))}
+          {([['Value', param.display_value], ['Range', `${param.min} – ${param.max}`], ['Quantized', param.is_quantized ? 'Yes' : 'No'], ['Enabled', param.is_enabled ? 'Yes' : 'No']] as [string, string][]).map(
+            ([label, val]) => (
+              <div key={label}>
+                <p className="text-stone-500">{label}</p>
+                <p className="text-stone-200 font-mono">{val}</p>
+              </div>
+            )
+          )}
         </div>
         <p className="text-stone-600 font-mono text-xs">id {param.id}</p>
+      </div>
+    )
+  }
+
+  if (clipSlot) {
+    const clip = clipSlot.clip_data
+    return (
+      <div className="flex flex-col gap-4 p-3">
+        <div>
+          <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Clip</p>
+          <p className="text-stone-100 text-sm">{clip?.name || 'Untitled'}</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${clip?.is_playing ? 'bg-green-400' : 'bg-stone-600'}`}
+          />
+          <span className="text-stone-400">
+            {clip?.is_playing ? 'Playing' : clip?.is_recording ? 'Recording' : 'Stopped'}
+          </span>
+        </div>
+        {clip && (
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            {([['Length', String(clip.length)], ['Looping', clip.looping ? 'Yes' : 'No'], ['Muted', clip.muted ? 'Yes' : 'No']] as [string, string][]).map(
+              ([label, val]) => (
+                <div key={label}>
+                  <p className="text-stone-500">{label}</p>
+                  <p className="text-stone-200 font-mono">{val}</p>
+                </div>
+              )
+            )}
+          </div>
+        )}
+        <p className="text-stone-600 font-mono text-xs">id {clipSlot.id}</p>
       </div>
     )
   }
@@ -361,7 +621,9 @@ function ObjectInfo({
                 </div>
               ))}
               {device.parameters.length > 10 && (
-                <p className="text-stone-600 text-xs pt-1">+{device.parameters.length - 10} more</p>
+                <p className="text-stone-600 text-xs pt-1">
+                  +{device.parameters.length - 10} more
+                </p>
               )}
             </div>
           </div>
@@ -371,6 +633,7 @@ function ObjectInfo({
     )
   }
 
+  // Track
   return (
     <div className="flex flex-col gap-4 p-3 overflow-y-auto">
       <div className="flex items-center gap-2">
@@ -420,12 +683,13 @@ function ObjectInfo({
 // ============================================================================
 
 export default function Workspace({ instanceId }: WorkspaceProps) {
-  // Ableton store
   const instance = usePluginsStore((s) => s.getInstance(instanceId)) as ActivePlugin<AbletonState>
+
   const abletonProject = instance.useStore((s) => s.abletonProject) as
     | AbletonProject
     | Record<string, never>
   const selectedTrack = instance.useStore((s) => s.selectedTrack)
+  const selectedClipSlot = instance.useStore((s) => s.selectedClipSlot)
   const selectedDevice = instance.useStore((s) => s.selectedDevice)
   const selectedParam = instance.useStore((s) => s.selectedParam)
   const selectedKeyword = instance.useStore((s) => s.selectedKeyword)
@@ -498,21 +762,30 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     if (!val) setExpanded(false)
   }
 
-  function handleSaveConnection(cfg: AbletonConfigurationKey) {
+  function handleSaveConnection(entry: ConfigurationKey) {
     if (!selectedKeyword || !poiesisEntry) return
     const current = poiesisEntry.useStore.getState().parsedConfig ?? {}
-    const entry = { ...current[selectedKeyword] }
-    if (cfg.path) {
-      entry.ableton = cfg
-    } else {
-      delete entry.ableton
-    }
     poiesisEntry.useStore.getState().setParsedConfig({ ...current, [selectedKeyword]: entry })
   }
 
-  const hasSelection = !!(selectedTrack || selectedDevice || selectedParam)
+  function handleRemoveConnection() {
+    if (!selectedKeyword || !poiesisEntry) return
+    const current = poiesisEntry.useStore.getState().parsedConfig ?? {}
+    const entry = { ...current[selectedKeyword] }
+    delete entry.ableton
+    delete entry.args
+    poiesisEntry.useStore.getState().setParsedConfig({ ...current, [selectedKeyword]: entry })
+  }
+
+  const hasSelection = !!(selectedTrack || selectedDevice || selectedParam || selectedClipSlot)
   const showForm = !!(selectedKeyword && hasSelection)
-  const defaults = defaultsForSelection(selectedTrack, selectedDevice, selectedParam)
+
+  const defaultAbleton = project
+    ? defaultsForSelection(project, selectedTrack, selectedClipSlot, selectedDevice, selectedParam)
+    : null
+
+  // Key resets the ConnectionForm completely whenever keyword or selection changes
+  const formKey = `${selectedKeyword}-${selectedTrack?.id ?? ''}-${selectedClipSlot?.id ?? ''}-${selectedDevice?.id ?? ''}-${selectedParam?.id ?? ''}`
 
   return (
     <div className="flex flex-row h-full overflow-hidden text-sm font-mono bg-stone-950">
@@ -597,17 +870,19 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
       </div>
 
       {/* ── Middle: Connection form ── */}
-      <div className="flex flex-col w-64 border-r border-stone-700 shrink-0">
+      <div className="flex flex-col w-72 border-r border-stone-700 shrink-0">
         <ColumnHeader>
           {showForm && selectedKeyword ? `"${selectedKeyword}"` : 'Connection'}
         </ColumnHeader>
         <div className="flex-1 overflow-y-auto">
           {showForm ? (
             <ConnectionForm
+              key={formKey}
               keyword={selectedKeyword!}
-              existing={parsedConfig?.[selectedKeyword!]?.ableton}
-              defaults={defaults}
+              existing={parsedConfig?.[selectedKeyword!]}
+              defaultAbleton={defaultAbleton}
               onSave={handleSaveConnection}
+              onRemove={handleRemoveConnection}
             />
           ) : (
             <div className="h-full flex items-center justify-center p-4">
@@ -628,14 +903,21 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
         <ColumnHeader>
           {selectedParam
             ? 'Parameter'
-            : selectedDevice
-              ? 'Device'
-              : selectedTrack
-                ? 'Track'
-                : 'Object'}
+            : selectedClipSlot
+              ? 'Clip'
+              : selectedDevice
+                ? 'Device'
+                : selectedTrack
+                  ? 'Track'
+                  : 'Object'}
         </ColumnHeader>
         <div className="flex-1 overflow-y-auto">
-          <ObjectInfo track={selectedTrack} device={selectedDevice} param={selectedParam} />
+          <ObjectInfo
+            track={selectedTrack}
+            clipSlot={selectedClipSlot}
+            device={selectedDevice}
+            param={selectedParam}
+          />
         </div>
       </div>
     </div>

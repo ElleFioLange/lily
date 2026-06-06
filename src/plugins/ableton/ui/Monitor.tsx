@@ -61,14 +61,15 @@ function Row({
 export default function Monitor({ instanceId }: UIProps) {
   const instance = usePluginsStore((s) => s.getInstance(instanceId)) as ActivePlugin<AbletonState>
 
-  const abletonProject = instance.useStore((state) => state.abletonProject) as
+  const abletonProject = instance.useStore((s) => s.abletonProject) as
     | AbletonProject
     | Record<string, never>
-  const selectedTrack = instance.useStore((state) => state.selectedTrack)
-  const selectedDevice = instance.useStore((state) => state.selectedDevice)
-  const selectedParam = instance.useStore((state) => state.selectedParam)
+  const selectedTrack = instance.useStore((s) => s.selectedTrack)
+  const selectedClipSlot = instance.useStore((s) => s.selectedClipSlot)
+  const selectedDevice = instance.useStore((s) => s.selectedDevice)
+  const selectedParam = instance.useStore((s) => s.selectedParam)
 
-  const { setSelectedTrack, setSelectedDevice, setSelectedParam } =
+  const { setSelectedTrack, setSelectedClipSlot, setSelectedDevice, setSelectedParam } =
     instance.useStore.getState()
 
   const tracks = (abletonProject as AbletonProject).track_data_arr ?? []
@@ -81,9 +82,7 @@ export default function Monitor({ instanceId }: UIProps) {
     <div className="flex flex-row h-full overflow-hidden text-sm font-mono bg-stone-950">
       {/* Column 1: Tracks */}
       <div className="flex flex-col w-52 border-r border-stone-700 shrink-0">
-        <ColumnHeader onRefresh={() => window.api.osc.send('/get-state', [])}>
-          Tracks
-        </ColumnHeader>
+        <ColumnHeader onRefresh={() => window.api.osc.send('/get-state', [])}>Tracks</ColumnHeader>
         <div className="overflow-y-auto flex-1">
           {isEmpty ? (
             <div className="px-3 py-4 text-stone-500 text-xs">No project loaded</div>
@@ -116,18 +115,23 @@ export default function Monitor({ instanceId }: UIProps) {
                 <SectionLabel>Clips</SectionLabel>
                 {clips.map((slot) => {
                   const clip = slot.clip_data
-                  if (clip)
-                    return (
-                      <Row key={slot.id}>
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                            clip.is_playing ? 'bg-green-400' : 'bg-stone-600'
-                          }`}
-                        />
-                        <span className="truncate">{clip.name || 'Untitled'}</span>
-                      </Row>
-                    )
-                  else return null
+                  if (!clip) return null
+                  return (
+                    <Row
+                      key={slot.id}
+                      selected={selectedClipSlot?.id === slot.id}
+                      onClick={() =>
+                        setSelectedClipSlot(selectedClipSlot?.id === slot.id ? null : slot)
+                      }
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                          clip.is_playing ? 'bg-green-400' : 'bg-stone-600'
+                        }`}
+                      />
+                      <span className="truncate">{clip.name || 'Untitled'}</span>
+                    </Row>
+                  )
                 })}
               </>
             )}
@@ -173,9 +177,7 @@ export default function Monitor({ instanceId }: UIProps) {
                   key={param.id}
                   onClick={() => setSelectedParam(selectedParam?.id === param.id ? null : param)}
                   className={`flex items-center justify-between px-3 py-1.5 gap-2 cursor-pointer select-none ${
-                    selectedParam?.id === param.id
-                      ? 'bg-stone-600'
-                      : 'hover:bg-stone-800'
+                    selectedParam?.id === param.id ? 'bg-stone-600' : 'hover:bg-stone-800'
                   } ${param.is_enabled ? 'text-stone-300' : 'text-stone-600'}`}
                 >
                   <span className="truncate">{param.name}</span>
