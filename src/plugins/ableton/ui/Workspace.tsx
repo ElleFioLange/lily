@@ -111,7 +111,14 @@ function defaultsForSelection(
 ): AbletonConfigurationKey | null {
   if (!track || !project) return null
   const path = generateLivePath(project, track, clipSlot, device, param)
-  if (param) return { type: 'device_parameter', path, object: 'value', present: param.max, absent: param.min }
+  if (param)
+    return {
+      type: 'device_parameter',
+      path,
+      object: 'value',
+      present: param.max,
+      absent: param.min
+    }
   if (clipSlot) return { type: 'clip', path, object: 'active', present: true, absent: false }
   if (device) return { type: 'device', path, object: 'active', present: true, absent: false }
   return { type: 'track', path, object: 'active', present: true, absent: false }
@@ -160,14 +167,13 @@ function KeywordPill({
   onClick
 }: {
   keyword: string
-  keyConfig: ConfigurationKey
+  keyConfig: ConfigurationKey | undefined
   project: AbletonProject | null
   selected: boolean
   onClick: () => void
 }) {
-  const track =
-    keyConfig.ableton && project ? findTrackForConfig(keyConfig.ableton, project) : null
-  const isConnected = !!keyConfig.ableton
+  const track = keyConfig?.ableton && project ? findTrackForConfig(keyConfig.ableton, project) : null
+  const isConnected = !!keyConfig?.ableton
   const trackColor = track?.color ?? null
 
   const pillStyle =
@@ -226,7 +232,10 @@ function ArgEditor({
   function updatePreset(preset: string, val: string) {
     onChange({
       ...arg,
-      presets: { ...(arg.presets ?? {}), [preset]: { ...(arg.presets?.[preset] ?? {}), ableton: parseVal(val) } }
+      presets: {
+        ...(arg.presets ?? {}),
+        [preset]: { ...(arg.presets?.[preset] ?? {}), ableton: parseVal(val) }
+      }
     })
   }
 
@@ -247,7 +256,10 @@ function ArgEditor({
     <div className="border border-stone-800 rounded p-2.5 flex flex-col gap-2.5">
       <div className="flex items-center justify-between">
         <span className="text-stone-200 text-xs font-mono">{name}</span>
-        <button onClick={onRemove} className="text-stone-600 hover:text-stone-400 text-sm leading-none">
+        <button
+          onClick={onRemove}
+          className="text-stone-600 hover:text-stone-400 text-sm leading-none"
+        >
           ×
         </button>
       </div>
@@ -257,7 +269,10 @@ function ArgEditor({
           <select
             value={arg.ableton?.type ?? 'number'}
             onChange={(e) =>
-              updateAbleton({ acts_on: 'path', type: e.target.value as 'number' | 'string' | 'boolean' })
+              updateAbleton({
+                acts_on: 'path',
+                type: e.target.value as 'number' | 'string' | 'boolean'
+              })
             }
             className={inputCls}
           >
@@ -281,7 +296,9 @@ function ArgEditor({
         <p className="text-xs text-stone-600 uppercase tracking-wider">Presets</p>
         {Object.entries(arg.presets ?? {}).map(([preset, val]) => (
           <div key={preset} className="flex items-center gap-1">
-            <span className="text-stone-500 font-mono text-xs w-16 shrink-0 truncate">{preset}</span>
+            <span className="text-stone-500 font-mono text-xs w-16 shrink-0 truncate">
+              {preset}
+            </span>
             <span className="text-stone-700 text-xs">→</span>
             <input
               type="text"
@@ -387,7 +404,9 @@ function ConnectionForm({
       <Field label="Type">
         <select
           value={abl.type}
-          onChange={(e) => setAbl((f) => ({ ...f, type: e.target.value as AbletonConfigurationKey['type'] }))}
+          onChange={(e) =>
+            setAbl((f) => ({ ...f, type: e.target.value as AbletonConfigurationKey['type'] }))
+          }
           className={inputCls}
         >
           <option value="track">Track</option>
@@ -407,7 +426,9 @@ function ConnectionForm({
         />
         {defaultAbleton && defaultAbleton.path !== abl.path && (
           <button
-            onClick={() => setAbl((f) => ({ ...f, path: defaultAbleton.path, type: defaultAbleton.type }))}
+            onClick={() =>
+              setAbl((f) => ({ ...f, path: defaultAbleton.path, type: defaultAbleton.type }))
+            }
             className="text-stone-600 hover:text-stone-400 text-xs text-left mt-0.5 font-mono"
           >
             ← {defaultAbleton.path}
@@ -419,7 +440,9 @@ function ConnectionForm({
         <Field label="Object">
           <select
             value={abl.object}
-            onChange={(e) => setAbl((f) => ({ ...f, object: e.target.value as 'active' | 'value' }))}
+            onChange={(e) =>
+              setAbl((f) => ({ ...f, object: e.target.value as 'active' | 'value' }))
+            }
             className={inputCls}
           >
             <option value="active">Active</option>
@@ -548,14 +571,19 @@ function ObjectInfo({
           <p className="text-stone-100 text-sm">{param.name}</p>
         </div>
         <div className="grid grid-cols-2 gap-3 text-xs">
-          {([['Value', param.display_value], ['Range', `${param.min} – ${param.max}`], ['Quantized', param.is_quantized ? 'Yes' : 'No'], ['Enabled', param.is_enabled ? 'Yes' : 'No']] as [string, string][]).map(
-            ([label, val]) => (
-              <div key={label}>
-                <p className="text-stone-500">{label}</p>
-                <p className="text-stone-200 font-mono">{val}</p>
-              </div>
-            )
-          )}
+          {(
+            [
+              ['Value', param.display_value],
+              ['Range', `${param.min} – ${param.max}`],
+              ['Quantized', param.is_quantized ? 'Yes' : 'No'],
+              ['Enabled', param.is_enabled ? 'Yes' : 'No']
+            ] as [string, string][]
+          ).map(([label, val]) => (
+            <div key={label}>
+              <p className="text-stone-500">{label}</p>
+              <p className="text-stone-200 font-mono">{val}</p>
+            </div>
+          ))}
         </div>
         <p className="text-stone-600 font-mono text-xs">id {param.id}</p>
       </div>
@@ -580,14 +608,18 @@ function ObjectInfo({
         </div>
         {clip && (
           <div className="grid grid-cols-2 gap-3 text-xs">
-            {([['Length', String(clip.length)], ['Looping', clip.looping ? 'Yes' : 'No'], ['Muted', clip.muted ? 'Yes' : 'No']] as [string, string][]).map(
-              ([label, val]) => (
-                <div key={label}>
-                  <p className="text-stone-500">{label}</p>
-                  <p className="text-stone-200 font-mono">{val}</p>
-                </div>
-              )
-            )}
+            {(
+              [
+                ['Length', String(clip.length)],
+                ['Looping', clip.looping ? 'Yes' : 'No'],
+                ['Muted', clip.muted ? 'Yes' : 'No']
+              ] as [string, string][]
+            ).map(([label, val]) => (
+              <div key={label}>
+                <p className="text-stone-500">{label}</p>
+                <p className="text-stone-200 font-mono">{val}</p>
+              </div>
+            ))}
           </div>
         )}
         <p className="text-stone-600 font-mono text-xs">id {clipSlot.id}</p>
@@ -622,9 +654,7 @@ function ObjectInfo({
                 </div>
               ))}
               {device.parameters.length > 10 && (
-                <p className="text-stone-600 text-xs pt-1">
-                  +{device.parameters.length - 10} more
-                </p>
+                <p className="text-stone-600 text-xs pt-1">+{device.parameters.length - 10} more</p>
               )}
             </div>
           </div>
@@ -696,8 +726,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
   const selectedKeyword = instance.useStore((s) => s.selectedKeyword)
   const { setSelectedKeyword } = instance.useStore.getState()
 
-  const project =
-    Object.keys(abletonProject).length > 0 ? (abletonProject as AbletonProject) : null
+  const project = Object.keys(abletonProject).length > 0 ? (abletonProject as AbletonProject) : null
 
   // Poiesis store — reactive subscription
   const active = usePluginsStore((s) => s.active)
@@ -788,7 +817,9 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     delete updated[selectedKeyword]
     writeConfig(updated)
     // Move back to pending so the keyword stays visible but unwritten
-    setPendingKeywords((prev) => (prev.includes(selectedKeyword) ? prev : [...prev, selectedKeyword]))
+    setPendingKeywords((prev) =>
+      prev.includes(selectedKeyword) ? prev : [...prev, selectedKeyword]
+    )
   }
 
   const hasSelection = !!(selectedTrack || selectedDevice || selectedParam || selectedClipSlot)
@@ -814,7 +845,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
                 <KeywordPill
                   key={k}
                   keyword={k}
-                  keyConfig={parsedConfig![k]}
+                  keyConfig={parsedConfig?.[k]}
                   project={project}
                   selected={selectedKeyword === k}
                   onClick={() => setSelectedKeyword(selectedKeyword === k ? null : k)}
@@ -833,7 +864,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
                 <KeywordPill
                   key={k}
                   keyword={k}
-                  keyConfig={parsedConfig![k]}
+                  keyConfig={parsedConfig?.[k]}
                   project={project}
                   selected={selectedKeyword === k}
                   onClick={() => setSelectedKeyword(selectedKeyword === k ? null : k)}
