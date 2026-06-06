@@ -83,6 +83,6 @@ export function registerDedupeToSession(ctx: Ctx): void {
       .catch((e) => log("failed:", e));
   });
 
-  void ctx.ui.registerContextMenuAction("AudioTrack", "Lily: Dedupe to Session", "lily.dedupeToSession");
-  void ctx.ui.registerContextMenuAction("MidiTrack", "Lily: Dedupe to Session", "lily.dedupeToSession");
+  void ctx.ui.registerContextMenuAction("AudioTrack", "Dedupe to Session", "lily.dedupeToSession");
+  void ctx.ui.registerContextMenuAction("MidiTrack", "Dedupe to Session", "lily.dedupeToSession");
 }

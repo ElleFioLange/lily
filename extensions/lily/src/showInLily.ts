@@ -81,7 +81,7 @@ function locate(ctx: Ctx, handle: Handle): SelectionPayload | null {
 }
 
 /**
- * Right-click → "Lily: Show in Lily" on tracks and clips. Resolves the clicked
+ * Right-click → "Show in Lily" on tracks and clips. Resolves the clicked
  * object to a SelectionPayload and hands it to `onSelect` (which pushes it to
  * Lily over OSC and exposes it on the bridge).
  */
@@ -101,6 +101,9 @@ export function registerShowInLily(ctx: Ctx, onSelect: (sel: SelectionPayload) =
   });
 
   for (const scope of ["AudioTrack", "MidiTrack", "AudioClip", "MidiClip"] as const) {
-    void ctx.ui.registerContextMenuAction(scope, "Lily: Show in Lily", "lily.showInLily");
+    ctx.ui
+      .registerContextMenuAction(scope, "Show in Lily", "lily.showInLily")
+      .then(() => log(`context action registered (${scope})`))
+      .catch((e) => log(`context action FAILED (${scope}):`, e));
   }
 }

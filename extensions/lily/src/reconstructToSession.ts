@@ -138,6 +138,6 @@ export function registerReconstructToSession(ctx: Ctx): void {
       .catch((e) => log("failed:", e));
   });
 
-  void ctx.ui.registerContextMenuAction("AudioTrack", "Lily: Reconstruct to Session", "lily.reconstructToSession");
-  void ctx.ui.registerContextMenuAction("MidiTrack", "Lily: Reconstruct to Session", "lily.reconstructToSession");
+  void ctx.ui.registerContextMenuAction("AudioTrack", "Reconstruct to Session", "lily.reconstructToSession");
+  void ctx.ui.registerContextMenuAction("MidiTrack", "Reconstruct to Session", "lily.reconstructToSession");
 }

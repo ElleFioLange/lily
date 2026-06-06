@@ -41,6 +41,6 @@ export function registerMarkInflections(ctx: Ctx): void {
   });
 
   // Right-clicking any track triggers a whole-arrangement analysis.
-  void ctx.ui.registerContextMenuAction("AudioTrack", "Lily: Mark Inflections", "lily.markInflections");
-  void ctx.ui.registerContextMenuAction("MidiTrack", "Lily: Mark Inflections", "lily.markInflections");
+  void ctx.ui.registerContextMenuAction("AudioTrack", "Mark Inflections", "lily.markInflections");
+  void ctx.ui.registerContextMenuAction("MidiTrack", "Mark Inflections", "lily.markInflections");
 }
