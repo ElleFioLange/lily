@@ -363,12 +363,14 @@ function ConnectionForm({
   keyword,
   existing,
   defaultAbleton,
+  project,
   onSave,
   onRemove
 }: {
   keyword: string
   existing: ConfigurationKey | undefined
   defaultAbleton: AbletonConfigurationKey | null
+  project: AbletonProject | null
   onSave: (entry: ConfigurationKey) => void
   onRemove: () => void
 }) {
@@ -417,7 +419,14 @@ function ConnectionForm({
   return (
     <div className="flex flex-col gap-4 p-3">
       <p className="text-xs text-stone-400">
-        Connecting <span className="text-stone-200 font-mono">{keyword}</span>
+        Connecting{' '}
+        <KeywordPill
+          keyword={keyword}
+          keyConfig={existing}
+          project={project}
+          selected={false}
+          onClick={() => {}}
+        />
       </p>
 
       {/* Ableton config */}
@@ -987,7 +996,11 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
               <p className="text-stone-600 text-xs">Double-click a word to add as keyword</p>
             </div>
           ) : (
-            <div className="flex items-center gap-1">
+            <div
+              className={`flex items-stretch bg-stone-900 border border-stone-700 rounded overflow-hidden focus-within:border-stone-500 ${
+                !poiesisEntry ? 'opacity-50' : ''
+              }`}
+            >
               <input
                 type="text"
                 value={inputValue}
@@ -996,14 +1009,22 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
                 disabled={!poiesisEntry}
                 placeholder={poiesisEntry ? 'Add keyword...' : 'Load a Poiesis plugin first…'}
                 title={poiesisEntry ? undefined : 'Keywords are written into the Poiesis config'}
-                className={`flex-1 ${inputCls} disabled:opacity-50`}
+                className="flex-1 min-w-0 bg-transparent px-2 py-1 text-xs text-stone-200 focus:outline-none"
               />
               <button
-                onClick={() => setExpanded(true)}
-                className="text-stone-500 hover:text-stone-300 px-1 text-base leading-none transition-colors"
-                title="Paste poem"
+                onClick={() => {
+                  if (inputValue.trim()) {
+                    addKeyword(inputValue)
+                    setInputValue('')
+                  } else {
+                    setExpanded(true)
+                  }
+                }}
+                disabled={!poiesisEntry}
+                className="px-2.5 border-l border-stone-700 text-stone-400 hover:text-stone-100 hover:bg-stone-800 outline-none leading-none"
+                title={inputValue.trim() ? 'Add keyword' : 'Paste a poem'}
               >
-                ↑
+                +
               </button>
             </div>
           )}
@@ -1014,7 +1035,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
       <div className="flex flex-col w-72 border-r border-stone-700 shrink-0">
         <ColumnHeader>
           <span className={!poiesisEntry ? 'text-stone-600' : ''}>
-            {showForm && selectedKeyword ? `"${selectedKeyword}"` : 'Connection'}
+            Connection
           </span>
         </ColumnHeader>
         <div className="flex-1 overflow-y-auto">
@@ -1029,6 +1050,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
               key={formKey}
               keyword={selectedKeyword!}
               existing={parsedConfig?.[selectedKeyword!]}
+              project={project}
               defaultAbleton={defaultAbleton}
               onSave={handleSaveConnection}
               onRemove={handleRemoveConnection}
