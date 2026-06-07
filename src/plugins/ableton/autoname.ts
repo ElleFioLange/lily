@@ -3,9 +3,10 @@ import type { ConfigurationJSON } from 'src/types/config'
 /**
  * Derive rename targets from the Poiesis config so Live's names mirror the
  * keyword grammar (`bass(verse)` ↔ track "bass", clip "verse"):
- *   - the connection's TRACK is named after the keyword
- *   - each ableton preset's resolved clip is named after the PRESET
- *   - a keyword with no presets names its default-resolved clip after itself
+ *   - a keyword WITH ableton presets names its TRACK after the keyword and
+ *     each preset's resolved clip after the PRESET
+ *   - a keyword with no presets targets one specific clip — only that clip is
+ *     named after the keyword; its track is left alone
  *
  * Path args (acts_on: 'path', e.g. `… clip_slots _clip_index clip`) resolve
  * at their ableton defaults / per-preset values. A path is skipped (no-op)
@@ -55,11 +56,7 @@ export function deriveAutonameItems(config: ConfigurationJSON): AutonameDerivati
     const defaults: Record<string, ArgValue> = {}
     for (const [arg, a] of pathArgs) defaults[arg] = a.default_value?.ableton
 
-    // The connection's track carries the keyword name.
-    const trackMatch = ableton.path.match(/^live_set tracks (\d+)/)
-    if (trackMatch) items.push({ path: `live_set tracks ${trackMatch[1]}`, name: keyword })
-
-    let presetCount = 0
+    const presetItems: AutonameItem[] = []
     for (const [arg, a] of pathArgs) {
       for (const [presetName, preset] of Object.entries(a.presets ?? {})) {
         if (preset.ableton === undefined) {
@@ -67,15 +64,18 @@ export function deriveAutonameItems(config: ConfigurationJSON): AutonameDerivati
           continue
         }
         const presetPath = resolve({ ...defaults, [arg]: preset.ableton })
-        if (presetPath) {
-          items.push({ path: presetPath, name: presetName })
-          presetCount++
-        } else skipped++
+        if (presetPath) presetItems.push({ path: presetPath, name: presetName })
+        else skipped++
       }
     }
 
-    // No presets → the (default-resolved) clip itself carries the keyword.
-    if (presetCount === 0) {
+    if (presetItems.length > 0) {
+      // Preset grammar: track carries the keyword, clips carry preset names.
+      const trackMatch = ableton.path.match(/^live_set tracks (\d+)/)
+      if (trackMatch) items.push({ path: `live_set tracks ${trackMatch[1]}`, name: keyword })
+      items.push(...presetItems)
+    } else {
+      // A specific clip: name it after the keyword, leave the track alone.
       const basePath = resolve(defaults)
       if (basePath) items.push({ path: basePath, name: keyword })
       else skipped++

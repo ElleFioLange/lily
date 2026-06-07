@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
 import Header from './common/Header'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
@@ -24,18 +24,28 @@ function SourceControl({
   onDragOver,
   onDrop
 }: SourceControlProps) {
+  // Row drag (reorder) only arms from the ⠿ grip — a draggable row swallows
+  // mousedown-drag on the range input, making the slider thumb undraggable.
+  const [dragArmed, setDragArmed] = useState(false)
   return (
     <div
-      draggable
+      draggable={dragArmed}
       onDragStart={onDragStart}
+      onDragEnd={() => setDragArmed(false)}
       onDragOver={(e) => {
         e.preventDefault()
         onDragOver(e)
       }}
       onDrop={onDrop}
-      className="grid grid-cols-[12px_72px_auto] gap-2 items-center cursor-grab active:cursor-grabbing"
+      className="grid grid-cols-[12px_72px_auto] gap-2 items-center"
     >
-      <span className="text-stone-500 select-none">⠿</span>
+      <span
+        className="text-stone-500 select-none cursor-grab active:cursor-grabbing"
+        onMouseDown={() => setDragArmed(true)}
+        onMouseUp={() => setDragArmed(false)}
+      >
+        ⠿
+      </span>
       <span
         className={`cursor-pointer ${enabled ? 'hover:line-through' : 'line-through'}`}
         onClick={() => setEnabled(!enabled)}
