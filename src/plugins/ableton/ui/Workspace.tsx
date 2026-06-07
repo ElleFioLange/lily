@@ -571,14 +571,28 @@ function ObjectInfo({
       <div className="flex flex-col gap-4 p-3">
         <div>
           <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Parameter</p>
-          <p className="text-stone-100 text-sm">{param.name}</p>
+          <p className="text-stone-100 text-sm flex items-center gap-1.5 min-w-0">
+            {track && (
+              <>
+                <span className="shrink-0" style={{ color: colorToHex(track.color) }}>
+                  {track.name}
+                </span>
+                <span className="text-stone-600 shrink-0">›</span>
+              </>
+            )}
+            {device && (
+              <>
+                <span className="shrink-0 text-stone-400">{device.name}</span>
+                <span className="text-stone-600 shrink-0">›</span>
+              </>
+            )}
+            <span className="truncate">{param.name}</span>
+          </p>
         </div>
         {keywords}
         <div className="grid grid-cols-2 gap-3 text-xs">
           {(
             [
-              ['Device', device?.name ?? '—'],
-              ['Track', track?.name ?? '—'],
               ['Value', param.display_value],
               ['Range', `${param.min} – ${param.max}`],
               ['Quantized', param.is_quantized ? 'Yes' : 'No'],
@@ -602,7 +616,17 @@ function ObjectInfo({
       <div className="flex flex-col gap-4 p-3">
         <div>
           <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Clip</p>
-          <p className="text-stone-100 text-sm">{clip?.name || 'Untitled'}</p>
+          <p className="text-stone-100 text-sm flex items-center gap-1.5 min-w-0">
+            {track && (
+              <>
+                <span className="shrink-0" style={{ color: colorToHex(track.color) }}>
+                  {track.name}
+                </span>
+                <span className="text-stone-600 shrink-0">›</span>
+              </>
+            )}
+            <span className="truncate">{clip?.name || 'Untitled'}</span>
+          </p>
         </div>
         {keywords}
         <div className="flex items-center gap-2 text-xs">
@@ -617,7 +641,6 @@ function ObjectInfo({
           <div className="grid grid-cols-2 gap-3 text-xs">
             {(
               [
-                ['Track', track?.name ?? '—'],
                 ['Length', String(clip.length)],
                 ['Looping', clip.looping ? 'Yes' : 'No'],
                 ['Muted', clip.muted ? 'Yes' : 'No']
@@ -640,7 +663,17 @@ function ObjectInfo({
       <div className="flex flex-col gap-4 p-3 overflow-y-auto">
         <div>
           <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Device</p>
-          <p className="text-stone-100 text-sm">{device.name}</p>
+          <p className="text-stone-100 text-sm flex items-center gap-1.5 min-w-0">
+            {track && (
+              <>
+                <span className="shrink-0" style={{ color: colorToHex(track.color) }}>
+                  {track.name}
+                </span>
+                <span className="text-stone-600 shrink-0">›</span>
+              </>
+            )}
+            <span className="truncate">{device.name}</span>
+          </p>
         </div>
         {keywords}
         <div className="flex items-center gap-2 text-xs">
@@ -650,12 +683,7 @@ function ObjectInfo({
           <span className="text-stone-400">{device.is_active ? 'Active' : 'Inactive'}</span>
         </div>
         <div className="grid grid-cols-2 gap-3 text-xs">
-          {(
-            [
-              ['Class', device.class_display_name],
-              ['Track', track?.name ?? '—']
-            ] as [string, string][]
-          ).map(([label, val]) => (
+          {([['Class', device.class_display_name]] as [string, string][]).map(([label, val]) => (
             <div key={label}>
               <p className="text-stone-500">{label}</p>
               <p className="text-stone-200 font-mono">{val}</p>
@@ -690,12 +718,12 @@ function ObjectInfo({
     <div className="flex flex-col gap-4 p-3 overflow-y-auto">
       <div>
         <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Track</p>
-        <p className="text-stone-100 text-sm flex items-center gap-2">
+        <p className="text-sm flex items-center gap-2">
           <span
             className="w-2.5 h-2.5 rounded-full shrink-0"
             style={{ backgroundColor: colorToHex(track!.color) }}
           />
-          {track!.name}
+          <span style={{ color: colorToHex(track!.color) }}>{track!.name}</span>
         </p>
       </div>
       {keywords}
