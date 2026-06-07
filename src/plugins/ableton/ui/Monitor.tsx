@@ -17,7 +17,9 @@ import { colorStyle } from './colors'
 
 // shrink-0 matters: rows are flex children of a scrollable column — without it
 // they compress into slivers once a column has more content than fits.
-const ROW = 'px-2 py-0.5 truncate border-l-4 shrink-0'
+// NO `truncate` on the row itself (overflow:hidden would clip the highlight
+// ripple) — labels truncate via an inner span instead.
+const ROW = 'px-2 py-0.5 border-l-4 shrink-0 flex items-center gap-1 min-w-0'
 
 /** Steady accent + one-shot pulse for the pushed node. `seq` changes per
  *  push, re-keying the animation so a repeat selection pulses again. */
@@ -69,7 +71,7 @@ function DeviceRow({
         onClick={() => pick.device(track, device.id)}
         className={`${ROW} ${highlight(device.id === selectedPath)} ${clickSel(
           mappedDevice !== null && mappedDevice.id === pick.ids.device
-        )} bg-stone-800 text-stone-300 cursor-pointer flex items-center gap-1`}
+        )} bg-stone-800 text-stone-300 cursor-pointer ${open ? 'sticky top-0 z-[5]' : ''}`}
         title={device.id}
       >
         <span
@@ -102,7 +104,7 @@ function DeviceRow({
               )} ml-3 bg-stone-900 text-stone-400 cursor-pointer`}
               title={`${p.min}–${p.max}${p.isQuantized ? ' · quantized' : ''} · default ${p.defaultValue} · ${p.id}`}
             >
-              ◇ {p.name}
+              <span className="truncate">◇ {p.name}</span>
             </div>
           )
         })}
@@ -144,13 +146,13 @@ function TrackColumn({
       <div
         key={nodeKey(track.id)}
         onClick={() => pick.track(track)}
-        className={`px-2 py-1 truncate font-bold border-l-4 shrink-0 cursor-pointer ${highlight(
+        className={`px-2 py-1 font-bold border-l-4 shrink-0 cursor-pointer flex items-center min-w-0 ${highlight(
           track.id === selectedPath
         )} ${clickSel(mapped !== null && mapped.id === pick.ids.track)}`}
         style={colorStyle(track.color)}
         title={track.id}
       >
-        {track.name}
+        <span className="truncate">{track.name}</span>
       </div>
 
       <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar">
@@ -167,7 +169,7 @@ function TrackColumn({
               style={colorStyle(c.color)}
               title={`${c.kind} · ${c.id}`}
             >
-              {c.name || '(unnamed)'}
+              <span className="truncate">{c.name || '(unnamed)'}</span>
             </div>
           )
         })}
