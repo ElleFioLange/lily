@@ -220,16 +220,23 @@ function ArgEditor({
   onRemove: () => void
 }) {
   const [newPreset, setNewPreset] = useState('')
+  // Draft strings for value fields — keeps raw text while typing, parses only on blur
+  const [defaultDraft, setDefaultDraft] = useState(String(arg.default_value?.ableton ?? ''))
+  const [presetDrafts, setPresetDrafts] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      Object.entries(arg.presets ?? {}).map(([k, v]) => [k, String((v as ArgPreset).ableton ?? '')])
+    )
+  )
 
   function updateAbleton(type: KeyArgument['ableton']) {
     onChange({ ...arg, ableton: type })
   }
 
-  function updateDefault(val: string) {
+  function commitDefault(val: string) {
     onChange({ ...arg, default_value: { ...arg.default_value, ableton: parseVal(val) } })
   }
 
-  function updatePreset(preset: string, val: string) {
+  function commitPreset(preset: string, val: string) {
     onChange({
       ...arg,
       presets: {
@@ -242,13 +249,19 @@ function ArgEditor({
   function removePreset(preset: string) {
     const next = { ...(arg.presets ?? {}) }
     delete next[preset]
+    setPresetDrafts((d) => {
+      const nd = { ...d }
+      delete nd[preset]
+      return nd
+    })
     onChange({ ...arg, presets: Object.keys(next).length ? next : undefined })
   }
 
   function addPreset() {
-    const name = newPreset.trim().replace(/\s+/g, '_')
-    if (!name) return
-    onChange({ ...arg, presets: { ...(arg.presets ?? {}), [name]: { ableton: 0 } } })
+    const key = newPreset.trim().replace(/\s+/g, '_')
+    if (!key) return
+    setPresetDrafts((d) => ({ ...d, [key]: '0' }))
+    onChange({ ...arg, presets: { ...(arg.presets ?? {}), [key]: { ableton: 0 } } })
     setNewPreset('')
   }
 
@@ -270,7 +283,7 @@ function ArgEditor({
             value={arg.ableton?.type ?? 'number'}
             onChange={(e) =>
               updateAbleton({
-                acts_on: 'path',
+                acts_on: arg.ableton?.acts_on ?? 'path',
                 type: e.target.value as 'number' | 'string' | 'boolean'
               })
             }
@@ -284,8 +297,9 @@ function ArgEditor({
         <Field label="Default">
           <input
             type="text"
-            value={String(arg.default_value?.ableton ?? '')}
-            onChange={(e) => updateDefault(e.target.value)}
+            value={defaultDraft}
+            onChange={(e) => setDefaultDraft(e.target.value)}
+            onBlur={(e) => commitDefault(e.target.value)}
             className={`${inputCls} font-mono`}
           />
         </Field>
@@ -294,7 +308,7 @@ function ArgEditor({
       {/* Presets */}
       <div className="flex flex-col gap-1">
         <p className="text-xs text-stone-600 uppercase tracking-wider">Presets</p>
-        {Object.entries(arg.presets ?? {}).map(([preset, val]) => (
+        {Object.entries(arg.presets ?? {}).map(([preset]) => (
           <div key={preset} className="flex items-center gap-1">
             <span className="text-stone-500 font-mono text-xs w-16 shrink-0 truncate">
               {preset}
@@ -302,8 +316,9 @@ function ArgEditor({
             <span className="text-stone-700 text-xs">→</span>
             <input
               type="text"
-              value={String((val as ArgPreset).ableton ?? '')}
-              onChange={(e) => updatePreset(preset, e.target.value)}
+              value={presetDrafts[preset] ?? ''}
+              onChange={(e) => setPresetDrafts((d) => ({ ...d, [preset]: e.target.value }))}
+              onBlur={(e) => commitPreset(preset, e.target.value)}
               className={`flex-1 ${inputCls} font-mono`}
             />
             <button
