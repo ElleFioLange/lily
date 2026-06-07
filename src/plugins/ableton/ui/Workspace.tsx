@@ -125,6 +125,25 @@ function defaultsForSelection(
   return { type: 'track', path, object: 'active', present: true, absent: false }
 }
 
+function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!value)}
+      className={`relative w-9 h-5 rounded-full transition-colors outline-none ${
+        value ? 'bg-green-700' : 'bg-stone-700'
+      }`}
+      title={value ? 'true' : 'false'}
+    >
+      <span
+        className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-stone-100 transition-transform ${
+          value ? 'translate-x-4' : ''
+        }`}
+      />
+    </button>
+  )
+}
+
 function parseVal(s: string): boolean | number {
   if (s === 'true') return true
   if (s === 'false') return false
@@ -441,9 +460,17 @@ function ConnectionForm({
         <Field label="Object">
           <select
             value={abl.object}
-            onChange={(e) =>
-              setAbl((f) => ({ ...f, object: e.target.value as 'active' | 'value' }))
-            }
+            onChange={(e) => {
+              const object = e.target.value as 'active' | 'value'
+              // active is boolean semantics, value is numeric — coerce so a
+              // stale true/false can't be sent as a raw parameter value.
+              setAbl((f) => ({
+                ...f,
+                object,
+                present: object === 'active' ? Boolean(f.present) : Number(f.present),
+                absent: object === 'active' ? Boolean(f.absent) : Number(f.absent)
+              }))
+            }}
             className={inputCls}
           >
             <option value="active">Active</option>
@@ -452,33 +479,30 @@ function ConnectionForm({
         </Field>
       )}
 
+      {/* active → boolean (toggles); value / device_parameter → numeric */}
       <div className="flex gap-2">
-        <Field label="Present">
-          <input
-            type={isParam ? 'number' : 'text'}
-            value={String(abl.present)}
-            onChange={(e) =>
-              setAbl((f) => ({
-                ...f,
-                present: isParam ? parseFloat(e.target.value) : parseVal(e.target.value)
-              }))
-            }
-            className={`${inputCls} font-mono`}
-          />
-        </Field>
-        <Field label="Absent">
-          <input
-            type={isParam ? 'number' : 'text'}
-            value={String(abl.absent)}
-            onChange={(e) =>
-              setAbl((f) => ({
-                ...f,
-                absent: isParam ? parseFloat(e.target.value) : parseVal(e.target.value)
-              }))
-            }
-            className={`${inputCls} font-mono`}
-          />
-        </Field>
+        {(['present', 'absent'] as const).map((which) => (
+          <Field key={which} label={which === 'present' ? 'Present' : 'Absent'}>
+            {!isParam && abl.object === 'active' ? (
+              <div className="py-1.5">
+                <Toggle
+                  value={Boolean(abl[which])}
+                  onChange={(v) => setAbl((f) => ({ ...f, [which]: v }))}
+                />
+              </div>
+            ) : (
+              <input
+                type="number"
+                step="any"
+                value={String(Number(abl[which]))}
+                onChange={(e) =>
+                  setAbl((f) => ({ ...f, [which]: parseFloat(e.target.value) || 0 }))
+                }
+                className={`${inputCls} font-mono`}
+              />
+            )}
+          </Field>
+        ))}
       </div>
 
       {/* Arguments */}
@@ -718,12 +742,8 @@ function ObjectInfo({
     <div className="flex flex-col gap-4 p-3 overflow-y-auto">
       <div>
         <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Track</p>
-        <p className="text-sm flex items-center gap-2">
-          <span
-            className="w-2.5 h-2.5 rounded-full shrink-0"
-            style={{ backgroundColor: colorToHex(track!.color) }}
-          />
-          <span style={{ color: colorToHex(track!.color) }}>{track!.name}</span>
+        <p className="text-sm" style={{ color: colorToHex(track!.color) }}>
+          {track!.name}
         </p>
       </div>
       {keywords}
