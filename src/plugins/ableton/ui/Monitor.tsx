@@ -39,6 +39,7 @@ const idx = (path: string, re: RegExp): number | null => {
 /** What the Workspace connection form needs from a click. */
 interface Picker {
   track: (t: LiveTrack) => void
+  shiftTrack: (t: LiveTrack, trackIndex: number) => void
   clip: (t: LiveTrack, clipId: string) => void
   device: (t: LiveTrack, deviceId: string) => void
   param: (t: LiveTrack, deviceId: string, paramId: string) => void
@@ -160,12 +161,16 @@ function TrackColumn({
       <div
         key={nodeKey(track.id)}
         data-maxpath={track.id}
-        onClick={() => pick.track(track)}
+        onClick={(e) => {
+          const trackIndex = idx(track.id, /^live_set tracks (\d+)/)
+          if (e.shiftKey && trackIndex !== null) pick.shiftTrack(track, trackIndex)
+          else pick.track(track)
+        }}
         className={`relative px-2 py-1 font-bold shrink-0 cursor-pointer flex items-center min-w-0 ${pulse(
           track.id === selectedPath
         )}`}
         style={colorStyle(track.color)}
-        title={track.id}
+        title={`${track.id} · shift+click to connect keyword to track clips`}
       >
         <Accent on={track.id === selectedPath || (mapped !== null && mapped.id === pick.ids.track)} />
         <span className="truncate">{track.name}</span>
@@ -230,6 +235,8 @@ export default function Monitor({ instanceId }: UIProps) {
   const { refresh, setSelectedTrack, setSelectedClipSlot, setSelectedDevice, setSelectedParam } =
     instance.useStore.getState()
 
+  const selectedKeyword = instance.useStore((s) => s.selectedKeyword)
+
   const selectedPath = selection?.maxPath ?? null
 
   // --- Ripple overlay: the expanding rectangle is drawn on a fixed-position
@@ -278,6 +285,24 @@ export default function Monitor({ instanceId }: UIProps) {
     track: (t) => {
       const mapped = mapTrack(t)
       if (mapped) setSelectedTrack(mapped)
+    },
+    shiftTrack: (_t, trackIndex) => {
+      if (!selectedKeyword) return
+      instance.useStore.getState().setConnectionDraft({
+        ableton: {
+          type: 'clip',
+          path: `live_set tracks ${trackIndex} clip_slots _clip-index clip`,
+          object: 'active',
+          present: true,
+          absent: false
+        },
+        args: {
+          'clip-index': {
+            ableton: { acts_on: 'path', type: 'number' },
+            default_value: { ableton: 0 }
+          }
+        }
+      })
     },
     clip: (t, clipId) => {
       const mapped = mapTrack(t)

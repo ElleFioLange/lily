@@ -7,6 +7,7 @@
 // device is control-only (process.ts → /control).
 import { create } from 'zustand'
 import { UseStore } from 'src/types/plugins'
+import { AbletonConfigurationKey, KeyArgument } from 'src/types/config'
 import {
   fetchSnapshot,
   toAbletonProject,
@@ -90,10 +91,12 @@ export interface AbletonState {
   keywordInputValue: string
   poemText: string
   keywordInputExpanded: boolean
+  connectionDraft: { ableton: AbletonConfigurationKey; args: Record<string, KeyArgument> } | null
   setPendingKeywords: (keywords: string[]) => void
   setKeywordInputValue: (value: string) => void
   setPoemText: (text: string) => void
   setKeywordInputExpanded: (expanded: boolean) => void
+  setConnectionDraft: (draft: { ableton: AbletonConfigurationKey; args: Record<string, KeyArgument> } | null) => void
 
   // --- Extension-bridge slice (GET /snapshot + /lily/select) ---------------
   snapshot: ProjectSnapshot | null
@@ -142,10 +145,12 @@ export const createAbletonStore = (instanceId: string): UseStore<AbletonState> =
     keywordInputValue: '',
     poemText: '',
     keywordInputExpanded: false,
+    connectionDraft: null,
     setPendingKeywords: (pendingKeywords) => set({ pendingKeywords }),
     setKeywordInputValue: (keywordInputValue) => set({ keywordInputValue }),
     setPoemText: (poemText) => set({ poemText }),
     setKeywordInputExpanded: (keywordInputExpanded) => set({ keywordInputExpanded }),
+    setConnectionDraft: (connectionDraft) => set({ connectionDraft }),
 
     // --- Extension-bridge slice ----------------------------------------------
     snapshot: null,

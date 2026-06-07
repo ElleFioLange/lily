@@ -373,12 +373,14 @@ function ConnectionForm({
   keyword,
   existing,
   defaultAbleton,
+  draft,
   onSave,
   onRemove
 }: {
   keyword: string
   existing: ConfigurationKey | undefined
   defaultAbleton: AbletonConfigurationKey | null
+  draft: { ableton: AbletonConfigurationKey; args: Record<string, KeyArgument> } | null
   onSave: (entry: ConfigurationKey) => void
   onRemove: () => void
 }) {
@@ -390,11 +392,14 @@ function ConnectionForm({
     absent: false
   }
 
+  // Draft takes priority over defaultAbleton; existing connection overrides both
   // Form is keyed externally — no useEffect needed for reset
   const [abl, setAbl] = useState<AbletonConfigurationKey>(
-    existing?.ableton ?? defaultAbleton ?? fallback
+    existing?.ableton ?? draft?.ableton ?? defaultAbleton ?? fallback
   )
-  const [args, setArgs] = useState<Record<string, KeyArgument>>(existing?.args ?? {})
+  const [args, setArgs] = useState<Record<string, KeyArgument>>(
+    existing?.args ?? draft?.args ?? {}
+  )
   const [newArgName, setNewArgName] = useState('')
 
   const isParam = abl.type === 'device_parameter'
@@ -758,12 +763,14 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
   const keywordInputValue = instance.useStore((s) => s.keywordInputValue)
   const poemText = instance.useStore((s) => s.poemText)
   const keywordInputExpanded = instance.useStore((s) => s.keywordInputExpanded)
+  const connectionDraft = instance.useStore((s) => s.connectionDraft)
   const {
     setSelectedKeyword,
     setPendingKeywords,
     setKeywordInputValue,
     setPoemText,
-    setKeywordInputExpanded
+    setKeywordInputExpanded,
+    setConnectionDraft
   } = instance.useStore.getState()
 
   const project = Object.keys(abletonProject).length > 0 ? (abletonProject as AbletonProject) : null
@@ -855,14 +862,17 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
   }
 
   const hasSelection = !!(selectedTrack || selectedDevice || selectedParam || selectedClipSlot)
-  const showForm = !!(selectedKeyword && hasSelection)
+  const showForm = !!(selectedKeyword && (hasSelection || connectionDraft))
 
   const defaultAbleton = project
     ? defaultsForSelection(project, selectedTrack, selectedClipSlot, selectedDevice, selectedParam)
     : null
 
-  // Key resets the ConnectionForm completely whenever keyword or selection changes
-  const formKey = `${selectedKeyword}-${selectedTrack?.id ?? ''}-${selectedClipSlot?.id ?? ''}-${selectedDevice?.id ?? ''}-${selectedParam?.id ?? ''}`
+  // Key resets the ConnectionForm completely whenever keyword, selection, or draft changes
+  const draftKey = connectionDraft
+    ? `${connectionDraft.ableton.type}-${connectionDraft.ableton.path}`
+    : 'no-draft'
+  const formKey = `${selectedKeyword}-${selectedTrack?.id ?? ''}-${selectedClipSlot?.id ?? ''}-${selectedDevice?.id ?? ''}-${selectedParam?.id ?? ''}-${draftKey}`
 
   return (
     <div className="flex flex-row h-full overflow-hidden text-sm font-mono bg-stone-950">
@@ -968,7 +978,8 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
               keyword={selectedKeyword!}
               existing={parsedConfig?.[selectedKeyword!]}
               defaultAbleton={defaultAbleton}
-              onSave={handleSaveConnection}
+              draft={connectionDraft}
+              onSave={(entry) => { setConnectionDraft(null); handleSaveConnection(entry) }}
               onRemove={handleRemoveConnection}
             />
           ) : (
