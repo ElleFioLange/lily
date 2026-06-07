@@ -637,6 +637,63 @@ function setupIPCHandlers(): void {
   })
 
   // ============================================================================
+  // Configuration File Handlers
+  // ============================================================================
+  ipcMain.handle('config:save', async (_, content: string, path: string) => {
+    try {
+      await fs.writeFile(path, content, 'utf-8')
+      return { success: true, path }
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : 'Failed to save config' }
+    }
+  })
+
+  ipcMain.handle('config:saveAs', async (_, content: string) => {
+    try {
+      const result = await dialog.showSaveDialog(mainWindowRef!, {
+        title: 'Save Configuration File',
+        defaultPath: 'config.yaml',
+        filters: [
+          { name: 'YAML Files', extensions: ['yaml', 'yml'] },
+          { name: 'All Files', extensions: ['*'] }
+        ]
+      })
+
+      if (result.canceled || !result.filePath) {
+        return { success: false, error: 'No file selected' }
+      }
+
+      await fs.writeFile(result.filePath, content, 'utf-8')
+      return { success: true, path: result.filePath }
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : 'Failed to save config' }
+    }
+  })
+
+  ipcMain.handle('config:open', async () => {
+    try {
+      const result = await dialog.showOpenDialog(mainWindowRef!, {
+        title: 'Open Configuration File',
+        filters: [
+          { name: 'YAML Files', extensions: ['yaml', 'yml'] },
+          { name: 'All Files', extensions: ['*'] }
+        ],
+        properties: ['openFile']
+      })
+
+      if (result.canceled || result.filePaths.length === 0) {
+        return { success: false, error: 'No file selected' }
+      }
+
+      const filePath = result.filePaths[0]
+      const content = await fs.readFile(filePath, 'utf-8')
+      return { success: true, content, path: filePath }
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : 'Failed to open config' }
+    }
+  })
+
+  // ============================================================================
   // Camera WebSocket Streaming Handlers
   // ============================================================================
   ipcMain.handle('camera:start', async (_, wsPort: number = 8765): Promise<StartServerResult> => {

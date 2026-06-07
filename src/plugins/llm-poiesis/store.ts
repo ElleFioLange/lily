@@ -51,11 +51,13 @@ export interface LLMPoiesisState extends PluginState {
   parsedConfig: ConfigurationJSON | null
   configPath: string | null
   configName: string | null
-  configIsValid: boolean
-  configError: string | null
+  isValid: boolean
+  error: string | null
   setConfig: (rawConfig: string) => void
   setParsedConfig: (parsedConfig: ConfigurationJSON) => void
-  openConfig: (content: string, path: string) => void
+  saveConfig: () => Promise<void>
+  saveConfigAs: () => Promise<void>
+  openConfig: () => Promise<void>
   newConfig: () => void
   setConfigPath: (path: string | null) => void
   setConfigName: (name: string | null) => void
@@ -70,7 +72,7 @@ export interface LLMPoiesisState extends PluginState {
 }
 
 export const createLLMPoiesisStore = (instanceId: string) => {
-  return create<LLMPoiesisState>((set) => ({
+  return create<LLMPoiesisState>((set, get) => ({
     // Plugin UIProps
     instanceId,
 
@@ -113,21 +115,21 @@ export const createLLMPoiesisStore = (instanceId: string) => {
     parsedConfig: {},
     configPath: null,
     configName: 'new-config',
-    configIsValid: true,
-    configError: null,
+    isValid: true,
+    error: null,
 
     setConfig: (config: string) => {
       try {
         jsyaml.load(config)
         const { parsedConfig, err } = parseConfig(config)
         if (err) throw err
-        set({ config, parsedConfig, configIsValid: true, configError: null })
+        set({ config, parsedConfig, isValid: true, error: null })
       } catch (err) {
         set({
           config,
           parsedConfig: null,
-          configIsValid: false,
-          configError: err instanceof Error ? err.message : 'Invalid YAML'
+          isValid: false,
+          error: err instanceof Error ? err.message : 'Invalid YAML'
         })
       }
     },
@@ -136,27 +138,65 @@ export const createLLMPoiesisStore = (instanceId: string) => {
       set({ parsedConfig })
     },
 
-    openConfig: (content: string, path: string) => {
+    saveConfig: async () => {
+      const state = get()
+      if (!state.isValid) {
+        set({ error: 'Cannot save invalid YAML' })
+        return
+      }
+      if (state.configPath === null) {
+        return get().saveConfigAs()
+      }
       try {
-        const pathArr = path.split('/')
-        const file = pathArr.at(-1)
-        const name = file?.split('.')[0]
+        const result = await window.api.config.save(state.config, state.configPath)
+        if (result.success) {
+          set({ configPath: result.path ?? null, error: null })
+        } else if (result.error) {
+          set({ error: result.error })
+        }
+      } catch (err) {
+        set({ error: err instanceof Error ? err.message : 'Failed to save configuration' })
+      }
+    },
 
-        const { parsedConfig, err } = parseConfig(content)
+    saveConfigAs: async () => {
+      const state = get()
+      if (!state.isValid) {
+        set({ error: 'Cannot save invalid YAML' })
+        return
+      }
+      try {
+        const result = await window.api.config.saveAs(state.config)
+        if (result.success) {
+          const name = result.path?.split('/').at(-1)?.replace(/\.[^.]+$/, '') ?? null
+          set({ configPath: result.path ?? null, configName: name, error: null })
+        } else if (result.error && result.error !== 'No file selected') {
+          set({ error: result.error })
+        }
+      } catch (err) {
+        set({ error: err instanceof Error ? err.message : 'Failed to save file' })
+      }
+    },
+
+    openConfig: async () => {
+      try {
+        const result = await window.api.config.open()
+        if (!result.success || !result.content || !result.path) return
+        const name = result.path.split('/').at(-1)?.replace(/\.[^.]+$/, '') ?? null
+        const { parsedConfig, err } = parseConfig(result.content)
         if (err) throw err
-
         set({
-          config: content,
+          config: result.content,
           parsedConfig,
-          configPath: path,
+          configPath: result.path,
           configName: name,
-          configIsValid: true,
-          configError: null
+          isValid: true,
+          error: null
         })
       } catch (err) {
         set({
-          configError: err instanceof Error ? err.message : 'Failed to open config file',
-          configIsValid: false
+          error: err instanceof Error ? err.message : 'Failed to open config file',
+          isValid: false
         })
       }
     },
@@ -167,8 +207,8 @@ export const createLLMPoiesisStore = (instanceId: string) => {
         parsedConfig: {},
         configPath: null,
         configName: 'new-config',
-        configIsValid: true,
-        configError: null
+        isValid: true,
+        error: null
       })
     },
 

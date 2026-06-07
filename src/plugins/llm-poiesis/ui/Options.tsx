@@ -76,16 +76,8 @@ export default function Options({ instanceId }: UIProps) {
   } = instance.useStore()
 
   const handleOpen = async () => {
-    const { success, content, path, error } = await window.api.files.open()
-    if (success && content && path) {
-      const type = path?.split('.').at(-1)
-      if (type === 'yaml' || type === 'yml') {
-        const { openConfig } = instance.useStore.getState()
-        openConfig(content, path)
-      }
-    } else {
-      console.error(error)
-    }
+    const { openConfig } = instance.useStore.getState()
+    await openConfig()
   }
 
   return (
