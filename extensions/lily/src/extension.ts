@@ -71,6 +71,56 @@ export function activate(activation: ActivationContext) {
       return
     }
 
+    // POST /insert-audio-effect — insert External Audio Effect on a track.
+    // Body: { trackPath: string, audioChannel: number }
+    // Inserts at the end of the device chain, sets Dry/Wet to 0 and Audio To to audioChannel.
+    if (req.method === 'POST' && url.startsWith('/insert-audio-effect')) {
+      let body = ''
+      req.on('data', (chunk) => (body += chunk))
+      req.on('end', () => {
+        void (async () => {
+          try {
+            const { trackPath, audioChannel } = JSON.parse(body) as {
+              trackPath: string
+              audioChannel: number
+            }
+            const song = context.application.song
+            const m = trackPath.match(/^live_set (return_)?tracks (\d+)/)
+            if (!m) {
+              res.statusCode = 400
+              res.end(JSON.stringify({ error: 'invalid trackPath' }))
+              return
+            }
+            const isReturn = !!m[1]
+            const idx = Number(m[2])
+            const track = isReturn ? song.returnTracks[idx] : song.tracks[idx]
+            if (!track) {
+              res.statusCode = 404
+              res.end(JSON.stringify({ error: 'track not found' }))
+              return
+            }
+            const insertIdx = track.devices.length
+            const device = await track.insertDevice('External Audio Effect', insertIdx)
+            for (const param of device.parameters) {
+              if (param.name === 'Dry/Wet') {
+                await param.setValue(0)
+              } else if (param.name === 'Audio To') {
+                await param.setValue(audioChannel)
+              }
+            }
+            console.log(
+              `[lily] insert-audio-effect: track ${idx}, channel=${audioChannel}, device=${device.name}`
+            )
+            res.end(JSON.stringify({ ok: true }))
+          } catch (e) {
+            res.statusCode = 500
+            res.end(JSON.stringify({ error: String(e) }))
+          }
+        })()
+      })
+      return
+    }
+
     // POST /autoname — rename tracks and session clips.
     // Body: { items: [{ path, name }] } where path is "live_set tracks N"
     // (track rename) or "live_set tracks N clip_slots M clip" (clip rename).
@@ -158,8 +208,8 @@ export function activate(activation: ActivationContext) {
       } else {
         res.statusCode = 404
         const routes = devHarness
-          ? '/snapshot /selection /autoname /mark /dedupe /reconstruct /state'
-          : '/snapshot /selection /autoname'
+          ? '/snapshot /selection /autoname /insert-audio-effect /mark /dedupe /reconstruct /state'
+          : '/snapshot /selection /autoname /insert-audio-effect'
         res.end(JSON.stringify({ error: `try ${routes}` }))
       }
     } catch (e) {
@@ -170,7 +220,7 @@ export function activate(activation: ActivationContext) {
   server.on('error', (e) => console.log('[lily] bridge error', e))
   server.listen(BRIDGE_PORT, '127.0.0.1', () =>
     console.log(
-      `[lily] bridge on http://127.0.0.1:${BRIDGE_PORT} (/snapshot /selection /autoname${devHarness ? ' + dev: /mark /dedupe /reconstruct /state' : ''})`
+      `[lily] bridge on http://127.0.0.1:${BRIDGE_PORT} (/snapshot /selection /autoname /insert-audio-effect${devHarness ? ' + dev: /mark /dedupe /reconstruct /state' : ''})`
     )
   )
 

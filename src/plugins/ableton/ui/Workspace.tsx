@@ -12,6 +12,7 @@ import {
 import { ActivePlugin, WorkspaceProps } from 'src/types/plugins'
 import { AbletonState } from '../store'
 import { prependFlags } from '@renderer/utils/configFlags'
+import { postInsertAudioEffect } from '../bridge'
 
 // ============================================================================
 // Color utilities
@@ -396,11 +397,20 @@ function ConnectionForm({
 
   // Draft takes priority over defaultAbleton; existing connection overrides both
   // Form is keyed externally — no useEffect needed for reset
-  const [abl, setAbl] = useState<AbletonConfigurationKey>(
-    existing?.ableton ?? draft?.ableton ?? defaultAbleton ?? fallback
-  )
+  const initialAbl = existing?.ableton ?? draft?.ableton ?? defaultAbleton ?? fallback
+  const [abl, setAbl] = useState<AbletonConfigurationKey>(initialAbl)
   const [args, setArgs] = useState<Record<string, KeyArgument>>(existing?.args ?? draft?.args ?? {})
   const [newArgName, setNewArgName] = useState('')
+
+  const defaultAudioChannel = (() => {
+    const m = initialAbl.path?.match(/live_set (?:return_)?tracks (\d+)/)
+    return m ? parseInt(m[1]) : 0
+  })()
+  const [audioReactivity, setAudioReactivity] = useState({
+    enabled: !!(existing?.audio_reactivity),
+    audioChannel: existing?.audio_reactivity?.audioChannel ?? defaultAudioChannel,
+    visualEffect: (existing?.audio_reactivity?.visualEffect ?? 'waveform') as 'waveform' | 'voltage'
+  })
 
   const isParam = abl.type === 'device_parameter'
 
@@ -425,6 +435,20 @@ function ConnectionForm({
       entry.args = args
     } else {
       delete entry.args
+    }
+    if (audioReactivity.enabled) {
+      entry.audio_reactivity = {
+        audioChannel: audioReactivity.audioChannel,
+        visualEffect: audioReactivity.visualEffect
+      }
+    } else {
+      delete entry.audio_reactivity
+    }
+    // Insert device on first-time connection creation with audio reactivity enabled
+    if (audioReactivity.enabled && abl.path && !existing?.ableton) {
+      postInsertAudioEffect(abl.path, audioReactivity.audioChannel).catch((e) =>
+        console.error('[ableton] insert-audio-effect failed:', e)
+      )
     }
     onSave(entry)
   }
@@ -553,6 +577,60 @@ function ConnectionForm({
             +
           </button>
         </div>
+      </div>
+
+      {/* Audio Reactivity */}
+      <div className="flex flex-col gap-2 border border-stone-800 rounded p-2.5">
+        <div className="flex items-center gap-2">
+          <input
+            id={`audio-reactivity-${keyword}`}
+            type="checkbox"
+            checked={audioReactivity.enabled}
+            onChange={(e) => setAudioReactivity((a) => ({ ...a, enabled: e.target.checked }))}
+            className="accent-stone-400"
+          />
+          <label
+            htmlFor={`audio-reactivity-${keyword}`}
+            className="text-xs text-stone-400 uppercase tracking-wider cursor-pointer"
+          >
+            Audio Reactivity
+          </label>
+        </div>
+
+        {audioReactivity.enabled && (
+          <div className="flex gap-2">
+            <Field label="Audio Channel">
+              <input
+                type="number"
+                min={0}
+                max={15}
+                value={audioReactivity.audioChannel}
+                onChange={(e) =>
+                  setAudioReactivity((a) => ({
+                    ...a,
+                    audioChannel: Math.max(0, Math.min(15, parseInt(e.target.value) || 0))
+                  }))
+                }
+                className={`${inputCls} font-mono`}
+              />
+            </Field>
+            <Field label="Visual Effect">
+              <select
+                value={audioReactivity.visualEffect}
+                onChange={(e) =>
+                  setAudioReactivity((a) => ({
+                    ...a,
+                    visualEffect: e.target.value as 'waveform' | 'voltage'
+                  }))
+                }
+                className={inputCls}
+              >
+                <option value="waveform">waveform</option>
+                <option value="voltage">voltage</option>
+              </select>
+            </Field>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-2 pt-1">

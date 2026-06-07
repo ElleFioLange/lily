@@ -341,6 +341,18 @@ export async function postAutoname(
   return (await res.json()) as AutonameResult
 }
 
+/** Insert an External Audio Effect device on the track at trackPath, routing to audioChannel. */
+export async function postInsertAudioEffect(
+  trackPath: string,
+  audioChannel: number
+): Promise<void> {
+  const res = await fetch(`${BRIDGE_URL}/insert-audio-effect`, {
+    method: 'POST',
+    body: JSON.stringify({ trackPath, audioChannel })
+  })
+  if (!res.ok) throw new Error(`bridge /insert-audio-effect failed: ${res.status}`)
+}
+
 const SELECT_ADDRESS = '/lily/select'
 
 /**
