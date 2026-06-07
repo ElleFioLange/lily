@@ -57,3 +57,45 @@
     scrollbar-width: none;
   }
 }
+
+/* "Show in Lily" selection highlight (Ableton monitor) — an old-school
+   expanding rectangle (à la Ableton's clip-trigger flash) plus a brightness
+   pulse, both stepped for an intentionally low-framerate feel. The 350ms
+   delay lets the foreground/scroll settle before the animation draws the eye. */
+@keyframes select-pulse {
+  0% {
+    filter: brightness(2);
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+
+@keyframes select-ripple {
+  0% {
+    opacity: 1;
+    inset: 0;
+  }
+  100% {
+    opacity: 0;
+    inset: -16px;
+  }
+}
+
+@layer utilities {
+  .animate-select-pulse {
+    position: relative;
+    z-index: 10;
+    animation: select-pulse 600ms steps(5, end) 350ms;
+  }
+
+  .animate-select-pulse::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid #f5f5f4;
+    opacity: 0;
+    pointer-events: none;
+    animation: select-ripple 600ms steps(4, end) 350ms forwards;
+  }
+}

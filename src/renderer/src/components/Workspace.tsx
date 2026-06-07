@@ -47,10 +47,10 @@ function AddPlugin() {
 export default function Workspace() {
   const { active, focused } = usePluginsStore()
 
-  const focusedSurface = useMemo(() => {
-    console.log(focused, 'from workspace')
-    return Object.values(active).find(({ instanceId }) => instanceId === focused)
-  }, [active, focused])
+  const focusedSurface = useMemo(
+    () => Object.values(active).find(({ instanceId }) => instanceId === focused),
+    [active, focused]
+  )
 
   return (
     <div className="size-full flex flex-col">

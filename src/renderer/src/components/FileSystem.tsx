@@ -44,6 +44,7 @@ export default function FileSystem({
               onClick={() => setEditingName(true)}
               contentEditable={editingName}
               value={name}
+              readOnly
             />
           </li>
         ))}

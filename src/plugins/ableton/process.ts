@@ -1,7 +1,4 @@
-// import { useConfigStore } from '@renderer/stores/useConfigStore'
 import { PluginDefinition } from '@plugins/utils'
-import { ConfigurationJSON } from 'src/types/config'
-import { OSCMessage } from 'src/types/osc-messages'
 
 // TODO need to handle stuff like skeleton(() correctly
 export const keyRegex = (key) => new RegExp(`\\b${key}\\(([^\\)]*)\\)`, 'g')
@@ -11,7 +8,6 @@ const process: PluginDefinition['process'] = (_instanceId, inputs) => {
     console.log(config)
     if (config === null) throw new Error('Cannot parse input with invalid config')
     const keys = Object.entries(config)
-    const messages: OSCMessage[] = []
     keys.forEach(([key, params]) => {
       // The actual regex has single backslashes after escaping is done
       const regex = keyRegex(key)

@@ -1,210 +1,315 @@
+import { useEffect, useRef, useState } from 'react'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
-import { UIProps, ActivePlugin } from 'src/types/plugins'
+import { ActivePlugin, UIProps } from 'src/types/plugins'
 import { AbletonState } from '../store'
+import { LiveDevice, LiveTrack } from '../bridge'
+import { colorStyle } from './colors'
 
-function abletonColorToHex(color: number): string {
-  return `#${((color >>> 0) & 0xffffff).toString(16).padStart(6, '0')}`
+// Session-style monitor of the open Live Set, read from the extension bridge.
+// One column per track: name header, clips, then devices (expandable to their
+// parameters).
+//
+// Two kinds of "selected" live here, both shown as the white left border:
+//  - "Show in Lily" pushes from Live (maxPath match) — border + one-shot pulse
+//  - click-selection for the Workspace's ConnectionForm — steady border. Clicks
+//    map the bridge node's maxPath indexes onto the abletonProject objects
+//    (synthesized from the same snapshot, so indexes always line up).
+
+// shrink-0 matters: rows are flex children of a scrollable column — without it
+// they compress into slivers once a column has more content than fits.
+// NO `truncate` on the row itself (overflow:hidden would clip the highlight
+// ripple) — labels truncate via an inner span instead.
+const ROW = 'px-2 py-0.5 border-l-4 shrink-0 flex items-center gap-1 min-w-0'
+
+/** White left-border accent, shared by both selection kinds: a "Show in Lily"
+ *  push also pulses (nodeKey re-keys the animation per push); click-selection
+ *  (feeds the Workspace connection form) is the steady border alone. */
+const accent = (pushed: boolean, picked: boolean) =>
+  `${pushed || picked ? 'border-stone-100' : 'border-transparent'}${pushed ? ' animate-select-pulse' : ''}`
+
+const idx = (path: string, re: RegExp): number | null => {
+  const m = path.match(re)
+  return m ? Number(m[1]) : null
 }
 
-function ColumnHeader({
-  children,
-  onRefresh
+/** What the Workspace connection form needs from a click. */
+interface Picker {
+  track: (t: LiveTrack) => void
+  clip: (t: LiveTrack, clipId: string) => void
+  device: (t: LiveTrack, deviceId: string) => void
+  param: (t: LiveTrack, deviceId: string, paramId: string) => void
+  /** get-state ids of the currently click-selected objects, for the ring cue */
+  ids: { track: number | null; slot: number | null; device: number | null; param: number | null }
+  /** maps a bridge track to its get-state counterpart (null if M4L not connected) */
+  mapTrack: (t: LiveTrack) => AbletonTrack | null
+}
+
+function DeviceRow({
+  track,
+  device,
+  selectedPath,
+  nodeKey,
+  pick
 }: {
-  children: React.ReactNode
-  onRefresh?: () => void
+  track: LiveTrack
+  device: LiveDevice
+  selectedPath: string | null
+  nodeKey: (id: string) => string
+  pick: Picker
 }) {
+  const [open, setOpen] = useState(false)
+  const mapped = pick.mapTrack(track)
+  const deviceIdx = idx(device.id, /devices (\d+)$/)
+  const mappedDevice = deviceIdx !== null ? (mapped?.device_data?.[deviceIdx] ?? null) : null
+
   return (
-    <div className="flex items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wider text-stone-400 border-b border-stone-700 shrink-0">
-      <span>{children}</span>
-      {onRefresh && (
+    <div className="flex flex-col gap-1 shrink-0">
+      <div
+        key={nodeKey(device.id)}
+        onClick={() => pick.device(track, device.id)}
+        onDoubleClick={() => setOpen((o) => !o)}
+        className={`${ROW} ${accent(
+          device.id === selectedPath,
+          mappedDevice !== null && mappedDevice.id === pick.ids.device
+        )} bg-stone-800 text-stone-300 cursor-pointer ${open ? 'sticky top-0 z-[5]' : ''}`}
+        title={`${device.id} — click selects · double-click or caret expands`}
+      >
         <button
-          onClick={onRefresh}
-          className="text-stone-500 hover:text-stone-300 transition-colors"
-          title="Refresh"
+          onClick={(e) => {
+            e.stopPropagation()
+            setOpen((o) => !o)
+          }}
+          onDoubleClick={(e) => e.stopPropagation()}
+          className="shrink-0 w-5 -ml-1 self-stretch flex items-center justify-center text-stone-100 bg-stone-700 hover:bg-stone-600"
+          title={open ? 'Collapse parameters' : 'Expand parameters'}
         >
-          ↺
+          {open ? '▾' : '▸'}
         </button>
-      )}
+        <span className="truncate">◆ {device.name}</span>
+        <span className="ml-auto shrink-0 text-[10px] text-stone-500">
+          {device.parameters.length}
+        </span>
+      </div>
+
+      {open &&
+        device.parameters.map((p) => {
+          const paramIdx = idx(p.id, /parameters (\d+)$/)
+          const mappedParam =
+            paramIdx !== null ? (mappedDevice?.parameters?.[paramIdx] ?? null) : null
+          return (
+            <div
+              key={nodeKey(p.id)}
+              onClick={() => pick.param(track, device.id, p.id)}
+              className={`${ROW} ${accent(
+                p.id === selectedPath,
+                mappedParam !== null && mappedParam.id === pick.ids.param
+              )} ml-3 bg-stone-900 text-stone-400 cursor-pointer`}
+              title={`${p.min}–${p.max}${p.isQuantized ? ' · quantized' : ''} · default ${p.defaultValue} · ${p.id}`}
+            >
+              <span className="truncate">◇ {p.name}</span>
+            </div>
+          )
+        })}
     </div>
   )
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-stone-500">
-      {children}
-    </div>
-  )
-}
-
-function Row({
-  selected,
-  onClick,
-  children
+function TrackColumn({
+  track,
+  selectedPath,
+  selectionSeq,
+  pick
 }: {
-  selected?: boolean
-  onClick?: () => void
-  children: React.ReactNode
+  track: LiveTrack
+  selectedPath: string | null
+  selectionSeq: number
+  pick: Picker
 }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const mapped = pick.mapTrack(track)
+  const containsSelection =
+    selectedPath !== null &&
+    (track.id === selectedPath ||
+      track.clips.some((c) => c.id === selectedPath) ||
+      track.devices.some(
+        (d) => d.id === selectedPath || d.parameters.some((p) => p.id === selectedPath)
+      ))
+
+  useEffect(() => {
+    if (containsSelection) ref.current?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
+  }, [containsSelection, selectedPath, selectionSeq])
+
+  // key={`${id}:${selectionSeq}`} on the selected node remounts it per push,
+  // restarting the CSS animation even when the same node is re-selected.
+  const nodeKey = (id: string) => (id === selectedPath ? `${id}:${selectionSeq}` : id)
+
   return (
-    <div
-      onClick={onClick}
-      className={`flex items-center gap-2 px-3 py-1.5 cursor-pointer select-none ${
-        selected ? 'bg-stone-600 text-stone-100' : 'text-stone-300 hover:bg-stone-700'
-      }`}
-    >
-      {children}
+    <div ref={ref} className="flex flex-col gap-1 w-36 shrink-0 min-h-0">
+      <div
+        key={nodeKey(track.id)}
+        onClick={() => pick.track(track)}
+        className={`px-2 py-1 font-bold border-l-4 shrink-0 cursor-pointer flex items-center min-w-0 ${accent(
+          track.id === selectedPath,
+          mapped !== null && mapped.id === pick.ids.track
+        )}`}
+        style={colorStyle(track.color)}
+        title={track.id}
+      >
+        <span className="truncate">{track.name}</span>
+      </div>
+
+      <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar">
+        {track.clips.map((c) => {
+          const slotIdx = idx(c.id, /clip_slots (\d+) clip$/)
+          const mappedSlot = slotIdx !== null ? (mapped?.clip_slots_data?.[slotIdx] ?? null) : null
+          return (
+            <div
+              key={nodeKey(c.id)}
+              onClick={() => pick.clip(track, c.id)}
+              className={`${ROW} ${accent(
+                c.id === selectedPath,
+                mappedSlot !== null && mappedSlot.id === pick.ids.slot
+              )} cursor-pointer`}
+              style={colorStyle(c.color)}
+              title={`${c.kind} · ${c.id}`}
+            >
+              <span className="truncate">{c.name || '(unnamed)'}</span>
+            </div>
+          )
+        })}
+        {track.devices.map((d) => (
+          <DeviceRow
+            key={d.id}
+            track={track}
+            device={d}
+            selectedPath={selectedPath}
+            nodeKey={nodeKey}
+            pick={pick}
+          />
+        ))}
+      </div>
     </div>
   )
 }
 
 export default function Monitor({ instanceId }: UIProps) {
-  const instance = usePluginsStore((s) => s.getInstance(instanceId)) as ActivePlugin<AbletonState>
+  const { getInstance } = usePluginsStore()
+  const instance = getInstance(instanceId) as ActivePlugin<AbletonState>
 
-  const abletonProject = instance.useStore((s) => s.abletonProject) as
-    | AbletonProject
-    | Record<string, never>
-  const isLoading = instance.useStore((s) => s.isLoading)
+  // Selective subscriptions — subscribing to the whole store re-rendered this
+  // entire tree on every store write (deadly during get-state streaming).
+  const snapshot = instance.useStore((s) => s.snapshot)
+  const liveTracks = instance.useStore((s) => s.liveTracks)
+  const refreshing = instance.useStore((s) => s.refreshing)
+  const refreshError = instance.useStore((s) => s.refreshError)
+  const selection = instance.useStore((s) => s.selection)
+  const selectionSeq = instance.useStore((s) => s.selectionSeq)
+  const abletonProject = instance.useStore((s) => s.abletonProject)
   const selectedTrack = instance.useStore((s) => s.selectedTrack)
   const selectedClipSlot = instance.useStore((s) => s.selectedClipSlot)
   const selectedDevice = instance.useStore((s) => s.selectedDevice)
   const selectedParam = instance.useStore((s) => s.selectedParam)
-
-  const { setSelectedTrack, setSelectedClipSlot, setSelectedDevice, setSelectedParam, setIsLoading } =
+  // Actions are stable — no subscription needed.
+  const { refresh, setSelectedTrack, setSelectedClipSlot, setSelectedDevice, setSelectedParam } =
     instance.useStore.getState()
 
-  function refresh() {
-    setIsLoading(true)
-    window.api.osc.send('/get-state', [])
+  const selectedPath = selection?.maxPath ?? null
+
+  // --- Click-selection: bridge node → get-state object (for the Workspace) ---
+  const project = abletonProject as AbletonProject | Record<string, never>
+  const mapTrack = (t: LiveTrack): AbletonTrack | null => {
+    const i = idx(t.id, /^live_set tracks (\d+)/)
+    return i !== null ? (project.track_data_arr?.[i] ?? null) : null
   }
 
-  const tracks = (abletonProject as AbletonProject).track_data_arr ?? []
-  const isEmpty = tracks.length === 0
-  const clips = selectedTrack?.clip_slots_data?.filter((s) => s.has_clip) ?? []
-  const devices = selectedTrack?.device_data ?? []
-  const params = selectedDevice?.parameters ?? []
+  const pick: Picker = {
+    mapTrack,
+    ids: {
+      track: selectedTrack?.id ?? null,
+      slot: selectedClipSlot?.id ?? null,
+      device: selectedDevice?.id ?? null,
+      param: selectedParam?.id ?? null
+    },
+    track: (t) => {
+      const mapped = mapTrack(t)
+      if (mapped) setSelectedTrack(mapped)
+    },
+    clip: (t, clipId) => {
+      const mapped = mapTrack(t)
+      const slotIdx = idx(clipId, /clip_slots (\d+) clip$/)
+      const slot = slotIdx !== null ? mapped?.clip_slots_data?.[slotIdx] : null
+      if (mapped && slot) {
+        setSelectedTrack(mapped) // clears slot/device/param
+        setSelectedClipSlot(slot)
+      }
+    },
+    device: (t, deviceId) => {
+      const mapped = mapTrack(t)
+      const deviceIdx = idx(deviceId, /devices (\d+)$/)
+      const device = deviceIdx !== null ? mapped?.device_data?.[deviceIdx] : null
+      if (mapped && device) {
+        setSelectedTrack(mapped)
+        setSelectedDevice(device)
+      }
+    },
+    param: (t, deviceId, paramId) => {
+      const mapped = mapTrack(t)
+      const deviceIdx = idx(deviceId, /devices (\d+)$/)
+      const device = deviceIdx !== null ? mapped?.device_data?.[deviceIdx] : null
+      const paramIdx = idx(paramId, /parameters (\d+)$/)
+      const param = paramIdx !== null ? device?.parameters?.[paramIdx] : null
+      if (mapped && device && param) {
+        setSelectedTrack(mapped)
+        setSelectedDevice(device)
+        setSelectedParam(param)
+      }
+    }
+  }
 
   return (
-    <div className="flex flex-row h-full overflow-hidden text-sm font-mono bg-stone-950">
-      {/* Column 1: Tracks */}
-      <div className="flex flex-col w-52 border-r border-stone-700 shrink-0">
-        <ColumnHeader onRefresh={refresh}>
-          <span>Tracks</span>
-          {isLoading && (
-            <span className="ml-2 w-2.5 h-2.5 rounded-full border border-stone-500 border-t-transparent animate-spin inline-block" />
-          )}
-        </ColumnHeader>
-        {isLoading && isEmpty && (
-          <div className="px-3 py-4 flex items-center gap-2 text-stone-500 text-xs">
-            <span className="w-2.5 h-2.5 rounded-full border border-stone-500 border-t-transparent animate-spin shrink-0" />
-            Fetching project state…
-          </div>
+    <div className="h-full flex flex-col text-xs font-neon text-stone-100">
+      <div className="flex items-baseline gap-3 px-3 py-1.5 shrink-0">
+        <button
+          onClick={() => void refresh()}
+          disabled={refreshing}
+          className="border border-stone-600 px-2 py-0.5 hover:bg-stone-800 disabled:opacity-50"
+        >
+          {refreshing ? 'refreshing…' : 'refresh'}
+        </button>
+        {snapshot && (
+          <span className="text-stone-400 shrink-0">
+            {snapshot.tempo} bpm · {liveTracks.length} tracks
+          </span>
         )}
-        <div className="overflow-y-auto flex-1">
-          {!isLoading && isEmpty ? (
-            <div className="px-3 py-4 text-stone-500 text-xs">No project loaded</div>
-          ) : (
-            tracks.map((track) => (
-              <Row
-                key={track.id}
-                selected={selectedTrack?.id === track.id}
-                onClick={() => setSelectedTrack(track)}
-              >
-                <span
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{ backgroundColor: abletonColorToHex(track.color) }}
-                />
-                <span className="truncate">{track.name}</span>
-                {track.mute && <span className="ml-auto text-stone-500 text-xs shrink-0">M</span>}
-              </Row>
-            ))
-          )}
-        </div>
+        {selection && (
+          <span className="text-stone-400 truncate">
+            selected: {selection.trackName}
+            {selection.type === 'clip' ? ` › ${selection.name}` : ''}
+            {selection.inArrangement ? ' (arrangement)' : ''}
+          </span>
+        )}
+        {refreshError && (
+          <span className="text-rose-400 truncate" title={refreshError}>
+            bridge unreachable — is Live running with the Lily extension?
+          </span>
+        )}
       </div>
 
-      {/* Column 2: Clips + Devices */}
-      {selectedTrack && (
-        <div className="flex flex-col w-52 border-r border-stone-700 shrink-0">
-          <ColumnHeader>{selectedTrack.name}</ColumnHeader>
-          <div className="overflow-y-auto flex-1">
-            {clips.length > 0 && (
-              <>
-                <SectionLabel>Clips</SectionLabel>
-                {clips.map((slot) => {
-                  const clip = slot.clip_data
-                  if (!clip) return null
-                  return (
-                    <Row
-                      key={slot.id}
-                      selected={selectedClipSlot?.id === slot.id}
-                      onClick={() =>
-                        setSelectedClipSlot(selectedClipSlot?.id === slot.id ? null : slot)
-                      }
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                          clip.is_playing ? 'bg-green-400' : 'bg-stone-600'
-                        }`}
-                      />
-                      <span className="truncate">{clip.name || 'Untitled'}</span>
-                    </Row>
-                  )
-                })}
-              </>
-            )}
-
-            {devices.length > 0 && (
-              <>
-                <SectionLabel>Devices</SectionLabel>
-                {devices.map((device) => (
-                  <Row
-                    key={device.id}
-                    selected={selectedDevice?.id === device.id}
-                    onClick={() => setSelectedDevice(device)}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                        device.is_active ? 'bg-stone-400' : 'bg-stone-600'
-                      }`}
-                    />
-                    <span className="truncate">{device.name}</span>
-                    <span className="ml-auto text-stone-500 text-xs shrink-0">›</span>
-                  </Row>
-                ))}
-              </>
-            )}
-
-            {clips.length === 0 && devices.length === 0 && (
-              <div className="px-3 py-4 text-stone-500 text-xs">Empty track</div>
-            )}
-          </div>
+      {liveTracks.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center text-stone-500 italic">
+          {refreshing ? 'loading live set…' : 'no live set — refresh with Live open'}
         </div>
-      )}
-
-      {/* Column 3: Parameters */}
-      {selectedDevice && (
-        <div className="flex flex-col w-64 shrink-0">
-          <ColumnHeader>{selectedDevice.name}</ColumnHeader>
-          <div className="overflow-y-auto flex-1">
-            {params.length === 0 ? (
-              <div className="px-3 py-4 text-stone-500 text-xs">No parameters</div>
-            ) : (
-              params.map((param) => (
-                <div
-                  key={param.id}
-                  onClick={() => setSelectedParam(selectedParam?.id === param.id ? null : param)}
-                  className={`flex items-center justify-between px-3 py-1.5 gap-2 cursor-pointer select-none ${
-                    selectedParam?.id === param.id ? 'bg-stone-600' : 'hover:bg-stone-800'
-                  } ${param.is_enabled ? 'text-stone-300' : 'text-stone-600'}`}
-                >
-                  <span className="truncate">{param.name}</span>
-                  <span className="text-stone-400 shrink-0 text-right min-w-16">
-                    {param.display_value}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
+      ) : (
+        <div className="flex-1 min-h-0 overflow-x-auto flex gap-1 px-3 pb-2">
+          {liveTracks.map((t) => (
+            <TrackColumn
+              key={t.id}
+              track={t}
+              selectedPath={selectedPath}
+              selectionSeq={selectionSeq}
+              pick={pick}
+            />
+          ))}
         </div>
       )}
     </div>

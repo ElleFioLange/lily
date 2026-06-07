@@ -899,8 +899,10 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleInputKeyDown}
-                placeholder="Add keyword..."
-                className={`flex-1 ${inputCls}`}
+                disabled={!poiesisEntry}
+                placeholder={poiesisEntry ? 'Add keyword...' : 'Load a Poiesis plugin first…'}
+                title={poiesisEntry ? undefined : 'Keywords are written into the Poiesis config'}
+                className={`flex-1 ${inputCls} disabled:opacity-50`}
               />
               <button
                 onClick={() => setExpanded(true)}
