@@ -1,3 +1,1 @@
-export default function cleanup(instanceId: string) {
-  console.log('Clean up Ableton plugin')
-}
+export default function cleanup() {}
