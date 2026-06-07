@@ -318,6 +318,47 @@ const api = {
   },
 
   // ============================================================================
+  // Syphon API (macOS only)
+  // ============================================================================
+  syphon: {
+    listServers: (): Promise<{ name: string; appName: string; uuid: string }[]> =>
+      ipcRenderer.invoke('syphon:list-servers'),
+
+    connect: (
+      instanceId: string,
+      serverUUID: string
+    ): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('syphon:connect', instanceId, serverUUID),
+
+    disconnect: (instanceId: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('syphon:disconnect', instanceId),
+
+    onFrame: (
+      callback: (
+        _: unknown,
+        payload: { instanceId: string; buffer: ArrayBuffer; width: number; height: number }
+      ) => void
+    ) => {
+      ipcRenderer.on('syphon:frame', callback)
+    },
+
+    offFrame: (
+      callback: (
+        _: unknown,
+        payload: { instanceId: string; buffer: ArrayBuffer; width: number; height: number }
+      ) => void
+    ) => {
+      ipcRenderer.removeListener('syphon:frame', callback)
+    },
+
+    onServersChanged: (
+      callback: (servers: { name: string; appName: string; uuid: string }[]) => void
+    ) => {
+      ipcRenderer.on('syphon:servers-changed', (_, servers) => callback(servers))
+    }
+  },
+
+  // ============================================================================
   // Local LLM API (LM Studio / OpenAI-compatible)
   // ============================================================================
   llm: {

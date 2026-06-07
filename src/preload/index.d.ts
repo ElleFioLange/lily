@@ -201,6 +201,32 @@ interface LilyAPI {
       maxTokens: number
     ) => Promise<ClaudeSendMessageResult>
   }
+
+  /**
+   * Syphon API (macOS only)
+   *
+   * Methods for receiving Syphon video signals from other applications
+   */
+  syphon: {
+    listServers: () => Promise<{ name: string; appName: string; uuid: string }[]>
+    connect: (instanceId: string, serverUUID: string) => Promise<{ success: boolean }>
+    disconnect: (instanceId: string) => Promise<{ success: boolean }>
+    onFrame: (
+      callback: (
+        _: unknown,
+        payload: { instanceId: string; buffer: ArrayBuffer; width: number; height: number }
+      ) => void
+    ) => void
+    offFrame: (
+      callback: (
+        _: unknown,
+        payload: { instanceId: string; buffer: ArrayBuffer; width: number; height: number }
+      ) => void
+    ) => void
+    onServersChanged: (
+      callback: (servers: { name: string; appName: string; uuid: string }[]) => void
+    ) => void
+  }
 }
 
 declare global {
