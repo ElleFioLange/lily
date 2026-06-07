@@ -572,14 +572,13 @@ function ObjectInfo({
         <div>
           <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Parameter</p>
           <p className="text-stone-100 text-sm">{param.name}</p>
-          <p className="text-stone-500 text-xs">
-            {device ? `${device.name} · ` : ''}on {track?.name}
-          </p>
         </div>
         {keywords}
         <div className="grid grid-cols-2 gap-3 text-xs">
           {(
             [
+              ['Device', device?.name ?? '—'],
+              ['Track', track?.name ?? '—'],
               ['Value', param.display_value],
               ['Range', `${param.min} – ${param.max}`],
               ['Quantized', param.is_quantized ? 'Yes' : 'No'],
@@ -604,7 +603,6 @@ function ObjectInfo({
         <div>
           <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Clip</p>
           <p className="text-stone-100 text-sm">{clip?.name || 'Untitled'}</p>
-          <p className="text-stone-500 text-xs">on {track?.name}</p>
         </div>
         {keywords}
         <div className="flex items-center gap-2 text-xs">
@@ -619,6 +617,7 @@ function ObjectInfo({
           <div className="grid grid-cols-2 gap-3 text-xs">
             {(
               [
+                ['Track', track?.name ?? '—'],
                 ['Length', String(clip.length)],
                 ['Looping', clip.looping ? 'Yes' : 'No'],
                 ['Muted', clip.muted ? 'Yes' : 'No']
@@ -642,9 +641,6 @@ function ObjectInfo({
         <div>
           <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Device</p>
           <p className="text-stone-100 text-sm">{device.name}</p>
-          <p className="text-stone-500 text-xs">
-            {device.class_display_name} · on {track?.name}
-          </p>
         </div>
         {keywords}
         <div className="flex items-center gap-2 text-xs">
@@ -652,6 +648,19 @@ function ObjectInfo({
             className={`w-1.5 h-1.5 rounded-full ${device.is_active ? 'bg-green-400' : 'bg-stone-600'}`}
           />
           <span className="text-stone-400">{device.is_active ? 'Active' : 'Inactive'}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          {(
+            [
+              ['Class', device.class_display_name],
+              ['Track', track?.name ?? '—']
+            ] as [string, string][]
+          ).map(([label, val]) => (
+            <div key={label}>
+              <p className="text-stone-500">{label}</p>
+              <p className="text-stone-200 font-mono">{val}</p>
+            </div>
+          ))}
         </div>
         {(device.parameters?.length ?? 0) > 0 && (
           <div>
