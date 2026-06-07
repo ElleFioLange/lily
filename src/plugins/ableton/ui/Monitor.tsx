@@ -105,21 +105,21 @@ function DeviceRow({
             (mappedDevice !== null && mappedDevice.id === pick.ids.device)
           }
         />
+        <span className="truncate">{device.name}</span>
+        <span className="ml-auto shrink-0 text-[10px] text-stone-500">
+          {device.parameters.length}
+        </span>
         <button
           onClick={(e) => {
             e.stopPropagation()
             setOpen((o) => !o)
           }}
           onDoubleClick={(e) => e.stopPropagation()}
-          className="shrink-0 w-5 -ml-2 self-stretch flex items-center justify-center text-stone-100 bg-stone-700 hover:bg-stone-600"
+          className="shrink-0 w-5 -mr-2 self-stretch flex items-center justify-center text-stone-100 bg-stone-700 hover:bg-stone-600 outline-none"
           title={open ? 'Collapse parameters' : 'Expand parameters'}
         >
           {open ? '▾' : '▸'}
         </button>
-        <span className="truncate">{device.name}</span>
-        <span className="ml-auto shrink-0 text-[10px] text-stone-500">
-          {device.parameters.length}
-        </span>
       </div>
 
       {open &&
