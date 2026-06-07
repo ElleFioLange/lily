@@ -191,24 +191,23 @@ function TrackColumn({
 export default function Monitor({ instanceId }: UIProps) {
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<AbletonState>
-  const {
-    snapshot,
-    liveTracks,
-    refreshing,
-    refreshError,
-    selection,
-    selectionSeq,
-    refresh,
-    abletonProject,
-    selectedTrack,
-    selectedClipSlot,
-    selectedDevice,
-    selectedParam,
-    setSelectedTrack,
-    setSelectedClipSlot,
-    setSelectedDevice,
-    setSelectedParam
-  } = instance.useStore()
+
+  // Selective subscriptions — subscribing to the whole store re-rendered this
+  // entire tree on every store write (deadly during get-state streaming).
+  const snapshot = instance.useStore((s) => s.snapshot)
+  const liveTracks = instance.useStore((s) => s.liveTracks)
+  const refreshing = instance.useStore((s) => s.refreshing)
+  const refreshError = instance.useStore((s) => s.refreshError)
+  const selection = instance.useStore((s) => s.selection)
+  const selectionSeq = instance.useStore((s) => s.selectionSeq)
+  const abletonProject = instance.useStore((s) => s.abletonProject)
+  const selectedTrack = instance.useStore((s) => s.selectedTrack)
+  const selectedClipSlot = instance.useStore((s) => s.selectedClipSlot)
+  const selectedDevice = instance.useStore((s) => s.selectedDevice)
+  const selectedParam = instance.useStore((s) => s.selectedParam)
+  // Actions are stable — no subscription needed.
+  const { refresh, setSelectedTrack, setSelectedClipSlot, setSelectedDevice, setSelectedParam } =
+    instance.useStore.getState()
 
   const selectedPath = selection?.maxPath ?? null
 

@@ -8,24 +8,30 @@ export default function init(instanceId: string) {
   useAbletonStore.getState().setIsLoading(true)
   window.api.osc.send('/get-state', [])
 
+  // Accumulate packets in a local buffer and write the store ONCE on
+  // completion. Writing every packet into the store re-rendered every
+  // subscriber per packet (hundreds of sets per refresh) and froze the UI.
+  let stateBuffer: Record<string, string> = {}
   window.api.osc.onMessage((message) => {
     if (message.address !== '/send/state') return
 
     const payload = message.args[0] as string
     const spaceIdx = payload.indexOf(' ')
     const [msgIdx, total] = payload.slice(0, spaceIdx).split('/')
-    const data = payload.slice(spaceIdx + 1)
-
-    const { abletonProjectBuffer, setAbletonProjectBuffer, setAbletonProject } =
-      useAbletonStore.getState()
-    const newBuffer = { ...abletonProjectBuffer, [msgIdx]: data }
-    setAbletonProjectBuffer(newBuffer)
+    stateBuffer[msgIdx] = payload.slice(spaceIdx + 1)
 
     if (msgIdx === total) {
-      const chunks = Object.values(newBuffer)
-      if (chunks.length !== Number(total)) chunks.push(data)
-      setAbletonProject(JSON.parse(chunks.join(''))) // also clears isLoading
-      setAbletonProjectBuffer({})
+      const chunks = Object.values(stateBuffer)
+      stateBuffer = {}
+      if (chunks.length !== Number(total)) {
+        console.warn(`[ableton] get-state incomplete: ${chunks.length}/${total} packets`)
+      }
+      try {
+        useAbletonStore.getState().setAbletonProject(JSON.parse(chunks.join(''))) // also clears isLoading
+      } catch (e) {
+        console.error('[ableton] get-state parse failed', e)
+        useAbletonStore.getState().setIsLoading(false)
+      }
     }
   })
 
