@@ -5,18 +5,12 @@ import { PoiesisState } from '@renderer/surfaces/poiesis/store'
 import { AbletonState } from '../store'
 import { UIProps } from 'src/types/plugins'
 import { prependFlags } from '@renderer/utils/configFlags'
-import { postInsertDevices } from '../bridge'
 import jsyaml from 'js-yaml'
 
 const MODIFIER_MAP = [
-  {
-    label: '!keyword()!',
-    effect: 'Distortion',
-    trackName: '[Lily] Distortion',
-    device: 'Saturator'
-  },
-  { label: '[keyword()]', effect: 'Reverb', trackName: '[Lily] Reverb', device: 'Reverb' },
-  { label: '{keyword()}', effect: 'Delay', trackName: '[Lily] Delay', device: 'Delay' }
+  { label: '!keyword()!', effect: 'Distortion', trackName: '[Lily] Distortion' },
+  { label: '[keyword()]', effect: 'Reverb', trackName: '[Lily] Reverb' },
+  { label: '{keyword()}', effect: 'Delay', trackName: '[Lily] Delay' }
 ]
 
 export default function Options({ instanceId }: UIProps) {
@@ -79,17 +73,6 @@ export default function Options({ instanceId }: UIProps) {
         const sendIdx = snap.returnTracks.findIndex((t) => t.name.includes(trackName))
         if (sendIdx === -1) throw new Error(`Could not find return track: ${trackName}`)
         sendIndices.push(sendIdx)
-      }
-
-      // Insert effect devices onto each return track via the extension bridge
-      const deviceItems = MODIFIER_MAP.map(({ device }, i) => ({
-        returnTrackIndex: sendIndices[i],
-        deviceName: device
-      }))
-      const deviceResult = await postInsertDevices(deviceItems)
-      const failed = deviceResult.results.filter((r) => !r.ok)
-      if (failed.length) {
-        console.warn('[modifier-setup] some devices failed to insert:', failed)
       }
 
       // Write the flag to the config

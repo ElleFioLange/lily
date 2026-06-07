@@ -341,23 +341,6 @@ export async function postAutoname(
   return (await res.json()) as AutonameResult
 }
 
-export interface InsertDevicesResult {
-  inserted: number
-  results: { index: number; device: string; ok: boolean; reason?: string }[]
-}
-
-/** Insert built-in devices onto return tracks via the extension bridge. */
-export async function postInsertDevices(
-  items: { returnTrackIndex: number; deviceName: string }[]
-): Promise<InsertDevicesResult> {
-  const res = await fetch(`${BRIDGE_URL}/insert-devices`, {
-    method: 'POST',
-    body: JSON.stringify({ items })
-  })
-  if (!res.ok) throw new Error(`bridge /insert-devices failed: ${res.status}`)
-  return (await res.json()) as InsertDevicesResult
-}
-
 const SELECT_ADDRESS = '/lily/select'
 
 /**

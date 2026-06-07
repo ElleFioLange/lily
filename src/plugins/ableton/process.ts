@@ -35,13 +35,14 @@ function processPunctuationModifiers(
   const after = end < poiesis.length ? poiesis[end] : ''
 
   for (const [, { open, close, sendOffset }] of Object.entries(MODIFIER_CHARS)) {
+    let sendValue = 0
     if (before === open && after === close) {
-      const sendIndex = returnIndices[sendOffset]
-      const sendPath = `live_set tracks ${trackIndex} mixer_device sends ${sendIndex}`
-      window.api.osc.send('/control', ['send', sendPath, 0.5])
-      // Only match the innermost wrapper
-      break
+      sendValue = 0.5
     }
+    const sendIndex = returnIndices[sendOffset]
+    const sendPath = `live_set tracks ${trackIndex} mixer_device sends ${sendIndex}`
+    window.api.osc.send('/control', ['send', sendPath, sendValue])
+    // Only match the innermost wrapper
   }
 }
 

@@ -71,65 +71,6 @@ export function activate(activation: ActivationContext) {
       return
     }
 
-    // POST /insert-devices — insert built-in devices onto tracks.
-    // Body: { items: [{ returnTrackIndex, deviceName }] }
-    // Used by the punctuation modifier setup to add effects to return tracks.
-    if (req.method === 'POST' && url.startsWith('/insert-devices')) {
-      let body = ''
-      req.on('data', (chunk) => (body += chunk))
-      req.on('end', async () => {
-        try {
-          const { items } = JSON.parse(body) as {
-            items: { returnTrackIndex: number; deviceName: string }[]
-          }
-          const song = context.application.song
-          const results: { index: number; device: string; ok: boolean; reason?: string }[] = []
-
-          for (const { returnTrackIndex, deviceName } of items) {
-            const track = song.returnTracks[returnTrackIndex]
-            if (!track) {
-              results.push({
-                index: returnTrackIndex,
-                device: deviceName,
-                ok: false,
-                reason: 'no such return track'
-              })
-              continue
-            }
-            // Skip if track already has a device with this name
-            if (track.devices.some((d) => d.name === deviceName)) {
-              results.push({
-                index: returnTrackIndex,
-                device: deviceName,
-                ok: true,
-                reason: 'already present'
-              })
-              continue
-            }
-            try {
-              await track.insertDevice(deviceName, 0)
-              results.push({ index: returnTrackIndex, device: deviceName, ok: true })
-            } catch (e) {
-              results.push({
-                index: returnTrackIndex,
-                device: deviceName,
-                ok: false,
-                reason: String(e)
-              })
-            }
-          }
-
-          const inserted = results.filter((r) => r.ok && !r.reason).length
-          console.log(`[lily] insert-devices: inserted ${inserted}/${items.length} device(s)`)
-          res.end(JSON.stringify({ inserted, results }, bigintSafe, 2))
-        } catch (e) {
-          res.statusCode = 500
-          res.end(JSON.stringify({ error: String(e) }))
-        }
-      })
-      return
-    }
-
     // POST /autoname — rename tracks and session clips.
     // Body: { items: [{ path, name }] } where path is "live_set tracks N"
     // (track rename) or "live_set tracks N clip_slots M clip" (clip rename).
@@ -217,8 +158,8 @@ export function activate(activation: ActivationContext) {
       } else {
         res.statusCode = 404
         const routes = devHarness
-          ? '/snapshot /selection /autoname /insert-devices /mark /dedupe /reconstruct /state'
-          : '/snapshot /selection /autoname /insert-devices'
+          ? '/snapshot /selection /autoname /mark /dedupe /reconstruct /state'
+          : '/snapshot /selection /autoname'
         res.end(JSON.stringify({ error: `try ${routes}` }))
       }
     } catch (e) {
@@ -229,7 +170,7 @@ export function activate(activation: ActivationContext) {
   server.on('error', (e) => console.log('[lily] bridge error', e))
   server.listen(BRIDGE_PORT, '127.0.0.1', () =>
     console.log(
-      `[lily] bridge on http://127.0.0.1:${BRIDGE_PORT} (/snapshot /selection /autoname /insert-devices${devHarness ? ' + dev: /mark /dedupe /reconstruct /state' : ''})`
+      `[lily] bridge on http://127.0.0.1:${BRIDGE_PORT} (/snapshot /selection /autoname${devHarness ? ' + dev: /mark /dedupe /reconstruct /state' : ''})`
     )
   )
 

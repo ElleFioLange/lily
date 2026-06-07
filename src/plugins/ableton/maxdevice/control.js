@@ -75,21 +75,68 @@ function send(path, value) {
   obj.set('value', value)
 }
 
+function load_device_on_return(returnIndex, deviceName) {
+  var trackPath = 'live_set return_tracks ' + returnIndex
+  var t = new LiveAPI(trackPath)
+
+  // Skip if the track already has devices
+  if (t.getcount('devices') > 0) {
+    log('track already has devices, skipping: ' + trackPath)
+    return
+  }
+
+  // Select the return track so the browser loads onto it
+  var view = new LiveAPI('live_set view')
+  view.set('selected_track', 'id', parseInt(t.id))
+
+  // Search the browser for the device and load it
+  var browser = new LiveAPI('live_app browser')
+  browser.set('filter_type', 1) // Audio Effects
+  var items = browser.get('items')
+  // items is a flat array: [id, name, id, name, ...]
+  for (var j = 0; j < items.length; j += 2) {
+    if (items[j + 1] === deviceName) {
+      browser.call('load_item', j / 2)
+      log('loaded device: ' + deviceName + ' on ' + trackPath)
+      return
+    }
+  }
+  log('device not found in browser: ' + deviceName)
+}
+
 function setup_modifier_returns() {
   var names = ['[Lily] Distortion', '[Lily] Reverb', '[Lily] Delay']
+  var devices = ['Saturator', 'Reverb', 'Delay']
   var ls = new LiveAPI('live_set')
+  var returnCount = ls.getcount('return_tracks')
   var indices = []
 
   for (var i = 0; i < names.length; i++) {
-    ls.call('create_return_track')
-    var returnCount = ls.getcount('return_tracks')
-    var idx = returnCount - 1
-    var rt = new LiveAPI('live_set return_tracks ' + idx)
-    rt.set('name', names[i])
-    indices.push(idx)
-    log('created return track: ' + names[i] + ' at index ' + idx)
+    // Check if a return track with this name already exists
+    var existingIdx = -1
+    for (var r = 0; r < returnCount; r++) {
+      var existing = new LiveAPI('live_set return_tracks ' + r)
+      if (existing.get('name').toString() === names[i]) {
+        existingIdx = r
+        break
+      }
+    }
+
+    if (existingIdx >= 0) {
+      log('return track already exists: ' + names[i] + ' at index ' + existingIdx)
+      indices.push(existingIdx)
+    } else {
+      ls.call('create_return_track')
+      returnCount = ls.getcount('return_tracks')
+      var idx = returnCount - 1
+      var rt = new LiveAPI('live_set return_tracks ' + idx)
+      rt.set('name', names[i])
+      indices.push(idx)
+      log('created return track: ' + names[i] + ' at index ' + idx)
+    }
+
+    load_device_on_return(indices[i], devices[i])
   }
 
-  // Output indices as comma-separated string for the bridge to capture
   outlet(0, 'modifier_returns ' + indices.join(','))
 }
