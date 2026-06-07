@@ -178,6 +178,12 @@ function TrackColumn({
   // restarting the CSS animation even when the same node is re-selected.
   const nodeKey = (id: string) => (id === selectedPath ? `${id}:${selectionSeq}` : id)
 
+  // Ableton numbers its tracks ("1 Wavetable"); sets keep that in the name.
+  // When a name doesn't start with a digit (e.g. after autoname), prefix the
+  // 1-based track index for display.
+  const trackNumber = (idx(track.id, /^live_set tracks (\d+)/) ?? 0) + 1
+  const displayName = /^\d/.test(track.name) ? track.name : `${trackNumber} ${track.name}`
+
   return (
     <div ref={ref} className="flex flex-col gap-1 w-36 shrink-0 min-h-0">
       <div
@@ -191,7 +197,7 @@ function TrackColumn({
         title={track.id}
       >
         <Accent on={track.id === selectedPath || (mapped !== null && mapped.id === pick.ids.track)} />
-        <span className="truncate">{track.name}</span>
+        <span className="truncate">{displayName}</span>
       </div>
 
       <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar">
