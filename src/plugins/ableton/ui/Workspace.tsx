@@ -411,6 +411,7 @@ function ConnectionForm({
     audioChannel: existing?.audio_reactivity?.audioChannel ?? defaultAudioChannel,
     visualEffect: (existing?.audio_reactivity?.visualEffect ?? 'waveform') as 'waveform' | 'voltage'
   })
+  const [insertNotice, setInsertNotice] = useState<string | null>(null)
 
   const isParam = abl.type === 'device_parameter'
 
@@ -446,9 +447,9 @@ function ConnectionForm({
     }
     // Insert device on first-time connection creation with audio reactivity enabled
     if (audioReactivity.enabled && abl.path && !existing?.ableton) {
-      postInsertAudioEffect(abl.path, audioReactivity.audioChannel).catch((e) =>
-        console.error('[ableton] insert-audio-effect failed:', e)
-      )
+      postInsertAudioEffect(abl.path, audioReactivity.audioChannel)
+        .then(({ notice }) => { if (notice) setInsertNotice(notice) })
+        .catch((e) => console.error('[ableton] insert-audio-effect failed:', e))
     }
     onSave(entry)
   }
@@ -632,6 +633,19 @@ function ConnectionForm({
           </div>
         )}
       </div>
+
+      {insertNotice && (
+        <div className="flex items-start gap-2 border border-amber-800/50 bg-amber-950/30 rounded p-2.5">
+          <span className="text-amber-500 text-xs shrink-0 mt-0.5">!</span>
+          <p className="text-amber-300 text-xs leading-relaxed">{insertNotice}</p>
+          <button
+            onClick={() => setInsertNotice(null)}
+            className="text-amber-700 hover:text-amber-500 text-sm leading-none shrink-0 ml-auto"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-col gap-2 pt-1">
         <button

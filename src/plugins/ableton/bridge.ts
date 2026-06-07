@@ -341,16 +341,18 @@ export async function postAutoname(
   return (await res.json()) as AutonameResult
 }
 
-/** Insert an External Audio Effect device on the track at trackPath, routing to audioChannel. */
+/** Insert an External Audio Effect device on the track at trackPath. Returns a notice string if
+ *  any manual follow-up is required in Ableton. */
 export async function postInsertAudioEffect(
   trackPath: string,
   audioChannel: number
-): Promise<void> {
+): Promise<{ notice?: string }> {
   const res = await fetch(`${BRIDGE_URL}/insert-audio-effect`, {
     method: 'POST',
     body: JSON.stringify({ trackPath, audioChannel })
   })
   if (!res.ok) throw new Error(`bridge /insert-audio-effect failed: ${res.status}`)
+  return (await res.json()) as { notice?: string }
 }
 
 const SELECT_ADDRESS = '/lily/select'

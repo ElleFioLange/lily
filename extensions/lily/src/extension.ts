@@ -89,6 +89,7 @@ export function activate(activation: ActivationContext) {
             if (!m) {
               res.statusCode = 400
               res.end(JSON.stringify({ error: 'invalid trackPath' }))
+              console.log('invalid track path')
               return
             }
             const isReturn = !!m[1]
@@ -97,6 +98,7 @@ export function activate(activation: ActivationContext) {
             if (!track) {
               res.statusCode = 404
               res.end(JSON.stringify({ error: 'track not found' }))
+              console.log('track not found')
               return
             }
             const insertIdx = track.devices.length
@@ -104,14 +106,17 @@ export function activate(activation: ActivationContext) {
             for (const param of device.parameters) {
               if (param.name === 'Dry/Wet') {
                 await param.setValue(0)
-              } else if (param.name === 'Audio To') {
-                await param.setValue(audioChannel)
               }
             }
             console.log(
               `[lily] insert-audio-effect: track ${idx}, channel=${audioChannel}, device=${device.name}`
             )
-            res.end(JSON.stringify({ ok: true }))
+            res.end(
+              JSON.stringify({
+                ok: true,
+                notice: `External Audio Effect inserted. Please manually set "Audio To" to channel ${audioChannel + 1} in Ableton.`
+              })
+            )
           } catch (e) {
             res.statusCode = 500
             res.end(JSON.stringify({ error: String(e) }))
