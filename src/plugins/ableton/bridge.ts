@@ -312,9 +312,11 @@ export interface AutonameResult {
 export async function postAutoname(
   items: { path: string; name: string }[]
 ): Promise<AutonameResult> {
+  // No content-type header on purpose: text/plain keeps this a "simple"
+  // request so the browser skips the CORS preflight (the bridge parses the
+  // body as JSON regardless).
   const res = await fetch(`${BRIDGE_URL}/autoname`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ items })
   })
   if (!res.ok) throw new Error(`bridge /autoname failed: ${res.status}`)

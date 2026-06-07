@@ -62,6 +62,15 @@ export function activate(activation: ActivationContext) {
     res.setHeader("access-control-allow-origin", "*"); // Lily renderer fetches from a file:// origin
     const url = req.url ?? "/";
 
+    // CORS preflight (Lily's renderer fetches cross-origin).
+    if (req.method === "OPTIONS") {
+      res.statusCode = 204;
+      res.setHeader("access-control-allow-methods", "GET, POST, OPTIONS");
+      res.setHeader("access-control-allow-headers", "content-type");
+      res.end();
+      return;
+    }
+
     // POST /autoname — rename tracks and session clips.
     // Body: { items: [{ path, name }] } where path is "live_set tracks N"
     // (track rename) or "live_set tracks N clip_slots M clip" (clip rename).
