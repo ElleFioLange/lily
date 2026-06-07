@@ -153,6 +153,7 @@ export interface LiveSlot {
 export interface LiveTrack {
   id: string
   name: string
+  kind: TrackKind
   /** Best-effort: the SDK exposes no track color — derived from the first clip */
   color: string
   /** ALL session slots, empty ones included — display order = slot index */
@@ -200,14 +201,19 @@ const toLiveTrack = (t: SnapshotTrack): LiveTrack => {
   return {
     id: t.maxPath,
     name: t.name,
+    kind: t.kind,
     color: slots.find((s) => s.clip)?.clip?.color ?? FALLBACK_COLOR,
     slots,
     devices: t.devices.map(toLiveDevice)
   }
 }
 
-/** Regular tracks only — what the monitor shows. */
-export const toLiveTracks = (snap: ProjectSnapshot): LiveTrack[] => snap.tracks.map(toLiveTrack)
+/** All tracks — regular, return, and master. */
+export const toLiveTracks = (snap: ProjectSnapshot): LiveTrack[] => [
+  ...snap.tracks.map(toLiveTrack),
+  ...snap.returnTracks.map(toLiveTrack),
+  toLiveTrack(snap.masterTrack)
+]
 
 // ============================================================================
 // get-state-shape synthesis

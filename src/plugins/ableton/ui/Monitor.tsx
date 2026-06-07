@@ -195,7 +195,9 @@ function TrackColumn({
         style={colorStyle(track.color)}
         title={`${track.id} · shift+click to connect keyword to track clips`}
       >
-        <Accent on={track.id === selectedPath || (mapped !== null && mapped.id === pick.ids.track)} />
+        <Accent
+          on={track.id === selectedPath || (mapped !== null && mapped.id === pick.ids.track)}
+        />
         <span className="truncate">{track.name}</span>
       </div>
 
@@ -312,9 +314,7 @@ export default function Monitor({ instanceId }: UIProps) {
         .map((r) => `${r.path} — ${r.reason}`)
         .join('\n')
       setAutonameDetail(reasons || null)
-      setAutonameStatus(
-        `named ${result.renamed}${totalSkipped ? ` · ${totalSkipped} no-op` : ''}`
-      )
+      setAutonameStatus(`named ${result.renamed}${totalSkipped ? ` · ${totalSkipped} no-op` : ''}`)
       void refresh()
     } catch {
       setAutonameDetail(null)
@@ -459,7 +459,8 @@ export default function Monitor({ instanceId }: UIProps) {
         )}
         {snapshot && (
           <span className="text-stone-400 shrink-0">
-            {snapshot.tempo} bpm · {liveTracks.length} tracks
+            {snapshot.tempo} bpm · {snapshot.tracks.length} tracks · {snapshot.returnTracks.length}{' '}
+            returns
           </span>
         )}
         {selection && (
