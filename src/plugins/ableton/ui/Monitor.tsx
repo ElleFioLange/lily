@@ -17,13 +17,19 @@ import { colorStyle } from './colors'
 
 // shrink-0 matters: rows are flex children of a scrollable column — without it
 // they compress into slivers once a column has more content than fits.
-const ROW = 'px-2 py-0.5 border-l-4 shrink-0 flex items-center gap-1 min-w-0'
+const ROW = 'relative px-2 py-0.5 shrink-0 flex items-center gap-1 min-w-0'
 
-/** White left-border accent, shared by both selection kinds: a "Show in Lily"
- *  push also pulses (nodeKey re-keys the animation per push); click-selection
- *  (feeds the Workspace connection form) is the steady border alone. */
-const accent = (pushed: boolean, picked: boolean) =>
-  `${pushed || picked ? 'border-stone-100' : 'border-transparent'}${pushed ? ' animate-select-pulse' : ''}`
+/** Selection accent: an overlaid left bar — absolute, so unselected rows sit
+ *  flush with no reserved border gap. A "Show in Lily" push also pulses the
+ *  row (nodeKey re-keys the animation per push); click-selection (feeds the
+ *  Workspace connection form) shows the steady bar alone. */
+const pulse = (pushed: boolean) => (pushed ? 'animate-select-pulse' : '')
+
+function Accent({ on }: { on: boolean }) {
+  return on ? (
+    <span className="absolute inset-y-0 left-0 w-1 bg-stone-100 pointer-events-none" />
+  ) : null
+}
 
 const idx = (path: string, re: RegExp): number | null => {
   const m = path.match(re)
@@ -67,24 +73,27 @@ function DeviceRow({
         data-maxpath={device.id}
         onClick={() => pick.device(track, device.id)}
         onDoubleClick={() => setOpen((o) => !o)}
-        className={`${ROW} ${accent(
-          device.id === selectedPath,
-          mappedDevice !== null && mappedDevice.id === pick.ids.device
-        )} bg-stone-800 text-stone-300 cursor-pointer ${open ? 'sticky top-0 z-[5]' : ''}`}
+        className={`${ROW} ${pulse(device.id === selectedPath)} bg-stone-800 text-stone-300 cursor-pointer ${open ? 'sticky top-0 z-[5]' : ''}`}
         title={`${device.id} — click selects · double-click or caret expands`}
       >
+        <Accent
+          on={
+            device.id === selectedPath ||
+            (mappedDevice !== null && mappedDevice.id === pick.ids.device)
+          }
+        />
         <button
           onClick={(e) => {
             e.stopPropagation()
             setOpen((o) => !o)
           }}
           onDoubleClick={(e) => e.stopPropagation()}
-          className="shrink-0 w-5 -ml-1 self-stretch flex items-center justify-center text-stone-100 bg-stone-700 hover:bg-stone-600"
+          className="shrink-0 w-5 -ml-2 self-stretch flex items-center justify-center text-stone-100 bg-stone-700 hover:bg-stone-600"
           title={open ? 'Collapse parameters' : 'Expand parameters'}
         >
           {open ? '▾' : '▸'}
         </button>
-        <span className="truncate">◆ {device.name}</span>
+        <span className="truncate">{device.name}</span>
         <span className="ml-auto shrink-0 text-[10px] text-stone-500">
           {device.parameters.length}
         </span>
@@ -100,13 +109,16 @@ function DeviceRow({
               key={nodeKey(p.id)}
               data-maxpath={p.id}
               onClick={() => pick.param(track, device.id, p.id)}
-              className={`${ROW} ${accent(
-                p.id === selectedPath,
-                mappedParam !== null && mappedParam.id === pick.ids.param
-              )} ml-3 bg-stone-900 text-stone-400 cursor-pointer`}
+              className={`${ROW} ${pulse(p.id === selectedPath)} ml-3 bg-stone-900 text-stone-400 cursor-pointer`}
               title={`${p.min}–${p.max}${p.isQuantized ? ' · quantized' : ''} · default ${p.defaultValue} · ${p.id}`}
             >
-              <span className="truncate">◇ {p.name}</span>
+              <Accent
+                on={
+                  p.id === selectedPath ||
+                  (mappedParam !== null && mappedParam.id === pick.ids.param)
+                }
+              />
+              <span className="truncate">{p.name}</span>
             </div>
           )
         })}
@@ -149,13 +161,13 @@ function TrackColumn({
         key={nodeKey(track.id)}
         data-maxpath={track.id}
         onClick={() => pick.track(track)}
-        className={`px-2 py-1 font-bold border-l-4 shrink-0 cursor-pointer flex items-center min-w-0 ${accent(
-          track.id === selectedPath,
-          mapped !== null && mapped.id === pick.ids.track
+        className={`relative px-2 py-1 font-bold shrink-0 cursor-pointer flex items-center min-w-0 ${pulse(
+          track.id === selectedPath
         )}`}
         style={colorStyle(track.color)}
         title={track.id}
       >
+        <Accent on={track.id === selectedPath || (mapped !== null && mapped.id === pick.ids.track)} />
         <span className="truncate">{track.name}</span>
       </div>
 
@@ -168,13 +180,16 @@ function TrackColumn({
               key={nodeKey(c.id)}
               data-maxpath={c.id}
               onClick={() => pick.clip(track, c.id)}
-              className={`${ROW} ${accent(
-                c.id === selectedPath,
-                mappedSlot !== null && mappedSlot.id === pick.ids.slot
-              )} cursor-pointer`}
+              className={`${ROW} ${pulse(c.id === selectedPath)} cursor-pointer`}
               style={colorStyle(c.color)}
               title={`${c.kind} · ${c.id}`}
             >
+              <Accent
+                on={
+                  c.id === selectedPath ||
+                  (mappedSlot !== null && mappedSlot.id === pick.ids.slot)
+                }
+              />
               <span className="truncate">{c.name || '(unnamed)'}</span>
             </div>
           )
