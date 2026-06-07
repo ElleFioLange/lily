@@ -437,13 +437,14 @@ export default function Monitor({ instanceId }: UIProps) {
         <button
           onClick={() => void refresh()}
           disabled={refreshing}
-          className="border border-stone-600 px-2 py-0.5 hover:bg-stone-800 disabled:opacity-50"
+          className="border border-stone-600 px-2 py-0.5 hover:bg-stone-800 disabled:opacity-50 outline-none flex items-center gap-1.5"
         >
-          {refreshing ? 'refreshing…' : 'refresh'}
+          <span className={`inline-block ${refreshing ? 'animate-spin' : ''}`}>↻</span>
+          refresh
         </button>
         <button
           onClick={() => void handleAutoname()}
-          className="border border-stone-600 px-2 py-0.5 hover:bg-stone-800"
+          className="border border-stone-600 px-2 py-0.5 hover:bg-stone-800 outline-none"
           title="Name clips in Live after the config's clip-connected keywords"
         >
           autoname
