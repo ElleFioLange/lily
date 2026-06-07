@@ -83,19 +83,25 @@
 }
 
 @layer utilities {
+  /* Brightness pulse on the row itself (clip-safe). */
   .animate-select-pulse {
-    position: relative;
-    z-index: 10;
     animation: select-pulse 600ms steps(5, end) 350ms;
   }
 
-  .animate-select-pulse::after {
+  /* The expanding rectangle is drawn on a fixed-position overlay measured off
+     the target row, so ancestor overflow/scroll containers can't clip it. */
+  .select-ripple-overlay {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .select-ripple-overlay::after {
     content: '';
     position: absolute;
     inset: 0;
     border: 2px solid #f5f5f4;
     opacity: 0;
-    pointer-events: none;
     animation: select-ripple 600ms steps(4, end) 350ms forwards;
   }
 }
