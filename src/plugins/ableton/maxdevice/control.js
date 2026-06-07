@@ -86,7 +86,7 @@ function setup_modifier_returns() {
     var existingIdx = -1
     for (var r = 0; r < returnCount; r++) {
       var existing = new LiveAPI('live_set return_tracks ' + r)
-      if (existing.get('name').toString() === names[i]) {
+      if (existing.get('name').toString().includes(names[i])) {
         existingIdx = r
         break
       }
