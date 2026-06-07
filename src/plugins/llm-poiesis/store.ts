@@ -1,6 +1,6 @@
 import parseConfig from '@renderer/utils/parseConfig'
 import jsyaml from 'js-yaml'
-import { ConfigurationJSON } from 'src/types/config'
+import { ConfigFlags, ConfigurationJSON } from 'src/types/config'
 import { PluginState } from 'src/types/plugins'
 import { create } from 'zustand'
 
@@ -51,6 +51,7 @@ export interface LLMPoiesisState extends PluginState {
   parsedConfig: ConfigurationJSON | null
   configPath: string | null
   configName: string | null
+  configFlags: ConfigFlags
   isValid: boolean
   error: string | null
   setConfig: (rawConfig: string) => void
@@ -115,15 +116,16 @@ export const createLLMPoiesisStore = (instanceId: string) => {
     parsedConfig: {},
     configPath: null,
     configName: 'new-config',
+    configFlags: {},
     isValid: true,
     error: null,
 
     setConfig: (config: string) => {
       try {
         jsyaml.load(config)
-        const { parsedConfig, err } = parseConfig(config)
+        const { parsedConfig, flags, err } = parseConfig(config)
         if (err) throw err
-        set({ config, parsedConfig, isValid: true, error: null })
+        set({ config, parsedConfig, configFlags: flags, isValid: true, error: null })
       } catch (err) {
         set({
           config,
@@ -168,7 +170,11 @@ export const createLLMPoiesisStore = (instanceId: string) => {
       try {
         const result = await window.api.config.saveAs(state.config)
         if (result.success) {
-          const name = result.path?.split('/').at(-1)?.replace(/\.[^.]+$/, '') ?? null
+          const name =
+            result.path
+              ?.split('/')
+              .at(-1)
+              ?.replace(/\.[^.]+$/, '') ?? null
           set({ configPath: result.path ?? null, configName: name, error: null })
         } else if (result.error && result.error !== 'No file selected') {
           set({ error: result.error })
@@ -182,12 +188,17 @@ export const createLLMPoiesisStore = (instanceId: string) => {
       try {
         const result = await window.api.config.open()
         if (!result.success || !result.content || !result.path) return
-        const name = result.path.split('/').at(-1)?.replace(/\.[^.]+$/, '') ?? null
-        const { parsedConfig, err } = parseConfig(result.content)
+        const name =
+          result.path
+            .split('/')
+            .at(-1)
+            ?.replace(/\.[^.]+$/, '') ?? null
+        const { parsedConfig, flags, err } = parseConfig(result.content)
         if (err) throw err
         set({
           config: result.content,
           parsedConfig,
+          configFlags: flags,
           configPath: result.path,
           configName: name,
           isValid: true,
@@ -205,6 +216,7 @@ export const createLLMPoiesisStore = (instanceId: string) => {
       set({
         config: '',
         parsedConfig: {},
+        configFlags: {},
         configPath: null,
         configName: 'new-config',
         isValid: true,

@@ -1,5 +1,5 @@
 import { FunctionComponent, HTMLProps } from 'react'
-import { ConfigurationJSON } from './config'
+import { ConfigFlags, ConfigurationJSON } from './config'
 import { StoreApi, UseBoundStore } from 'zustand'
 
 // TODO Force returning an OffscreenCanvas for the renderer and implement web workers for parallelization and performance gains
@@ -33,7 +33,10 @@ type PluginBase = {
 
   // Primary functionality
   init: (instanceId: string) => void
-  process: (instanceId: string, inputs: { poiesis: string; config: ConfigurationJSON }[]) => void
+  process: (
+    instanceId: string,
+    inputs: { poiesis: string; config: ConfigurationJSON; flags?: ConfigFlags }[]
+  ) => void
   cleanup: (instanceId: string) => void
 
   // UI Elements

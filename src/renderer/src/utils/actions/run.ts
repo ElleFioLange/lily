@@ -19,10 +19,10 @@ export default function run() {
   })
 
   if (poiesisPlugins.length) {
-    const { poiesis, parsedConfig } = poiesisPlugins[0].useStore.getState()
+    const { poiesis, parsedConfig, configFlags } = poiesisPlugins[0].useStore.getState()
     for (const plugin of otherPlugins) {
       console.log('running process of ' + plugin.manifest.name)
-      plugin.process(plugin.instanceId, [{ poiesis, config: parsedConfig }])
+      plugin.process(plugin.instanceId, [{ poiesis, config: parsedConfig, flags: configFlags }])
     }
   } else {
     for (const plugin of otherPlugins) {

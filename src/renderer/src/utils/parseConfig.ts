@@ -1,5 +1,6 @@
 import * as jsyaml from 'js-yaml'
-import { ConfigurationJSON, ConfigurationKey } from 'src/types/config'
+import { ConfigFlags, ConfigurationJSON, ConfigurationKey } from 'src/types/config'
+import { extractFlags } from './configFlags'
 
 export function validateConfig(suspect: any) {
   const entries = Object.entries(suspect)
@@ -154,16 +155,18 @@ export function validateConfig(suspect: any) {
 
 export default function parseConfig(config: string): {
   parsedConfig: ConfigurationJSON
+  flags: ConfigFlags
   err?: Error
 } {
   try {
+    const flags = extractFlags(config)
     const parsedConfig = jsyaml.load(config)
 
     validateConfig(parsedConfig)
 
-    return { parsedConfig: parsedConfig as ConfigurationJSON }
+    return { parsedConfig: parsedConfig as ConfigurationJSON, flags }
   } catch (err) {
     console.error(err)
-    return { parsedConfig: null, err: err as Error }
+    return { parsedConfig: null, flags: {}, err: err as Error }
   }
 }

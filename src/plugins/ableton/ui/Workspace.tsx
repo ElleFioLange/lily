@@ -11,6 +11,7 @@ import {
 } from 'src/types/config'
 import { ActivePlugin, WorkspaceProps } from 'src/types/plugins'
 import { AbletonState } from '../store'
+import { prependFlags } from '@renderer/utils/configFlags'
 
 // ============================================================================
 // Color utilities
@@ -172,7 +173,8 @@ function KeywordPill({
   selected: boolean
   onClick: () => void
 }) {
-  const track = keyConfig?.ableton && project ? findTrackForConfig(keyConfig.ableton, project) : null
+  const track =
+    keyConfig?.ableton && project ? findTrackForConfig(keyConfig.ableton, project) : null
   const isConnected = !!keyConfig?.ableton
   const trackColor = track?.color ?? null
 
@@ -397,9 +399,7 @@ function ConnectionForm({
   const [abl, setAbl] = useState<AbletonConfigurationKey>(
     existing?.ableton ?? draft?.ableton ?? defaultAbleton ?? fallback
   )
-  const [args, setArgs] = useState<Record<string, KeyArgument>>(
-    existing?.args ?? draft?.args ?? {}
-  )
+  const [args, setArgs] = useState<Record<string, KeyArgument>>(existing?.args ?? draft?.args ?? {})
   const [newArgName, setNewArgName] = useState('')
 
   const isParam = abl.type === 'device_parameter'
@@ -839,7 +839,9 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
   }
 
   function writeConfig(updated: ConfigurationJSON) {
-    poiesisEntry!.useStore.getState().setConfig(jsyaml.dump(updated, { indent: 2, lineWidth: -1 }))
+    const flags = poiesisEntry!.useStore.getState().configFlags
+    const yaml = jsyaml.dump(updated, { indent: 2, lineWidth: -1 })
+    poiesisEntry!.useStore.getState().setConfig(prependFlags(yaml, flags))
   }
 
   function handleSaveConnection(entry: ConfigurationKey) {
@@ -979,7 +981,10 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
               existing={parsedConfig?.[selectedKeyword!]}
               defaultAbleton={defaultAbleton}
               draft={connectionDraft}
-              onSave={(entry) => { setConnectionDraft(null); handleSaveConnection(entry) }}
+              onSave={(entry) => {
+                setConnectionDraft(null)
+                handleSaveConnection(entry)
+              }}
               onRemove={handleRemoveConnection}
             />
           ) : (

@@ -38,6 +38,10 @@ function list() {
     device(action, path)
   } else if (type === 'device_parameter') {
     set_param(path, value)
+  } else if (type === 'send') {
+    send(action, path)
+  } else if (type === 'setup_modifier_returns') {
+    setup_modifier_returns()
   } else {
     log('unknown control type: ' + type)
   }
@@ -64,4 +68,28 @@ function device(action, path) {
 function device_parameter(action, path, value) {
   var obj = new LiveAPI(path)
   if (action === 'value') obj.set('value', value)
+}
+
+function send(path, value) {
+  var obj = new LiveAPI(path)
+  obj.set('value', value)
+}
+
+function setup_modifier_returns() {
+  var names = ['[Lily] Distortion', '[Lily] Reverb', '[Lily] Delay']
+  var ls = new LiveAPI('live_set')
+  var indices = []
+
+  for (var i = 0; i < names.length; i++) {
+    ls.call('create_return_track')
+    var returnCount = ls.getcount('return_tracks')
+    var idx = returnCount - 1
+    var rt = new LiveAPI('live_set return_tracks ' + idx)
+    rt.set('name', names[i])
+    indices.push(idx)
+    log('created return track: ' + names[i] + ' at index ' + idx)
+  }
+
+  // Output indices as comma-separated string for the bridge to capture
+  outlet(0, 'modifier_returns ' + indices.join(','))
 }

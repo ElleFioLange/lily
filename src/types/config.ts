@@ -42,3 +42,5 @@ export type ConfigurationKey = {
 export type ConfigurationJSON = {
   [keyword: string]: ConfigurationKey
 } | null
+
+export type ConfigFlags = Record<string, string>
