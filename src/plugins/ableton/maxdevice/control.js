@@ -37,7 +37,7 @@ function list() {
   } else if (type === 'device') {
     device(action, path)
   } else if (type === 'device_parameter') {
-    set_param(path, value)
+    device_parameter(action, path, value)
   } else if (type === 'send') {
     send(action, path)
   } else if (type === 'setup_modifier_returns') {
