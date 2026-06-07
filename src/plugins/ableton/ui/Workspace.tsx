@@ -1,4 +1,5 @@
 import jsyaml from 'js-yaml'
+import { resolveConnectionPaths } from '../autoname'
 import { useEffect, useMemo, useState } from 'react'
 import type { PoiesisState } from '@renderer/surfaces/poiesis/store'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
@@ -825,6 +826,30 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
   const hasSelection = !!(selectedTrack || selectedDevice || selectedParam || selectedClipSlot)
   const showForm = !!(selectedKeyword && hasSelection)
 
+  // Keywords whose connection resolves to (or under) the selected object —
+  // shown as pills in the object-info pane.
+  const selectedLivePath =
+    project && selectedTrack
+      ? generateLivePath(project, selectedTrack, selectedClipSlot, selectedDevice, selectedParam)
+      : null
+  const assignedKeywords = useMemo(() => {
+    if (!selectedLivePath || !parsedConfig) return []
+    const out: { keyword: string; label: string }[] = []
+    for (const [kw, entry] of Object.entries(parsedConfig)) {
+      const seen = new Set<string>()
+      for (const { path, preset } of resolveConnectionPaths(entry)) {
+        if (path === selectedLivePath || path.startsWith(selectedLivePath + ' ')) {
+          const label = preset ? `${kw}(${preset})` : kw
+          if (!seen.has(label)) {
+            seen.add(label)
+            out.push({ keyword: kw, label })
+          }
+        }
+      }
+    }
+    return out
+  }, [selectedLivePath, parsedConfig])
+
   const defaultAbleton = project
     ? defaultsForSelection(project, selectedTrack, selectedClipSlot, selectedDevice, selectedParam)
     : null
@@ -967,6 +992,20 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
                   : 'Object'}
         </ColumnHeader>
         <div className="flex-1 overflow-y-auto">
+          {assignedKeywords.length > 0 && (
+            <div className="px-4 pt-3 flex flex-wrap gap-1.5">
+              {assignedKeywords.map(({ keyword, label }) => (
+                <KeywordPill
+                  key={label}
+                  keyword={label}
+                  keyConfig={parsedConfig?.[keyword]}
+                  project={project}
+                  selected={selectedKeyword === keyword}
+                  onClick={() => setSelectedKeyword(keyword)}
+                />
+              ))}
+            </div>
+          )}
           <ObjectInfo
             track={selectedTrack}
             clipSlot={selectedClipSlot}

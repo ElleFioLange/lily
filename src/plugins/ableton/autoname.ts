@@ -1,4 +1,4 @@
-import type { ConfigurationJSON } from 'src/types/config'
+import type { ConfigurationJSON, ConfigurationKey } from 'src/types/config'
 
 /**
  * Derive rename targets from the Poiesis config so Live's names mirror the
@@ -27,6 +27,51 @@ export interface AutonameDerivation {
 }
 
 type ArgValue = number | boolean | string | undefined
+
+export interface ResolvedConnectionPath {
+  path: string
+  /** set when the path was resolved via an ableton preset value */
+  preset?: string
+}
+
+/**
+ * All concrete Live paths a connection can resolve to: the all-defaults path
+ * plus one per ableton preset (other args at defaults). Unresolvable
+ * combinations (missing ableton values) are omitted.
+ */
+export function resolveConnectionPaths(entry: ConfigurationKey): ResolvedConnectionPath[] {
+  const ableton = entry.ableton
+  if (!ableton) return []
+
+  const pathArgs = Object.entries(entry.args ?? {}).filter(
+    ([, a]) => a.ableton?.acts_on === 'path'
+  )
+
+  const resolve = (values: Record<string, ArgValue>): string | null => {
+    let path = ableton.path
+    for (const [arg] of pathArgs) {
+      const value = values[arg]
+      if (value === undefined) return null
+      path = path.replace('_' + arg, String(value))
+    }
+    return path
+  }
+
+  const defaults: Record<string, ArgValue> = {}
+  for (const [arg, a] of pathArgs) defaults[arg] = a.default_value?.ableton
+
+  const out: ResolvedConnectionPath[] = []
+  const base = resolve(defaults)
+  if (base) out.push({ path: base })
+  for (const [arg, a] of pathArgs) {
+    for (const [presetName, preset] of Object.entries(a.presets ?? {})) {
+      if (preset.ableton === undefined) continue
+      const presetPath = resolve({ ...defaults, [arg]: preset.ableton })
+      if (presetPath) out.push({ path: presetPath, preset: presetName })
+    }
+  }
+  return out
+}
 
 export function deriveAutonameItems(config: ConfigurationJSON): AutonameDerivation {
   const items: AutonameItem[] = []
