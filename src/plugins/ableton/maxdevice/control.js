@@ -75,38 +75,8 @@ function send(path, value) {
   obj.set('value', value)
 }
 
-function load_device_on_return(returnIndex, deviceName) {
-  var trackPath = 'live_set return_tracks ' + returnIndex
-  var t = new LiveAPI(trackPath)
-
-  // Skip if the track already has devices
-  if (t.getcount('devices') > 0) {
-    log('track already has devices, skipping: ' + trackPath)
-    return
-  }
-
-  // Select the return track so the browser loads onto it
-  var view = new LiveAPI('live_set view')
-  view.set('selected_track', 'id', parseInt(t.id))
-
-  // Search the browser for the device and load it
-  var browser = new LiveAPI('live_app browser')
-  browser.set('filter_type', 1) // Audio Effects
-  var items = browser.get('items')
-  // items is a flat array: [id, name, id, name, ...]
-  for (var j = 0; j < items.length; j += 2) {
-    if (items[j + 1] === deviceName) {
-      browser.call('load_item', j / 2)
-      log('loaded device: ' + deviceName + ' on ' + trackPath)
-      return
-    }
-  }
-  log('device not found in browser: ' + deviceName)
-}
-
 function setup_modifier_returns() {
-  var names = ['[Lily] Distortion', '[Lily] Reverb', '[Lily] Delay']
-  var devices = ['Saturator', 'Reverb', 'Delay']
+  var names = ['Lily - !!', 'Lily - []', 'Lily - {}']
   var ls = new LiveAPI('live_set')
   var returnCount = ls.getcount('return_tracks')
   var indices = []
@@ -134,8 +104,6 @@ function setup_modifier_returns() {
       indices.push(idx)
       log('created return track: ' + names[i] + ' at index ' + idx)
     }
-
-    load_device_on_return(indices[i], devices[i])
   }
 
   outlet(0, 'modifier_returns ' + indices.join(','))

@@ -8,9 +8,9 @@ import { prependFlags } from '@renderer/utils/configFlags'
 import jsyaml from 'js-yaml'
 
 const MODIFIER_MAP = [
-  { label: '!keyword()!', effect: 'Distortion', trackName: '[Lily] Distortion' },
-  { label: '[keyword()]', effect: 'Reverb', trackName: '[Lily] Reverb' },
-  { label: '{keyword()}', effect: 'Delay', trackName: '[Lily] Delay' }
+  { label: '!keyword()!', trackName: 'Lily - !!' },
+  { label: '[keyword()]', trackName: 'Lily - []' },
+  { label: '{keyword()}', trackName: 'Lily - {}' }
 ]
 
 export default function Options({ instanceId }: UIProps) {
@@ -46,7 +46,7 @@ export default function Options({ instanceId }: UIProps) {
   // Check if return tracks still exist in snapshot
   const returnTracksValid = useMemo(() => {
     if (!returnIndices || !snapshot) return false
-    const returnTracks = snapshot.returnTracks?.filter((t) => t.name.startsWith('[Lily]'))
+    const returnTracks = snapshot.returnTracks?.filter((t) => t.name.startsWith('Lily - '))
     return returnTracks && returnTracks.length >= 3
   }, [returnIndices, snapshot])
 
@@ -98,10 +98,10 @@ export default function Options({ instanceId }: UIProps) {
       </h3>
 
       <div className="flex flex-col gap-2 text-xs">
-        {MODIFIER_MAP.map(({ label, effect }, i) => (
+        {MODIFIER_MAP.map(({ label, trackName }, i) => (
           <div key={label} className="flex items-center gap-3">
             <code className="bg-stone-800 px-2 py-1 rounded font-mono text-stone-300">{label}</code>
-            <span className="text-stone-400">{effect}</span>
+            <span className="text-stone-400">{trackName}</span>
             {returnIndices && (
               <span className="text-stone-500 ml-auto">send {returnIndices[i]}</span>
             )}
