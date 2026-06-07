@@ -105,7 +105,7 @@ export interface ProjectSnapshot {
 // ============================================================================
 
 export interface SelectionPayload {
-  type: 'track' | 'clip'
+  type: 'track' | 'clip' | 'device'
   name: string
   maxPath: string
   trackName: string

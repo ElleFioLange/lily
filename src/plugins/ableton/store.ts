@@ -22,6 +22,47 @@ import {
 
 type AbletonProjectBuffer = Record<string, string>
 
+/**
+ * Map a "Show in Lily" push onto the Workspace's click-selection state so the
+ * pushed object also becomes active in the connection/info pane. Returns null
+ * when the project isn't loaded yet (refresh re-applies it afterwards).
+ */
+function selectionToPick(
+  sel: SelectionPayload,
+  project: AbletonProject | Record<string, never>
+): Partial<AbletonState> | null {
+  const tracks = (project as AbletonProject).track_data_arr
+  if (!tracks?.length) return null
+  const ti = sel.trackPath.match(/^live_set tracks (\d+)/)
+  const track = ti ? tracks[Number(ti[1])] : undefined
+  if (!track) return null
+
+  if (sel.type === 'clip' && !sel.inArrangement) {
+    const si = sel.maxPath.match(/clip_slots (\d+) clip$/)
+    const slot = si ? (track.clip_slots_data?.[Number(si[1])] ?? null) : null
+    return {
+      selectedTrack: track,
+      selectedClipSlot: slot,
+      selectedDevice: null,
+      selectedParam: null
+    }
+  }
+
+  if (sel.type === 'device') {
+    const di = sel.maxPath.match(/devices (\d+)$/)
+    const device = di ? (track.device_data?.[Number(di[1])] ?? null) : null
+    return {
+      selectedTrack: track,
+      selectedClipSlot: null,
+      selectedDevice: device,
+      selectedParam: null
+    }
+  }
+
+  // track push (or arrangement clip falling back to its track)
+  return { selectedTrack: track, selectedClipSlot: null, selectedDevice: null, selectedParam: null }
+}
+
 export interface AbletonState {
   instanceId: string
   abletonProjectBuffer: AbletonProjectBuffer
@@ -98,20 +139,30 @@ export const createAbletonStore = (instanceId: string): UseStore<AbletonState> =
       set({ refreshing: true, refreshError: null, isLoading: true })
       try {
         const snapshot = await fetchSnapshot()
-        set({
+        const abletonProject = toAbletonProject(snapshot)
+        set((s) => ({
           snapshot,
           liveTracks: toLiveTracks(snapshot),
           // Same snapshot also feeds the Workspace's connection form
-          abletonProject: toAbletonProject(snapshot),
+          abletonProject,
           refreshing: false,
-          isLoading: false
-        })
+          isLoading: false,
+          // Re-apply a pending push selection against the fresh project (it may
+          // have arrived before the project was loaded).
+          ...(s.selection ? (selectionToPick(s.selection, abletonProject) ?? {}) : {})
+        }))
       } catch (e) {
         // Bridge unreachable usually means Live (or the extension host) isn't running.
         set({ refreshing: false, isLoading: false, refreshError: String(e) })
       }
     },
 
-    setSelection: (selection) => set((s) => ({ selection, selectionSeq: s.selectionSeq + 1 }))
+    setSelection: (selection) =>
+      set((s) => ({
+        selection,
+        selectionSeq: s.selectionSeq + 1,
+        // A push also becomes the active object in the Workspace pane.
+        ...(selection ? (selectionToPick(selection, s.abletonProject) ?? {}) : {})
+      }))
   }))
 }

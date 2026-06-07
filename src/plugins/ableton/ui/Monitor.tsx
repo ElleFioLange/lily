@@ -17,8 +17,6 @@ import { colorStyle } from './colors'
 
 // shrink-0 matters: rows are flex children of a scrollable column — without it
 // they compress into slivers once a column has more content than fits.
-// NO `truncate` on the row itself (overflow:hidden would clip the highlight
-// ripple) — labels truncate via an inner span instead.
 const ROW = 'px-2 py-0.5 border-l-4 shrink-0 flex items-center gap-1 min-w-0'
 
 /** White left-border accent, shared by both selection kinds: a "Show in Lily"
@@ -66,6 +64,7 @@ function DeviceRow({
     <div className="flex flex-col gap-1 shrink-0">
       <div
         key={nodeKey(device.id)}
+        data-maxpath={device.id}
         onClick={() => pick.device(track, device.id)}
         onDoubleClick={() => setOpen((o) => !o)}
         className={`${ROW} ${accent(
@@ -99,6 +98,7 @@ function DeviceRow({
           return (
             <div
               key={nodeKey(p.id)}
+              data-maxpath={p.id}
               onClick={() => pick.param(track, device.id, p.id)}
               className={`${ROW} ${accent(
                 p.id === selectedPath,
@@ -147,6 +147,7 @@ function TrackColumn({
     <div ref={ref} className="flex flex-col gap-1 w-36 shrink-0 min-h-0">
       <div
         key={nodeKey(track.id)}
+        data-maxpath={track.id}
         onClick={() => pick.track(track)}
         className={`px-2 py-1 font-bold border-l-4 shrink-0 cursor-pointer flex items-center min-w-0 ${accent(
           track.id === selectedPath,
@@ -165,6 +166,7 @@ function TrackColumn({
           return (
             <div
               key={nodeKey(c.id)}
+              data-maxpath={c.id}
               onClick={() => pick.clip(track, c.id)}
               className={`${ROW} ${accent(
                 c.id === selectedPath,
@@ -214,6 +216,34 @@ export default function Monitor({ instanceId }: UIProps) {
     instance.useStore.getState()
 
   const selectedPath = selection?.maxPath ?? null
+
+  // --- Ripple overlay: the expanding rectangle is drawn on a fixed-position
+  // layer measured off the target row, so scroll containers can't clip it.
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [ripple, setRipple] = useState<{
+    key: number
+    left: number
+    top: number
+    width: number
+    height: number
+  } | null>(null)
+
+  useEffect(() => {
+    if (!selectedPath) return
+    // Measure after the child effects have scrolled the target into view.
+    const raf = requestAnimationFrame(() => {
+      const el = rootRef.current?.querySelector(`[data-maxpath="${CSS.escape(selectedPath)}"]`)
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      setRipple({ key: selectionSeq, left: r.left, top: r.top, width: r.width, height: r.height })
+    })
+    // 350ms delay + 600ms animation + slack, then unmount the layer.
+    const timer = setTimeout(() => setRipple(null), 1100)
+    return () => {
+      cancelAnimationFrame(raf)
+      clearTimeout(timer)
+    }
+  }, [selectedPath, selectionSeq])
 
   // --- Click-selection: bridge node → get-state object (for the Workspace) ---
   const project = abletonProject as AbletonProject | Record<string, never>
@@ -267,7 +297,19 @@ export default function Monitor({ instanceId }: UIProps) {
   }
 
   return (
-    <div className="h-full flex flex-col text-xs font-neon text-stone-100">
+    <div ref={rootRef} className="h-full flex flex-col text-xs font-neon text-stone-100">
+      {ripple && (
+        <div
+          key={ripple.key}
+          className="select-ripple-overlay"
+          style={{
+            left: ripple.left,
+            top: ripple.top,
+            width: ripple.width,
+            height: ripple.height
+          }}
+        />
+      )}
       <div className="flex items-baseline gap-3 px-3 py-1.5 shrink-0">
         <button
           onClick={() => void refresh()}
@@ -284,7 +326,7 @@ export default function Monitor({ instanceId }: UIProps) {
         {selection && (
           <span className="text-stone-400 truncate">
             selected: {selection.trackName}
-            {selection.type === 'clip' ? ` › ${selection.name}` : ''}
+            {selection.type !== 'track' ? ` › ${selection.name}` : ''}
             {selection.inArrangement ? ' (arrangement)' : ''}
           </span>
         )}
