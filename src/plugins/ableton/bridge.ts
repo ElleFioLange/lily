@@ -143,12 +143,20 @@ export interface LiveClip {
   kind: ClipKind
 }
 
+export interface LiveSlot {
+  /** clip path for this slot (live_set tracks N clip_slots M clip) */
+  id: string
+  index: number
+  clip: LiveClip | null
+}
+
 export interface LiveTrack {
   id: string
   name: string
   /** Best-effort: the SDK exposes no track color — derived from the first clip */
   color: string
-  clips: LiveClip[]
+  /** ALL session slots, empty ones included — display order = slot index */
+  slots: LiveSlot[]
   devices: LiveDevice[]
 }
 
@@ -184,17 +192,21 @@ const toLiveClip = (c: SnapshotClip): LiveClip => ({
 })
 
 const toLiveTrack = (t: SnapshotTrack): LiveTrack => {
-  const clips = t.clipSlots.flatMap((s) => (s.clip ? [toLiveClip(s.clip)] : []))
+  const slots = t.clipSlots.map((s, index) => ({
+    id: `${t.maxPath} clip_slots ${index} clip`,
+    index,
+    clip: s.clip ? toLiveClip(s.clip) : null
+  }))
   return {
     id: t.maxPath,
     name: t.name,
-    color: clips[0]?.color ?? FALLBACK_COLOR,
-    clips,
+    color: slots.find((s) => s.clip)?.clip?.color ?? FALLBACK_COLOR,
+    slots,
     devices: t.devices.map(toLiveDevice)
   }
 }
 
-/** Regular tracks only — what the filetree shows. Empty slots are dropped. */
+/** Regular tracks only — what the monitor shows. */
 export const toLiveTracks = (snap: ProjectSnapshot): LiveTrack[] => snap.tracks.map(toLiveTrack)
 
 // ============================================================================

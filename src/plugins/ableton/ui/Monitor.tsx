@@ -144,7 +144,7 @@ function TrackColumn({
   const containsSelection =
     selectedPath !== null &&
     (track.id === selectedPath ||
-      track.clips.some((c) => c.id === selectedPath) ||
+      track.slots.some((sl) => sl.id === selectedPath) ||
       track.devices.some(
         (d) => d.id === selectedPath || d.parameters.some((p) => p.id === selectedPath)
       ))
@@ -174,24 +174,36 @@ function TrackColumn({
       </div>
 
       <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar">
-        {track.clips.map((c) => {
-          const slotIdx = idx(c.id, /clip_slots (\d+) clip$/)
-          const mappedSlot = slotIdx !== null ? (mapped?.clip_slots_data?.[slotIdx] ?? null) : null
+        {track.slots.map((slot) => {
+          const mappedSlot = mapped?.clip_slots_data?.[slot.index] ?? null
+          const picked = mappedSlot !== null && mappedSlot.id === pick.ids.slot
+          if (!slot.clip) {
+            // Empty slot — kept in the grid so rows line up with slot indexes;
+            // clickable to wire a keyword at this position.
+            return (
+              <div
+                key={slot.id}
+                data-maxpath={slot.id}
+                onClick={() => pick.clip(track, slot.id)}
+                className={`${ROW} cursor-pointer bg-stone-900 text-stone-700 hover:text-stone-500`}
+                title={`empty slot ${slot.index} · ${slot.id}`}
+              >
+                <Accent on={picked} />
+                <span className="truncate">·</span>
+              </div>
+            )
+          }
+          const c = slot.clip
           return (
             <div
-              key={nodeKey(c.id)}
-              data-maxpath={c.id}
-              onClick={() => pick.clip(track, c.id)}
-              className={`${ROW} ${pulse(c.id === selectedPath)} cursor-pointer`}
+              key={nodeKey(slot.id)}
+              data-maxpath={slot.id}
+              onClick={() => pick.clip(track, slot.id)}
+              className={`${ROW} ${pulse(slot.id === selectedPath)} cursor-pointer`}
               style={colorStyle(c.color)}
-              title={`${c.kind} · ${c.id}`}
+              title={`${c.kind} · slot ${slot.index} · ${slot.id}`}
             >
-              <Accent
-                on={
-                  c.id === selectedPath ||
-                  (mappedSlot !== null && mappedSlot.id === pick.ids.slot)
-                }
-              />
+              <Accent on={slot.id === selectedPath || picked} />
               <span className="truncate">{c.name || '(unnamed)'}</span>
             </div>
           )
@@ -236,6 +248,7 @@ export default function Monitor({ instanceId }: UIProps) {
 
   // --- Autoname: name clips in Live after the config's clip-connected keywords
   const [autonameStatus, setAutonameStatus] = useState<string | null>(null)
+  const [autonameDetail, setAutonameDetail] = useState<string | null>(null)
   const handleAutoname = async (): Promise<void> => {
     const poiesis = Object.values(usePluginsStore.getState().active).find(
       (p) => p.manifest.id === 'poiesis'
@@ -256,11 +269,18 @@ export default function Monitor({ instanceId }: UIProps) {
     try {
       const result = await postAutoname(items)
       const totalSkipped = result.skipped + skipped
+      console.table(result.results)
+      const reasons = result.results
+        .filter((r) => !r.ok)
+        .map((r) => `${r.path} — ${r.reason}`)
+        .join('\n')
+      setAutonameDetail(reasons || null)
       setAutonameStatus(
-        `named ${result.renamed} clip${result.renamed === 1 ? '' : 's'}${totalSkipped ? ` · ${totalSkipped} no-op` : ''}`
+        `named ${result.renamed}${totalSkipped ? ` · ${totalSkipped} no-op` : ''}`
       )
       void refresh()
     } catch {
+      setAutonameDetail(null)
       setAutonameStatus('autoname failed — bridge unreachable?')
     }
   }
@@ -373,7 +393,14 @@ export default function Monitor({ instanceId }: UIProps) {
         >
           autoname
         </button>
-        {autonameStatus && <span className="text-stone-400 shrink-0">{autonameStatus}</span>}
+        {autonameStatus && (
+          <span
+            className={`text-stone-400 shrink-0 ${autonameDetail ? 'cursor-help underline decoration-dotted' : ''}`}
+            title={autonameDetail ?? undefined}
+          >
+            {autonameStatus}
+          </span>
+        )}
         {snapshot && (
           <span className="text-stone-400 shrink-0">
             {snapshot.tempo} bpm · {liveTracks.length} tracks
