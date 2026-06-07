@@ -1,53 +1,57 @@
 import { PluginDefinition } from '@plugins/utils'
 
-// TODO need to handle stuff like skeleton(() correctly
-export const keyRegex = (key) => new RegExp(`\\b${key}\\(([^\\)]*)\\)`, 'g')
+export const keyRegex = (key: string) => new RegExp(`\\b${key}\\(([^\\)]*)\\)`, 'g')
 
 const process: PluginDefinition['process'] = (_instanceId, inputs) => {
   for (const { poiesis, config } of inputs) {
-    console.log(config)
     if (config === null) throw new Error('Cannot parse input with invalid config')
-    const keys = Object.entries(config)
-    keys.forEach(([key, params]) => {
-      // The actual regex has single backslashes after escaping is done
+
+    Object.entries(config).forEach(([key, params]) => {
       const regex = keyRegex(key)
-      const matches = poiesis.matchAll(regex)
-      const instances = Array.from(matches)
+      const instances = Array.from(poiesis.matchAll(regex))
       const isPresent = instances.length > 0
+
       const { ableton, args } = params
       if (!ableton) return
+
       const { type, path: rawPath, object, present, absent } = ableton
-      let value = isPresent ? present : absent
-      if (type === 'clip' || type === 'track') {
+
+      if (type === 'clip' || type === 'track' || type === 'device') {
+        // Resolve path substitutions from args
         let path = rawPath
         if (args) {
-          Object.entries(args).forEach(([arg, { ableton, default_value, presets }], index) => {
-            if (ableton === undefined || default_value.ableton === undefined) return
-            let value = default_value.ableton
-            const { acts_on } = ableton
-            if (acts_on === 'path') {
-              if (presets !== undefined && isPresent) {
-                const preset = instances[0][index + 1]
-                if (preset) {
-                  const argPreset = presets[preset]
-                  if (argPreset.ableton) value = argPreset.ableton
-                }
-              }
-              const indexOfArg = path.indexOf('_' + arg)
-              console.log(key, value)
-              path = path.slice(0, indexOfArg) + value + path.slice(indexOfArg + arg.length + 1)
+          Object.entries(args).forEach(([arg, { ableton: argAbleton, default_value, presets }], index) => {
+            if (!argAbleton || default_value.ableton === undefined) return
+            if (argAbleton.acts_on !== 'path') return
+            let argValue: number | boolean = default_value.ableton
+            if (presets && isPresent) {
+              const match = instances[0][index + 1]
+              if (match && presets[match]?.ableton !== undefined) argValue = presets[match].ableton!
             }
+            path = path.slice(0, path.indexOf('_' + arg)) + argValue + path.slice(path.indexOf('_' + arg) + arg.length + 1)
           })
         }
-        window.api.osc.send('/control', [type, value ? 'active' : 'inactive', path])
-      } else {
+        const action = isPresent ? 'active' : 'inactive'
+        window.api.osc.send('/control', [type, action, path])
+      } else if (type === 'device_parameter') {
+        // Resolve value — args with acts_on: 'value' can override present/absent
+        let value: number | boolean = isPresent ? present : absent
+        if (args && isPresent) {
+          Object.entries(args).forEach(([_arg, { ableton: argAbleton, default_value, presets }], index) => {
+            if (!argAbleton || default_value.ableton === undefined) return
+            if (argAbleton.acts_on !== 'value') return
+            let argValue: number | boolean = default_value.ableton
+            if (presets) {
+              const match = instances[0][index + 1]
+              if (match && presets[match]?.ableton !== undefined) argValue = presets[match].ableton!
+            }
+            value = argValue
+          })
+        }
         window.api.osc.send('/control', [type, object, rawPath, value])
       }
     })
-    // return messages
   }
 }
 
 export default process
-
-// export type ParseAbletonResult = ReturnType<typeof parseAbleton>

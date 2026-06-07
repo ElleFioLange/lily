@@ -5,7 +5,7 @@ export type ArgPreset = {
 
 export type KeyArgument = {
   ableton?: {
-    acts_on: 'path'
+    acts_on: 'path' | 'value'
     type: 'number' | 'string' | 'boolean'
   }
   default_value: ArgPreset

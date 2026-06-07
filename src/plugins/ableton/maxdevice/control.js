@@ -31,15 +31,15 @@ function list() {
   log('control: ' + type + ' ' + action + ' ' + path + (value !== undefined ? ' ' + value : ''))
 
   if (type === 'clip') {
-    if (action === 'active') clip_active(path)
-    else if (action === 'inactive') clip_inactive(path)
-    else log('unknown clip action: ' + action)
+    clip(action, path)
   } else if (type === 'track') {
-    if (action === 'active') track_active(path)
-    else if (action === 'inactive') track_inactive(path)
-    else log('unknown track action: ' + action)
-  } else {
+    track(action, path)
+  } else if (type === 'device') {
+    device(action, path)
+  } else if (type === 'device_parameter') {
     set_param(path, value)
+  } else {
+    log('unknown control type: ' + type)
   }
 }
 
@@ -50,33 +50,17 @@ function clip(action, path) {
 }
 
 function track(action, path) {
-  var track = new LiveAPI(path)
-  if (action === 'active') track.set('mute', 0)
-  else if (action === 'inactive') track.set('mute', 1)
+  var t = new LiveAPI(path)
+  if (action === 'active') t.set('mute', 0)
+  else if (action === 'inactive') t.set('mute', 1)
 }
 
-// function clip_active(path) {
-//   var clip_slot = new LiveAPI(path)
-//   log(clip_slot)
-//   clip_slot.call('fire')
-// }
+function device(action, path) {
+  var dev = new LiveAPI(path)
+  if (action === 'active') dev.set('is_active', 1)
+  else if (action === 'inactive') dev.set('is_active', 0)
+}
 
-// function clip_inactive(path) {
-//   var clip_slot = new LiveAPI(path)
-//   clip_slot.call('stop')
-// }
-
-// function track_active(path) {
-//   var track = new LiveAPI(path)
-//   track.set('mute', 0)
-// }
-
-// function track_inactive(path) {
-//   var track = new LiveAPI(path)
-//   track.set('mute', 1)
-// }
-
-// TODO Handle param changes
 
 function set_param(path, value) {
   var obj = new LiveAPI(path)

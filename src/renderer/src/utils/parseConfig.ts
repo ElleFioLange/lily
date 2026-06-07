@@ -101,7 +101,8 @@ export function validateConfig(suspect: any) {
         if (ableton !== undefined) {
           const { acts_on, type } = ableton
 
-          if (acts_on !== 'path') invalidProps.push(`args-${arg}-ableton-acts_on`)
+          if (acts_on !== 'path' && acts_on !== 'value')
+            invalidProps.push(`args-${arg}-ableton-acts_on`)
 
           switch (typeof type) {
             case 'string':
