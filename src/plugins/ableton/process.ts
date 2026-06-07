@@ -30,19 +30,28 @@ function processPunctuationModifiers(
   const start = match.index!
   const end = start + match[0].length
 
-  // Check character before and after the match for modifier punctuation
-  const before = start > 0 ? poiesis[start - 1] : ''
-  const after = end < poiesis.length ? poiesis[end] : ''
+  // Scan backwards/forwards through consecutive modifier chars to detect all active wrappers
+  // e.g. {!keyword()!} activates both ! and {} modifiers simultaneously
+  const modifierOpenChars = new Set(Object.values(MODIFIER_CHARS).map((m) => m.open))
+  const modifierCloseChars = new Set(Object.values(MODIFIER_CHARS).map((m) => m.close))
+
+  const opensBefore = new Set<string>()
+  for (let i = start - 1; i >= 0; i--) {
+    if (modifierOpenChars.has(poiesis[i])) opensBefore.add(poiesis[i])
+    else break
+  }
+
+  const closesAfter = new Set<string>()
+  for (let i = end; i < poiesis.length; i++) {
+    if (modifierCloseChars.has(poiesis[i])) closesAfter.add(poiesis[i])
+    else break
+  }
 
   for (const [, { open, close, sendOffset }] of Object.entries(MODIFIER_CHARS)) {
-    let sendValue = 0
-    if (before === open && after === close) {
-      sendValue = 1
-    }
+    const sendValue = opensBefore.has(open) && closesAfter.has(close) ? 1 : 0
     const sendIndex = returnIndices[sendOffset]
     const sendPath = `live_set tracks ${trackIndex} mixer_device sends ${sendIndex}`
     window.api.osc.send('/control', ['send', sendPath, sendValue])
-    // Only match the innermost wrapper
   }
 }
 
