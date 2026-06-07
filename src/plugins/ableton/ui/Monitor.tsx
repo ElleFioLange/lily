@@ -9,11 +9,11 @@ import { colorStyle } from './colors'
 // One column per track: name header, clips, then devices (expandable to their
 // parameters).
 //
-// Two kinds of "selected" live here:
-//  - "Show in Lily" pushes from Live → left-border accent + pulse (maxPath match)
-//  - click-selection for the Workspace's ConnectionForm → inset ring. Clicks
-//    map the bridge node's maxPath indexes onto the M4L abletonProject objects
-//    (both are LOM-index-ordered), since the form consumes those.
+// Two kinds of "selected" live here, both shown as the white left border:
+//  - "Show in Lily" pushes from Live (maxPath match) — border + one-shot pulse
+//  - click-selection for the Workspace's ConnectionForm — steady border. Clicks
+//    map the bridge node's maxPath indexes onto the abletonProject objects
+//    (synthesized from the same snapshot, so indexes always line up).
 
 // shrink-0 matters: rows are flex children of a scrollable column — without it
 // they compress into slivers once a column has more content than fits.
@@ -21,13 +21,11 @@ import { colorStyle } from './colors'
 // ripple) — labels truncate via an inner span instead.
 const ROW = 'px-2 py-0.5 border-l-4 shrink-0 flex items-center gap-1 min-w-0'
 
-/** Steady accent + one-shot pulse for the pushed node. `seq` changes per
- *  push, re-keying the animation so a repeat selection pulses again. */
-const highlight = (selected: boolean) =>
-  selected ? 'border-stone-100 animate-select-pulse' : 'border-transparent'
-
-/** Inset ring for click-selection (feeds the Workspace connection form). */
-const clickSel = (selected: boolean) => (selected ? 'ring-1 ring-inset ring-stone-100/80' : '')
+/** White left-border accent, shared by both selection kinds: a "Show in Lily"
+ *  push also pulses (nodeKey re-keys the animation per push); click-selection
+ *  (feeds the Workspace connection form) is the steady border alone. */
+const accent = (pushed: boolean, picked: boolean) =>
+  `${pushed || picked ? 'border-stone-100' : 'border-transparent'}${pushed ? ' animate-select-pulse' : ''}`
 
 const idx = (path: string, re: RegExp): number | null => {
   const m = path.match(re)
@@ -70,7 +68,8 @@ function DeviceRow({
         key={nodeKey(device.id)}
         onClick={() => pick.device(track, device.id)}
         onDoubleClick={() => setOpen((o) => !o)}
-        className={`${ROW} ${highlight(device.id === selectedPath)} ${clickSel(
+        className={`${ROW} ${accent(
+          device.id === selectedPath,
           mappedDevice !== null && mappedDevice.id === pick.ids.device
         )} bg-stone-800 text-stone-300 cursor-pointer ${open ? 'sticky top-0 z-[5]' : ''}`}
         title={`${device.id} — click selects · double-click or caret expands`}
@@ -101,7 +100,8 @@ function DeviceRow({
             <div
               key={nodeKey(p.id)}
               onClick={() => pick.param(track, device.id, p.id)}
-              className={`${ROW} ${highlight(p.id === selectedPath)} ${clickSel(
+              className={`${ROW} ${accent(
+                p.id === selectedPath,
                 mappedParam !== null && mappedParam.id === pick.ids.param
               )} ml-3 bg-stone-900 text-stone-400 cursor-pointer`}
               title={`${p.min}–${p.max}${p.isQuantized ? ' · quantized' : ''} · default ${p.defaultValue} · ${p.id}`}
@@ -148,9 +148,10 @@ function TrackColumn({
       <div
         key={nodeKey(track.id)}
         onClick={() => pick.track(track)}
-        className={`px-2 py-1 font-bold border-l-4 shrink-0 cursor-pointer flex items-center min-w-0 ${highlight(
-          track.id === selectedPath
-        )} ${clickSel(mapped !== null && mapped.id === pick.ids.track)}`}
+        className={`px-2 py-1 font-bold border-l-4 shrink-0 cursor-pointer flex items-center min-w-0 ${accent(
+          track.id === selectedPath,
+          mapped !== null && mapped.id === pick.ids.track
+        )}`}
         style={colorStyle(track.color)}
         title={track.id}
       >
@@ -165,7 +166,8 @@ function TrackColumn({
             <div
               key={nodeKey(c.id)}
               onClick={() => pick.clip(track, c.id)}
-              className={`${ROW} ${highlight(c.id === selectedPath)} ${clickSel(
+              className={`${ROW} ${accent(
+                c.id === selectedPath,
                 mappedSlot !== null && mappedSlot.id === pick.ids.slot
               )} cursor-pointer`}
               style={colorStyle(c.color)}
