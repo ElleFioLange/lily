@@ -724,7 +724,17 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
   const selectedDevice = instance.useStore((s) => s.selectedDevice)
   const selectedParam = instance.useStore((s) => s.selectedParam)
   const selectedKeyword = instance.useStore((s) => s.selectedKeyword)
-  const { setSelectedKeyword } = instance.useStore.getState()
+  const pendingKeywords = instance.useStore((s) => s.pendingKeywords)
+  const keywordInputValue = instance.useStore((s) => s.keywordInputValue)
+  const poemText = instance.useStore((s) => s.poemText)
+  const keywordInputExpanded = instance.useStore((s) => s.keywordInputExpanded)
+  const {
+    setSelectedKeyword,
+    setPendingKeywords,
+    setKeywordInputValue,
+    setPoemText,
+    setKeywordInputExpanded
+  } = instance.useStore.getState()
 
   const project = Object.keys(abletonProject).length > 0 ? (abletonProject as AbletonProject) : null
 
@@ -748,14 +758,6 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     return poiesisEntry.useStore.subscribe((state) => setParsedConfig(state.parsedConfig))
   }, [poiesisEntry])
 
-  // Keyword input state
-  const [inputValue, setInputValue] = useState('')
-  const [expanded, setExpanded] = useState(false)
-  const [poemText, setPoemText] = useState('')
-
-  // Pending keywords live only in local state until they get a valid connection
-  const [pendingKeywords, setPendingKeywords] = useState<string[]>([])
-
   const configKeywords = Object.keys(parsedConfig ?? {})
   const connectedKeywords = configKeywords.filter((k) => parsedConfig![k]?.ableton)
   const unconnectedKeywords = [
@@ -772,13 +774,13 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     const current = poiesisEntry.useStore.getState().parsedConfig ?? {}
     if (current[clean] || pendingKeywords.includes(clean)) return
     // Don't write to config yet — only add to local pending list
-    setPendingKeywords((prev) => [...prev, clean])
+    setPendingKeywords([...pendingKeywords, clean])
   }
 
   function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
-      addKeyword(inputValue)
-      setInputValue('')
+      addKeyword(keywordInputValue)
+      setKeywordInputValue('')
     }
   }
 
@@ -796,7 +798,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
   function handlePoemChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const val = e.target.value
     setPoemText(val)
-    if (!val) setExpanded(false)
+    if (!val) setKeywordInputExpanded(false)
   }
 
   function writeConfig(updated: ConfigurationJSON) {
@@ -807,7 +809,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     if (!selectedKeyword || !poiesisEntry || !entry.ableton) return
     const current = poiesisEntry.useStore.getState().parsedConfig ?? {}
     writeConfig({ ...current, [selectedKeyword]: entry })
-    setPendingKeywords((prev) => prev.filter((k) => k !== selectedKeyword))
+    setPendingKeywords(pendingKeywords.filter((k) => k !== selectedKeyword))
   }
 
   function handleRemoveConnection() {
@@ -817,9 +819,9 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     delete updated[selectedKeyword]
     writeConfig(updated)
     // Move back to pending so the keyword stays visible but unwritten
-    setPendingKeywords((prev) =>
-      prev.includes(selectedKeyword) ? prev : [...prev, selectedKeyword]
-    )
+    if (!pendingKeywords.includes(selectedKeyword)) {
+      setPendingKeywords([...pendingKeywords, selectedKeyword])
+    }
   }
 
   const hasSelection = !!(selectedTrack || selectedDevice || selectedParam || selectedClipSlot)
@@ -880,7 +882,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
 
         {/* Input area */}
         <div className="border-t border-stone-700 p-2 shrink-0">
-          {expanded ? (
+          {keywordInputExpanded ? (
             <div className="flex flex-col gap-1.5">
               <textarea
                 value={poemText}
@@ -896,8 +898,8 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
             <div className="flex items-center gap-1">
               <input
                 type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                value={keywordInputValue}
+                onChange={(e) => setKeywordInputValue(e.target.value)}
                 onKeyDown={handleInputKeyDown}
                 disabled={!poiesisEntry}
                 placeholder={poiesisEntry ? 'Add keyword...' : 'Load a Poiesis plugin first…'}
@@ -905,7 +907,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
                 className={`flex-1 ${inputCls} disabled:opacity-50`}
               />
               <button
-                onClick={() => setExpanded(true)}
+                onClick={() => setKeywordInputExpanded(true)}
                 className="text-stone-500 hover:text-stone-300 px-1 text-base leading-none transition-colors"
                 title="Paste poem"
               >

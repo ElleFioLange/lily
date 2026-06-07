@@ -85,6 +85,16 @@ export interface AbletonState {
   setSelectedParam: (param: AbletonDeviceParameter | null) => void
   setSelectedKeyword: (keyword: string | null) => void
 
+  // Workspace draft state — persisted across view switches
+  pendingKeywords: string[]
+  keywordInputValue: string
+  poemText: string
+  keywordInputExpanded: boolean
+  setPendingKeywords: (keywords: string[]) => void
+  setKeywordInputValue: (value: string) => void
+  setPoemText: (text: string) => void
+  setKeywordInputExpanded: (expanded: boolean) => void
+
   // --- Extension-bridge slice (GET /snapshot + /lily/select) ---------------
   snapshot: ProjectSnapshot | null
   /** Filetree-shaped view of snapshot.tracks (maxPath as every node id) */
@@ -126,6 +136,16 @@ export const createAbletonStore = (instanceId: string): UseStore<AbletonState> =
       set({ selectedDevice, selectedClipSlot: null, selectedParam: null }),
     setSelectedParam: (selectedParam) => set({ selectedParam }),
     setSelectedKeyword: (selectedKeyword) => set({ selectedKeyword }),
+
+    // Workspace draft state
+    pendingKeywords: [],
+    keywordInputValue: '',
+    poemText: '',
+    keywordInputExpanded: false,
+    setPendingKeywords: (pendingKeywords) => set({ pendingKeywords }),
+    setKeywordInputValue: (keywordInputValue) => set({ keywordInputValue }),
+    setPoemText: (poemText) => set({ poemText }),
+    setKeywordInputExpanded: (keywordInputExpanded) => set({ keywordInputExpanded }),
 
     // --- Extension-bridge slice ----------------------------------------------
     snapshot: null,
