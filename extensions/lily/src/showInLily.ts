@@ -2,6 +2,7 @@ import {
   AudioClip,
   Clip,
   DataModelObject,
+  Device,
   MidiClip,
   Track,
   type ExtensionContext,
@@ -17,7 +18,7 @@ const log = (...a: unknown[]) => console.log("[lily:show]", ...a);
  * pane can highlight by matching maxPath against its snapshot tree.
  */
 export interface SelectionPayload {
-  type: "track" | "clip";
+  type: "track" | "clip" | "device";
   name: string;
   maxPath: string;
   trackName: string;
@@ -44,6 +45,25 @@ function locate(ctx: Ctx, handle: Handle): SelectionPayload | null {
     if (i < 0) return null; // returns/master don't get these context scopes
     const trackPath = `live_set tracks ${i}`;
     return { type: "track", name: obj.name, maxPath: trackPath, trackName: obj.name, trackPath };
+  }
+
+  if (obj instanceof Device) {
+    // Only DrumRack/Simpler have context-menu scopes, but any Device resolves.
+    for (let i = 0; i < song.tracks.length; i++) {
+      const t = song.tracks[i];
+      const k = t.devices.findIndex((d) => d.handle.id === id);
+      if (k >= 0) {
+        const trackPath = `live_set tracks ${i}`;
+        return {
+          type: "device",
+          name: obj.name,
+          maxPath: `${trackPath} devices ${k}`,
+          trackName: t.name,
+          trackPath
+        };
+      }
+    }
+    return null;
   }
 
   if (obj instanceof Clip) {
@@ -100,7 +120,9 @@ export function registerShowInLily(ctx: Ctx, onSelect: (sel: SelectionPayload) =
     }
   });
 
-  for (const scope of ["AudioTrack", "MidiTrack", "AudioClip", "MidiClip"] as const) {
+  // Devices: Live only exposes context-menu scopes for DrumRack and Simpler —
+  // there is no generic Device scope and none for parameters.
+  for (const scope of ["AudioTrack", "MidiTrack", "AudioClip", "MidiClip", "DrumRack", "Simpler"] as const) {
     ctx.ui
       .registerContextMenuAction(scope, "Show in Lily", "lily.showInLily")
       .then(() => log(`context action registered (${scope})`))

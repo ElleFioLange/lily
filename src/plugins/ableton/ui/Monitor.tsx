@@ -326,7 +326,7 @@ export default function Monitor({ instanceId }: UIProps) {
         {selection && (
           <span className="text-stone-400 truncate">
             selected: {selection.trackName}
-            {selection.type === 'clip' ? ` › ${selection.name}` : ''}
+            {selection.type !== 'track' ? ` › ${selection.name}` : ''}
             {selection.inArrangement ? ' (arrangement)' : ''}
           </span>
         )}

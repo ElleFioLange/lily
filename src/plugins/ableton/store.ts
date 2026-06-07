@@ -48,6 +48,17 @@ function selectionToPick(
     }
   }
 
+  if (sel.type === 'device') {
+    const di = sel.maxPath.match(/devices (\d+)$/)
+    const device = di ? (track.device_data?.[Number(di[1])] ?? null) : null
+    return {
+      selectedTrack: track,
+      selectedClipSlot: null,
+      selectedDevice: device,
+      selectedParam: null
+    }
+  }
+
   // track push (or arrangement clip falling back to its track)
   return { selectedTrack: track, selectedClipSlot: null, selectedDevice: null, selectedParam: null }
 }
