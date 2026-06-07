@@ -4,5 +4,6 @@
   "repo": "",
   "author": "sysfem.err",
   "version": "1.0.0",
-  "outputTypes": ["graphics"]
+  "outputTypes": ["graphics"],
+  "allowMultiple": true
 }
