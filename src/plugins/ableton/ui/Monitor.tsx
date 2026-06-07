@@ -5,7 +5,7 @@ import { PoiesisState } from '@renderer/surfaces/poiesis/store'
 import { AbletonState } from '../store'
 import { LiveDevice, LiveTrack, postAutoname } from '../bridge'
 import { deriveAutonameItems } from '../autoname'
-import { colorStyle } from './colors'
+import { colorStyle, darkenHex } from './colors'
 
 // Session-style monitor of the open Live Set, read from the extension bridge.
 // One column per track: name header, clips, then devices (expandable to their
@@ -184,10 +184,10 @@ function TrackColumn({
         key={nodeKey(track.id)}
         data-maxpath={track.id}
         onClick={() => pick.track(track)}
-        className={`relative px-2 py-1 font-bold shrink-0 cursor-pointer flex items-center min-w-0 ${pulse(
+        className={`relative px-2 py-1.5 font-bold shrink-0 cursor-pointer flex items-center min-w-0 border-b-4 ${pulse(
           track.id === selectedPath
         )}`}
-        style={colorStyle(track.color)}
+        style={{ ...colorStyle(track.color), borderBottomColor: darkenHex(track.color, 0.45) }}
         title={track.id}
       >
         <Accent on={track.id === selectedPath || (mapped !== null && mapped.id === pick.ids.track)} />
