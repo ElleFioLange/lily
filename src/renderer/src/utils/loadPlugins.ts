@@ -17,6 +17,8 @@ export async function loadPlugins(): Promise<PluginDefinition[]> {
 
   await Promise.all(
     Object.entries(pluginModules).map(async ([path, importFn]) => {
+      // utils/ is shared plugin helpers, not a plugin — skip without warning
+      if (path.includes('/plugins/utils/')) return
       try {
         const module = await importFn()
         if (isValidPlugin(module.default)) {
