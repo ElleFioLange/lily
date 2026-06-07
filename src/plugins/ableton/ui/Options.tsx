@@ -71,7 +71,8 @@ export default function Options({ instanceId }: UIProps) {
       const sendIndices: number[] = []
 
       for (const name of returnTrackNames) {
-        const sendIdx = snap.returnTracks.findIndex((t) => t.name === name)
+        const sendIdx = snap.returnTracks.findIndex((t) => t.name.includes(name))
+        console.log('return track log', snap.returnTracks)
         if (sendIdx === -1) throw new Error(`Could not find return track: ${name}`)
         sendIndices.push(sendIdx)
       }
