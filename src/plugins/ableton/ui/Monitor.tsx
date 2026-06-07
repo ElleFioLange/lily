@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { ActivePlugin, UIProps } from 'src/types/plugins'
+import { PoiesisState } from '@renderer/surfaces/poiesis/store'
 import { AbletonState } from '../store'
-import { LiveDevice, LiveTrack } from '../bridge'
+import { LiveDevice, LiveTrack, postAutoname } from '../bridge'
+import { deriveAutonameItems } from '../autoname'
 import { colorStyle } from './colors'
 
 // Session-style monitor of the open Live Set, read from the extension bridge.
@@ -232,6 +234,37 @@ export default function Monitor({ instanceId }: UIProps) {
 
   const selectedPath = selection?.maxPath ?? null
 
+  // --- Autoname: name clips in Live after the config's clip-connected keywords
+  const [autonameStatus, setAutonameStatus] = useState<string | null>(null)
+  const handleAutoname = async (): Promise<void> => {
+    const poiesis = Object.values(usePluginsStore.getState().active).find(
+      (p) => p.manifest.id === 'poiesis'
+    ) as ActivePlugin<PoiesisState> | undefined
+    const config = poiesis?.useStore.getState().parsedConfig ?? null
+    const { items, skipped } = deriveAutonameItems(config)
+    if (items.length === 0) {
+      setAutonameStatus(
+        !poiesis
+          ? 'load a Poiesis plugin first'
+          : skipped
+            ? `nothing nameable (${skipped} unresolvable)`
+            : 'no clip connections in config'
+      )
+      return
+    }
+    setAutonameStatus('naming…')
+    try {
+      const result = await postAutoname(items)
+      const totalSkipped = result.skipped + skipped
+      setAutonameStatus(
+        `named ${result.renamed} clip${result.renamed === 1 ? '' : 's'}${totalSkipped ? ` · ${totalSkipped} no-op` : ''}`
+      )
+      void refresh()
+    } catch {
+      setAutonameStatus('autoname failed — bridge unreachable?')
+    }
+  }
+
   // --- Ripple overlay: the expanding rectangle is drawn on a fixed-position
   // layer measured off the target row, so scroll containers can't clip it.
   const rootRef = useRef<HTMLDivElement>(null)
@@ -333,6 +366,14 @@ export default function Monitor({ instanceId }: UIProps) {
         >
           {refreshing ? 'refreshing…' : 'refresh'}
         </button>
+        <button
+          onClick={() => void handleAutoname()}
+          className="border border-stone-600 px-2 py-0.5 hover:bg-stone-800"
+          title="Name clips in Live after the config's clip-connected keywords"
+        >
+          autoname
+        </button>
+        {autonameStatus && <span className="text-stone-400 shrink-0">{autonameStatus}</span>}
         {snapshot && (
           <span className="text-stone-400 shrink-0">
             {snapshot.tempo} bpm · {liveTracks.length} tracks

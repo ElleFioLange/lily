@@ -302,6 +302,25 @@ export async function fetchSelection(): Promise<SelectionPayload | null> {
   return body.selection
 }
 
+export interface AutonameResult {
+  renamed: number
+  skipped: number
+  results: { path: string; ok: boolean; name?: string; reason?: string }[]
+}
+
+/** Rename session clips via the extension (one undoable transaction). */
+export async function postAutoname(
+  items: { path: string; name: string }[]
+): Promise<AutonameResult> {
+  const res = await fetch(`${BRIDGE_URL}/autoname`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ items })
+  })
+  if (!res.ok) throw new Error(`bridge /autoname failed: ${res.status}`)
+  return (await res.json()) as AutonameResult
+}
+
 const SELECT_ADDRESS = '/lily/select'
 
 /**

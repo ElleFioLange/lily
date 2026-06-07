@@ -14,9 +14,11 @@
  *                        can highlight it.
  *
  * Always-on localhost bridge (Lily's read path, http://127.0.0.1:7879):
- *   GET /snapshot  — full project tree, a Max/LOM path on every node
- *                    (re-serialized per request — this is Lily's "Refresh")
- *   GET /selection — last "Show in Lily" payload (null until first use)
+ *   GET  /snapshot  — full project tree, a Max/LOM path on every node
+ *                     (re-serialized per request — this is Lily's "Refresh")
+ *   GET  /selection — last "Show in Lily" payload (null until first use)
+ *   POST /autoname  — { items: [{ path, name }] } renames session clips
+ *                     (Lily derives names from the Poiesis config keywords)
  *
  * See ../../docs/ABLETON_EXTENSION.md for capabilities/limits this is built on.
  */
@@ -59,6 +61,38 @@ export function activate(activation: ActivationContext) {
     res.setHeader("content-type", "application/json");
     res.setHeader("access-control-allow-origin", "*"); // Lily renderer fetches from a file:// origin
     const url = req.url ?? "/";
+
+    // POST /autoname — rename session clips. Body: { items: [{ path, name }] }
+    // where path is a session-clip Max path (live_set tracks N clip_slots M clip).
+    // One undoable transaction; empty slots / unsupported paths are no-ops.
+    if (req.method === "POST" && url.startsWith("/autoname")) {
+      let body = "";
+      req.on("data", (chunk) => (body += chunk));
+      req.on("end", () => {
+        try {
+          const { items } = JSON.parse(body) as { items: { path: string; name: string }[] };
+          const song = context.application.song;
+          const results = context.withinTransaction(() =>
+            items.map(({ path, name }) => {
+              const m = path.match(/^live_set tracks (\d+) clip_slots (\d+) clip$/);
+              if (!m) return { path, ok: false as const, reason: "unsupported path" };
+              const clip = song.tracks[Number(m[1])]?.clipSlots?.[Number(m[2])]?.clip;
+              if (!clip) return { path, ok: false as const, reason: "empty slot" };
+              clip.name = name;
+              return { path, ok: true as const, name };
+            }),
+          );
+          const renamed = results.filter((r) => r.ok).length;
+          console.log(`[lily] autoname: renamed ${renamed}/${items.length} clip(s)`);
+          res.end(JSON.stringify({ renamed, skipped: results.length - renamed, results }, bigintSafe, 2));
+        } catch (e) {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: String(e) }));
+        }
+      });
+      return;
+    }
+
     try {
       if (url.startsWith("/snapshot")) {
         // Full project tree with a Max/LOM path on every node — the read path
@@ -102,8 +136,8 @@ export function activate(activation: ActivationContext) {
       } else {
         res.statusCode = 404;
         const routes = devHarness
-          ? "/snapshot /selection /mark /dedupe /reconstruct /state"
-          : "/snapshot /selection";
+          ? "/snapshot /selection /autoname /mark /dedupe /reconstruct /state"
+          : "/snapshot /selection /autoname";
         res.end(JSON.stringify({ error: `try ${routes}` }));
       }
     } catch (e) {
@@ -114,7 +148,7 @@ export function activate(activation: ActivationContext) {
   server.on("error", (e) => console.log("[lily] bridge error", e));
   server.listen(BRIDGE_PORT, "127.0.0.1", () =>
     console.log(
-      `[lily] bridge on http://127.0.0.1:${BRIDGE_PORT} (/snapshot /selection${devHarness ? " + dev: /mark /dedupe /reconstruct /state" : ""})`,
+      `[lily] bridge on http://127.0.0.1:${BRIDGE_PORT} (/snapshot /selection /autoname${devHarness ? " + dev: /mark /dedupe /reconstruct /state" : ""})`,
     ),
   );
 
