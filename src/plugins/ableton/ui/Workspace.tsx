@@ -679,15 +679,15 @@ function ObjectInfo({
   // Track
   return (
     <div className="flex flex-col gap-4 p-3 overflow-y-auto">
-      <div className="flex items-center gap-2">
-        <span
-          className="w-3 h-3 rounded-full shrink-0"
-          style={{ backgroundColor: colorToHex(track!.color) }}
-        />
-        <div>
-          <p className="text-xs text-stone-500 uppercase tracking-wider">Track</p>
-          <p className="text-stone-100 text-sm">{track!.name}</p>
-        </div>
+      <div>
+        <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Track</p>
+        <p className="text-stone-100 text-sm flex items-center gap-2">
+          <span
+            className="w-2.5 h-2.5 rounded-full shrink-0"
+            style={{ backgroundColor: colorToHex(track!.color) }}
+          />
+          {track!.name}
+        </p>
       </div>
       {keywords}
       <div className="flex gap-4 text-xs">
