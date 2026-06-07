@@ -62,8 +62,9 @@ export function activate(activation: ActivationContext) {
     res.setHeader("access-control-allow-origin", "*"); // Lily renderer fetches from a file:// origin
     const url = req.url ?? "/";
 
-    // POST /autoname — rename session clips. Body: { items: [{ path, name }] }
-    // where path is a session-clip Max path (live_set tracks N clip_slots M clip).
+    // POST /autoname — rename tracks and session clips.
+    // Body: { items: [{ path, name }] } where path is "live_set tracks N"
+    // (track rename) or "live_set tracks N clip_slots M clip" (clip rename).
     // One undoable transaction; empty slots / unsupported paths are no-ops.
     if (req.method === "POST" && url.startsWith("/autoname")) {
       let body = "";
@@ -74,12 +75,21 @@ export function activate(activation: ActivationContext) {
           const song = context.application.song;
           const results = context.withinTransaction(() =>
             items.map(({ path, name }) => {
-              const m = path.match(/^live_set tracks (\d+) clip_slots (\d+) clip$/);
-              if (!m) return { path, ok: false as const, reason: "unsupported path" };
-              const clip = song.tracks[Number(m[1])]?.clipSlots?.[Number(m[2])]?.clip;
-              if (!clip) return { path, ok: false as const, reason: "empty slot" };
-              clip.name = name;
-              return { path, ok: true as const, name };
+              const clipMatch = path.match(/^live_set tracks (\d+) clip_slots (\d+) clip$/);
+              if (clipMatch) {
+                const clip = song.tracks[Number(clipMatch[1])]?.clipSlots?.[Number(clipMatch[2])]?.clip;
+                if (!clip) return { path, ok: false as const, reason: "empty slot" };
+                clip.name = name;
+                return { path, ok: true as const, name };
+              }
+              const trackMatch = path.match(/^live_set tracks (\d+)$/);
+              if (trackMatch) {
+                const track = song.tracks[Number(trackMatch[1])];
+                if (!track) return { path, ok: false as const, reason: "no such track" };
+                track.name = name;
+                return { path, ok: true as const, name };
+              }
+              return { path, ok: false as const, reason: "unsupported path" };
             }),
           );
           const renamed = results.filter((r) => r.ok).length;

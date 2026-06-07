@@ -1,16 +1,17 @@
 import type { ConfigurationJSON } from 'src/types/config'
 
 /**
- * Derive clip-rename targets from the Poiesis config: every keyword whose
- * ableton connection targets a clip names that clip after itself.
+ * Derive rename targets from the Poiesis config so Live's names mirror the
+ * keyword grammar (`bass(verse)` ↔ track "bass", clip "verse"):
+ *   - the connection's TRACK is named after the keyword
+ *   - each ableton preset's resolved clip is named after the PRESET
+ *   - a keyword with no presets names its default-resolved clip after itself
  *
- * Path args (acts_on: 'path', e.g. `… clip_slots _clip_index clip`) resolve:
- *   - all-defaults  → named `keyword`
- *   - each preset   → named `keyword (preset)` (other args at their defaults)
- *
- * A path is skipped (no-op) when a needed ableton value is undefined — e.g.
- * an arg with no ableton default and no ableton presets. Empty slots are the
- * extension's no-op, reported back per item.
+ * Path args (acts_on: 'path', e.g. `… clip_slots _clip_index clip`) resolve
+ * at their ableton defaults / per-preset values. A path is skipped (no-op)
+ * when a needed ableton value is undefined — e.g. an arg with no ableton
+ * default and no ableton presets. Empty slots are the extension's no-op,
+ * reported back per item.
  */
 
 export interface AutonameItem {
@@ -54,10 +55,11 @@ export function deriveAutonameItems(config: ConfigurationJSON): AutonameDerivati
     const defaults: Record<string, ArgValue> = {}
     for (const [arg, a] of pathArgs) defaults[arg] = a.default_value?.ableton
 
-    const basePath = resolve(defaults)
-    if (basePath) items.push({ path: basePath, name: keyword })
-    else skipped++
+    // The connection's track carries the keyword name.
+    const trackMatch = ableton.path.match(/^live_set tracks (\d+)/)
+    if (trackMatch) items.push({ path: `live_set tracks ${trackMatch[1]}`, name: keyword })
 
+    let presetCount = 0
     for (const [arg, a] of pathArgs) {
       for (const [presetName, preset] of Object.entries(a.presets ?? {})) {
         if (preset.ableton === undefined) {
@@ -65,9 +67,18 @@ export function deriveAutonameItems(config: ConfigurationJSON): AutonameDerivati
           continue
         }
         const presetPath = resolve({ ...defaults, [arg]: preset.ableton })
-        if (presetPath) items.push({ path: presetPath, name: `${keyword} (${presetName})` })
-        else skipped++
+        if (presetPath) {
+          items.push({ path: presetPath, name: presetName })
+          presetCount++
+        } else skipped++
       }
+    }
+
+    // No presets → the (default-resolved) clip itself carries the keyword.
+    if (presetCount === 0) {
+      const basePath = resolve(defaults)
+      if (basePath) items.push({ path: basePath, name: keyword })
+      else skipped++
     }
   }
 
