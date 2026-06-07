@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { ActivePlugin, UIProps } from 'src/types/plugins'
+import { PoiesisState } from '@renderer/surfaces/poiesis/store'
 import { AbletonState } from '../store'
-import { LiveDevice, LiveTrack } from '../bridge'
+import { LiveDevice, LiveTrack, postAutoname } from '../bridge'
+import { deriveAutonameItems } from '../autoname'
 import { colorStyle } from './colors'
 
 // Session-style monitor of the open Live Set, read from the extension bridge.
@@ -29,6 +31,27 @@ function Accent({ on }: { on: boolean }) {
   return on ? (
     <span className="absolute inset-y-0 left-0 w-1 bg-stone-100 pointer-events-none" />
   ) : null
+}
+
+/** Slot render plan: clips as rows, consecutive empties collapsed into one
+ *  gap row, trailing empties (after the last clip) dropped. */
+type SlotSegment = { kind: 'clip' | 'gap'; start: number; end: number }
+function segmentSlots(slots: { clip: unknown | null }[]): SlotSegment[] {
+  let lastClip = -1
+  slots.forEach((s, i) => {
+    if (s.clip) lastClip = i
+  })
+  const segments: SlotSegment[] = []
+  for (let i = 0; i <= lastClip; i++) {
+    if (slots[i].clip) {
+      segments.push({ kind: 'clip', start: i, end: i })
+    } else if (segments.length && segments[segments.length - 1].kind === 'gap') {
+      segments[segments.length - 1].end = i
+    } else {
+      segments.push({ kind: 'gap', start: i, end: i })
+    }
+  }
+  return segments
 }
 
 const idx = (path: string, re: RegExp): number | null => {
@@ -83,21 +106,21 @@ function DeviceRow({
             (mappedDevice !== null && mappedDevice.id === pick.ids.device)
           }
         />
+        <span className="truncate">{device.name}</span>
+        <span className="ml-auto shrink-0 text-[10px] text-stone-500">
+          {device.parameters.length}
+        </span>
         <button
           onClick={(e) => {
             e.stopPropagation()
             setOpen((o) => !o)
           }}
           onDoubleClick={(e) => e.stopPropagation()}
-          className="shrink-0 w-5 -ml-2 self-stretch flex items-center justify-center text-stone-100 bg-stone-700 hover:bg-stone-600"
+          className="shrink-0 w-5 -mr-2 self-stretch flex items-center justify-center text-stone-100 bg-stone-700 hover:bg-stone-600 outline-none"
           title={open ? 'Collapse parameters' : 'Expand parameters'}
         >
           {open ? '▾' : '▸'}
         </button>
-        <span className="truncate">{device.name}</span>
-        <span className="ml-auto shrink-0 text-[10px] text-stone-500">
-          {device.parameters.length}
-        </span>
       </div>
 
       {open &&
@@ -143,7 +166,7 @@ function TrackColumn({
   const containsSelection =
     selectedPath !== null &&
     (track.id === selectedPath ||
-      track.clips.some((c) => c.id === selectedPath) ||
+      track.slots.some((sl) => sl.id === selectedPath) ||
       track.devices.some(
         (d) => d.id === selectedPath || d.parameters.some((p) => p.id === selectedPath)
       ))
@@ -177,24 +200,45 @@ function TrackColumn({
       </div>
 
       <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar">
-        {track.clips.map((c) => {
-          const slotIdx = idx(c.id, /clip_slots (\d+) clip$/)
-          const mappedSlot = slotIdx !== null ? (mapped?.clip_slots_data?.[slotIdx] ?? null) : null
+        {segmentSlots(track.slots).map((seg) => {
+          if (seg.kind === 'gap') {
+            // A run of consecutive empty slots collapses into one row; runs
+            // after the last clip are dropped entirely (see segmentSlots).
+            const single = seg.start === seg.end
+            const slot = track.slots[seg.start]
+            const mappedSlot = mapped?.clip_slots_data?.[seg.start] ?? null
+            const picked = single && mappedSlot !== null && mappedSlot.id === pick.ids.slot
+            return (
+              <div
+                key={slot.id}
+                data-maxpath={single ? slot.id : undefined}
+                onClick={single ? () => pick.clip(track, slot.id) : undefined}
+                className={`${ROW} bg-stone-900 text-stone-700 ${single ? 'cursor-pointer hover:text-stone-500' : ''}`}
+                title={
+                  single
+                    ? `empty slot ${seg.start} · ${slot.id}`
+                    : `empty slots ${seg.start}–${seg.end}`
+                }
+              >
+                <Accent on={picked} />
+                <span className="truncate">{single ? '·' : `‥ ${seg.start}–${seg.end}`}</span>
+              </div>
+            )
+          }
+          const slot = track.slots[seg.start]
+          const c = slot.clip!
+          const mappedSlot = mapped?.clip_slots_data?.[slot.index] ?? null
+          const picked = mappedSlot !== null && mappedSlot.id === pick.ids.slot
           return (
             <div
-              key={nodeKey(c.id)}
-              data-maxpath={c.id}
-              onClick={() => pick.clip(track, c.id)}
-              className={`${ROW} ${pulse(c.id === selectedPath)} cursor-pointer`}
+              key={nodeKey(slot.id)}
+              data-maxpath={slot.id}
+              onClick={() => pick.clip(track, slot.id)}
+              className={`${ROW} ${pulse(slot.id === selectedPath)} cursor-pointer`}
               style={colorStyle(c.color)}
-              title={`${c.kind} · ${c.id}`}
+              title={`${c.kind} · slot ${slot.index} · ${slot.id}`}
             >
-              <Accent
-                on={
-                  c.id === selectedPath ||
-                  (mappedSlot !== null && mappedSlot.id === pick.ids.slot)
-                }
-              />
+              <Accent on={slot.id === selectedPath || picked} />
               <span className="truncate">{c.name || '(unnamed)'}</span>
             </div>
           )
@@ -238,6 +282,45 @@ export default function Monitor({ instanceId }: UIProps) {
   const selectedKeyword = instance.useStore((s) => s.selectedKeyword)
 
   const selectedPath = selection?.maxPath ?? null
+
+  // --- Autoname: name clips in Live after the config's clip-connected keywords
+  const [autonameStatus, setAutonameStatus] = useState<string | null>(null)
+  const [autonameDetail, setAutonameDetail] = useState<string | null>(null)
+  const handleAutoname = async (): Promise<void> => {
+    const poiesis = Object.values(usePluginsStore.getState().active).find(
+      (p) => p.manifest.id === 'poiesis'
+    ) as ActivePlugin<PoiesisState> | undefined
+    const config = poiesis?.useStore.getState().parsedConfig ?? null
+    const { items, skipped } = deriveAutonameItems(config)
+    if (items.length === 0) {
+      setAutonameStatus(
+        !poiesis
+          ? 'load a Poiesis plugin first'
+          : skipped
+            ? `nothing nameable (${skipped} unresolvable)`
+            : 'no clip connections in config'
+      )
+      return
+    }
+    setAutonameStatus('naming…')
+    try {
+      const result = await postAutoname(items)
+      const totalSkipped = result.skipped + skipped
+      console.table(result.results)
+      const reasons = result.results
+        .filter((r) => !r.ok)
+        .map((r) => `${r.path} — ${r.reason}`)
+        .join('\n')
+      setAutonameDetail(reasons || null)
+      setAutonameStatus(
+        `named ${result.renamed}${totalSkipped ? ` · ${totalSkipped} no-op` : ''}`
+      )
+      void refresh()
+    } catch {
+      setAutonameDetail(null)
+      setAutonameStatus('autoname failed — bridge unreachable?')
+    }
+  }
 
   // --- Ripple overlay: the expanding rectangle is drawn on a fixed-position
   // layer measured off the target row, so scroll containers can't clip it.
@@ -358,6 +441,21 @@ export default function Monitor({ instanceId }: UIProps) {
         >
           {refreshing ? 'refreshing…' : 'refresh'}
         </button>
+        <button
+          onClick={() => void handleAutoname()}
+          className="border border-stone-600 px-2 py-0.5 hover:bg-stone-800"
+          title="Name clips in Live after the config's clip-connected keywords"
+        >
+          autoname
+        </button>
+        {autonameStatus && (
+          <span
+            className={`text-stone-400 shrink-0 ${autonameDetail ? 'cursor-help underline decoration-dotted' : ''}`}
+            title={autonameDetail ?? undefined}
+          >
+            {autonameStatus}
+          </span>
+        )}
         {snapshot && (
           <span className="text-stone-400 shrink-0">
             {snapshot.tempo} bpm · {liveTracks.length} tracks

@@ -143,12 +143,20 @@ export interface LiveClip {
   kind: ClipKind
 }
 
+export interface LiveSlot {
+  /** clip path for this slot (live_set tracks N clip_slots M clip) */
+  id: string
+  index: number
+  clip: LiveClip | null
+}
+
 export interface LiveTrack {
   id: string
   name: string
   /** Best-effort: the SDK exposes no track color — derived from the first clip */
   color: string
-  clips: LiveClip[]
+  /** ALL session slots, empty ones included — display order = slot index */
+  slots: LiveSlot[]
   devices: LiveDevice[]
 }
 
@@ -184,17 +192,21 @@ const toLiveClip = (c: SnapshotClip): LiveClip => ({
 })
 
 const toLiveTrack = (t: SnapshotTrack): LiveTrack => {
-  const clips = t.clipSlots.flatMap((s) => (s.clip ? [toLiveClip(s.clip)] : []))
+  const slots = t.clipSlots.map((s, index) => ({
+    id: `${t.maxPath} clip_slots ${index} clip`,
+    index,
+    clip: s.clip ? toLiveClip(s.clip) : null
+  }))
   return {
     id: t.maxPath,
     name: t.name,
-    color: clips[0]?.color ?? FALLBACK_COLOR,
-    clips,
+    color: slots.find((s) => s.clip)?.clip?.color ?? FALLBACK_COLOR,
+    slots,
     devices: t.devices.map(toLiveDevice)
   }
 }
 
-/** Regular tracks only — what the filetree shows. Empty slots are dropped. */
+/** Regular tracks only — what the monitor shows. */
 export const toLiveTracks = (snap: ProjectSnapshot): LiveTrack[] => snap.tracks.map(toLiveTrack)
 
 // ============================================================================
@@ -300,6 +312,27 @@ export async function fetchSelection(): Promise<SelectionPayload | null> {
   if (!res.ok) throw new Error(`bridge /selection failed: ${res.status}`)
   const body = (await res.json()) as { selection: SelectionPayload | null }
   return body.selection
+}
+
+export interface AutonameResult {
+  renamed: number
+  skipped: number
+  results: { path: string; ok: boolean; name?: string; reason?: string }[]
+}
+
+/** Rename session clips via the extension (one undoable transaction). */
+export async function postAutoname(
+  items: { path: string; name: string }[]
+): Promise<AutonameResult> {
+  // No content-type header on purpose: text/plain keeps this a "simple"
+  // request so the browser skips the CORS preflight (the bridge parses the
+  // body as JSON regardless).
+  const res = await fetch(`${BRIDGE_URL}/autoname`, {
+    method: 'POST',
+    body: JSON.stringify({ items })
+  })
+  if (!res.ok) throw new Error(`bridge /autoname failed: ${res.status}`)
+  return (await res.json()) as AutonameResult
 }
 
 const SELECT_ADDRESS = '/lily/select'
