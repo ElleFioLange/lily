@@ -278,6 +278,21 @@ function ArgEditor({
       </div>
 
       <div className="flex gap-2">
+        <Field label="Acts On">
+          <select
+            value={arg.ableton?.acts_on ?? 'path'}
+            onChange={(e) =>
+              updateAbleton({
+                acts_on: e.target.value as 'path' | 'value',
+                type: arg.ableton?.type ?? 'number'
+              })
+            }
+            className={inputCls}
+          >
+            <option value="path">path</option>
+            <option value="value">value</option>
+          </select>
+        </Field>
         <Field label="Type">
           <select
             value={arg.ableton?.type ?? 'number'}
