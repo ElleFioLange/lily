@@ -178,11 +178,14 @@ function TrackColumn({
   // restarting the CSS animation even when the same node is re-selected.
   const nodeKey = (id: string) => (id === selectedPath ? `${id}:${selectionSeq}` : id)
 
-  // Ableton numbers its tracks ("1 Wavetable"); sets keep that in the name.
-  // When a name doesn't start with a digit (e.g. after autoname), prefix the
-  // 1-based track index for display.
+  // Ableton numbers its tracks ("1 Wavetable"). Auto-named tracks report
+  // "N-DeviceName" through the API (Live's UI shows "N Name") — normalize the
+  // hyphen to a space. Names without a leading digit (e.g. after autoname)
+  // get the 1-based track index prefixed for display.
   const trackNumber = (idx(track.id, /^live_set tracks (\d+)/) ?? 0) + 1
-  const displayName = /^\d/.test(track.name) ? track.name : `${trackNumber} ${track.name}`
+  const displayName = /^\d/.test(track.name)
+    ? track.name.replace(/^(\d+)-/, '$1 ')
+    : `${trackNumber} ${track.name}`
 
   return (
     <div ref={ref} className="flex flex-col gap-1 w-36 shrink-0 min-h-0">
