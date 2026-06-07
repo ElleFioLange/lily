@@ -61,8 +61,7 @@ function device(action, path) {
   else if (action === 'inactive') dev.set('is_active', 0)
 }
 
-
-function set_param(path, value) {
+function device_parameter(action, path, value) {
   var obj = new LiveAPI(path)
-  obj.set('value', value)
+  if (action === 'value') obj.set('value', value)
 }
