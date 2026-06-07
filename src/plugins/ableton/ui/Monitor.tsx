@@ -33,6 +33,27 @@ function Accent({ on }: { on: boolean }) {
   ) : null
 }
 
+/** Slot render plan: clips as rows, consecutive empties collapsed into one
+ *  gap row, trailing empties (after the last clip) dropped. */
+type SlotSegment = { kind: 'clip' | 'gap'; start: number; end: number }
+function segmentSlots(slots: { clip: unknown | null }[]): SlotSegment[] {
+  let lastClip = -1
+  slots.forEach((s, i) => {
+    if (s.clip) lastClip = i
+  })
+  const segments: SlotSegment[] = []
+  for (let i = 0; i <= lastClip; i++) {
+    if (slots[i].clip) {
+      segments.push({ kind: 'clip', start: i, end: i })
+    } else if (segments.length && segments[segments.length - 1].kind === 'gap') {
+      segments[segments.length - 1].end = i
+    } else {
+      segments.push({ kind: 'gap', start: i, end: i })
+    }
+  }
+  return segments
+}
+
 const idx = (path: string, re: RegExp): number | null => {
   const m = path.match(re)
   return m ? Number(m[1]) : null
@@ -174,26 +195,35 @@ function TrackColumn({
       </div>
 
       <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar">
-        {track.slots.map((slot) => {
-          const mappedSlot = mapped?.clip_slots_data?.[slot.index] ?? null
-          const picked = mappedSlot !== null && mappedSlot.id === pick.ids.slot
-          if (!slot.clip) {
-            // Empty slot — kept in the grid so rows line up with slot indexes;
-            // clickable to wire a keyword at this position.
+        {segmentSlots(track.slots).map((seg) => {
+          if (seg.kind === 'gap') {
+            // A run of consecutive empty slots collapses into one row; runs
+            // after the last clip are dropped entirely (see segmentSlots).
+            const single = seg.start === seg.end
+            const slot = track.slots[seg.start]
+            const mappedSlot = mapped?.clip_slots_data?.[seg.start] ?? null
+            const picked = single && mappedSlot !== null && mappedSlot.id === pick.ids.slot
             return (
               <div
                 key={slot.id}
-                data-maxpath={slot.id}
-                onClick={() => pick.clip(track, slot.id)}
-                className={`${ROW} cursor-pointer bg-stone-900 text-stone-700 hover:text-stone-500`}
-                title={`empty slot ${slot.index} · ${slot.id}`}
+                data-maxpath={single ? slot.id : undefined}
+                onClick={single ? () => pick.clip(track, slot.id) : undefined}
+                className={`${ROW} bg-stone-900 text-stone-700 ${single ? 'cursor-pointer hover:text-stone-500' : ''}`}
+                title={
+                  single
+                    ? `empty slot ${seg.start} · ${slot.id}`
+                    : `empty slots ${seg.start}–${seg.end}`
+                }
               >
                 <Accent on={picked} />
-                <span className="truncate">·</span>
+                <span className="truncate">{single ? '·' : `‥ ${seg.start}–${seg.end}`}</span>
               </div>
             )
           }
-          const c = slot.clip
+          const slot = track.slots[seg.start]
+          const c = slot.clip!
+          const mappedSlot = mapped?.clip_slots_data?.[slot.index] ?? null
+          const picked = mappedSlot !== null && mappedSlot.id === pick.ids.slot
           return (
             <div
               key={nodeKey(slot.id)}
