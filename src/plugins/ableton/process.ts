@@ -37,7 +37,7 @@ function processPunctuationModifiers(
   for (const [, { open, close, sendOffset }] of Object.entries(MODIFIER_CHARS)) {
     let sendValue = 0
     if (before === open && after === close) {
-      sendValue = 0.5
+      sendValue = 1
     }
     const sendIndex = returnIndices[sendOffset]
     const sendPath = `live_set tracks ${trackIndex} mixer_device sends ${sendIndex}`
