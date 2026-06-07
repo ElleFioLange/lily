@@ -1021,7 +1021,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
                   }
                 }}
                 disabled={!poiesisEntry}
-                className="px-2.5 border-l border-stone-700 text-stone-400 hover:text-stone-100 hover:bg-stone-800 outline-none leading-none"
+                className="px-2.5 bg-stone-600 hover:bg-stone-500 text-stone-100 outline-none leading-none transition-colors"
                 title={inputValue.trim() ? 'Add keyword' : 'Paste a poem'}
               >
                 +
