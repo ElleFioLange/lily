@@ -549,12 +549,14 @@ function ObjectInfo({
   track,
   clipSlot,
   device,
-  param
+  param,
+  keywords
 }: {
   track: AbletonTrack | null
   clipSlot: AbletonClipSlot | null
   device: AbletonDevice | null
   param: AbletonDeviceParameter | null
+  keywords?: React.ReactNode
 }) {
   if (!track && !device && !param && !clipSlot) {
     return (
@@ -570,7 +572,11 @@ function ObjectInfo({
         <div>
           <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Parameter</p>
           <p className="text-stone-100 text-sm">{param.name}</p>
+          <p className="text-stone-500 text-xs">
+            {device ? `${device.name} · ` : ''}on {track?.name}
+          </p>
         </div>
+        {keywords}
         <div className="grid grid-cols-2 gap-3 text-xs">
           {(
             [
@@ -598,7 +604,9 @@ function ObjectInfo({
         <div>
           <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Clip</p>
           <p className="text-stone-100 text-sm">{clip?.name || 'Untitled'}</p>
+          <p className="text-stone-500 text-xs">on {track?.name}</p>
         </div>
+        {keywords}
         <div className="flex items-center gap-2 text-xs">
           <span
             className={`w-1.5 h-1.5 rounded-full ${clip?.is_playing ? 'bg-green-400' : 'bg-stone-600'}`}
@@ -634,8 +642,11 @@ function ObjectInfo({
         <div>
           <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Device</p>
           <p className="text-stone-100 text-sm">{device.name}</p>
-          <p className="text-stone-500 text-xs">{device.class_display_name}</p>
+          <p className="text-stone-500 text-xs">
+            {device.class_display_name} · on {track?.name}
+          </p>
         </div>
+        {keywords}
         <div className="flex items-center gap-2 text-xs">
           <span
             className={`w-1.5 h-1.5 rounded-full ${device.is_active ? 'bg-green-400' : 'bg-stone-600'}`}
@@ -678,6 +689,7 @@ function ObjectInfo({
           <p className="text-stone-100 text-sm">{track!.name}</p>
         </div>
       </div>
+      {keywords}
       <div className="flex gap-4 text-xs">
         {[
           track!.mute !== undefined ? { label: 'Mute', val: track!.mute ? 'On' : 'Off' } : null,
@@ -992,25 +1004,30 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
                   : 'Object'}
         </ColumnHeader>
         <div className="flex-1 overflow-y-auto">
-          {assignedKeywords.length > 0 && (
-            <div className="px-4 pt-3 flex flex-wrap gap-1.5">
-              {assignedKeywords.map(({ keyword, label }) => (
-                <KeywordPill
-                  key={label}
-                  keyword={label}
-                  keyConfig={parsedConfig?.[keyword]}
-                  project={project}
-                  selected={selectedKeyword === keyword}
-                  onClick={() => setSelectedKeyword(keyword)}
-                />
-              ))}
-            </div>
-          )}
           <ObjectInfo
             track={selectedTrack}
             clipSlot={selectedClipSlot}
             device={selectedDevice}
             param={selectedParam}
+            keywords={
+              assignedKeywords.length > 0 ? (
+                <div>
+                  <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Keywords</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {assignedKeywords.map(({ keyword, label }) => (
+                      <KeywordPill
+                        key={label}
+                        keyword={label}
+                        keyConfig={parsedConfig?.[keyword]}
+                        project={project}
+                        selected={selectedKeyword === keyword}
+                        onClick={() => setSelectedKeyword(keyword)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : undefined
+            }
           />
         </div>
       </div>
