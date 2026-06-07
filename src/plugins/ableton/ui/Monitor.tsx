@@ -69,21 +69,23 @@ function DeviceRow({
       <div
         key={nodeKey(device.id)}
         onClick={() => pick.device(track, device.id)}
+        onDoubleClick={() => setOpen((o) => !o)}
         className={`${ROW} ${highlight(device.id === selectedPath)} ${clickSel(
           mappedDevice !== null && mappedDevice.id === pick.ids.device
         )} bg-stone-800 text-stone-300 cursor-pointer ${open ? 'sticky top-0 z-[5]' : ''}`}
-        title={device.id}
+        title={`${device.id} — click selects · double-click or caret expands`}
       >
-        <span
+        <button
           onClick={(e) => {
             e.stopPropagation()
             setOpen((o) => !o)
           }}
-          className="shrink-0 w-3 text-[10px] opacity-70 hover:opacity-100 cursor-pointer"
+          onDoubleClick={(e) => e.stopPropagation()}
+          className="shrink-0 w-5 -ml-1 self-stretch flex items-center justify-center text-stone-100 bg-stone-700 hover:bg-stone-600"
           title={open ? 'Collapse parameters' : 'Expand parameters'}
         >
           {open ? '▾' : '▸'}
-        </span>
+        </button>
         <span className="truncate">◆ {device.name}</span>
         <span className="ml-auto shrink-0 text-[10px] text-stone-500">
           {device.parameters.length}
@@ -262,8 +264,6 @@ export default function Monitor({ instanceId }: UIProps) {
     }
   }
 
-  const m4lConnected = (project.track_data_arr?.length ?? 0) > 0
-
   return (
     <div className="h-full flex flex-col text-xs font-neon text-stone-100">
       <div className="flex items-baseline gap-3 px-3 py-1.5 shrink-0">
@@ -289,11 +289,6 @@ export default function Monitor({ instanceId }: UIProps) {
         {refreshError && (
           <span className="text-rose-400 truncate" title={refreshError}>
             bridge unreachable — is Live running with the Lily extension?
-          </span>
-        )}
-        {!m4lConnected && liveTracks.length > 0 && (
-          <span className="text-stone-600 truncate">
-            m4l not connected — clicks can't drive the connection form yet
           </span>
         )}
       </div>

@@ -1,15 +1,15 @@
 // Ableton Live Project Store
 //
-// Two read paths coexist for now:
-//   - M4L get-state packets (/send/state → abletonProject) — powers the
-//     Workspace keyword/connection UI.
-//   - Extension bridge (extensions/lily, http://127.0.0.1:7879) — powers the
-//     session-style Monitor (snapshot/liveTracks) and "Show in Lily"
-//     selection pushes (/lily/select).
+// The extension bridge (extensions/lily, http://127.0.0.1:7879) is the single
+// read path: refresh() fetches /snapshot and derives BOTH the Monitor's view
+// (liveTracks) and the Workspace's get-state-shaped abletonProject from the
+// same data, so selection mapping and Live-path indexes always agree. The M4L
+// device is control-only (process.ts → /control).
 import { create } from 'zustand'
 import { UseStore } from 'src/types/plugins'
 import {
   fetchSnapshot,
+  toAbletonProject,
   toLiveTracks,
   type LiveTrack,
   type ProjectSnapshot,
@@ -95,13 +95,20 @@ export const createAbletonStore = (instanceId: string): UseStore<AbletonState> =
     selectionSeq: 0,
 
     refresh: async () => {
-      set({ refreshing: true, refreshError: null })
+      set({ refreshing: true, refreshError: null, isLoading: true })
       try {
         const snapshot = await fetchSnapshot()
-        set({ snapshot, liveTracks: toLiveTracks(snapshot), refreshing: false })
+        set({
+          snapshot,
+          liveTracks: toLiveTracks(snapshot),
+          // Same snapshot also feeds the Workspace's connection form
+          abletonProject: toAbletonProject(snapshot),
+          refreshing: false,
+          isLoading: false
+        })
       } catch (e) {
         // Bridge unreachable usually means Live (or the extension host) isn't running.
-        set({ refreshing: false, refreshError: String(e) })
+        set({ refreshing: false, isLoading: false, refreshError: String(e) })
       }
     },
 

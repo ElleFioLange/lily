@@ -198,6 +198,92 @@ const toLiveTrack = (t: SnapshotTrack): LiveTrack => {
 export const toLiveTracks = (snap: ProjectSnapshot): LiveTrack[] => snap.tracks.map(toLiveTrack)
 
 // ============================================================================
+// get-state-shape synthesis
+// ============================================================================
+
+/**
+ * Synthesize the Workspace's get-state-shaped AbletonProject from the bridge
+ * snapshot, making the bridge the single read source (M4L stays control-only).
+ * Ids are synthetic but unique within one snapshot — selection equality and
+ * findIndex lookups are all that consume them — and array indexes match LOM
+ * order by construction, so generateLivePath emits correct Live paths.
+ */
+export function toAbletonProject(snap: ProjectSnapshot): AbletonProject {
+  let nextId = 1
+  const id = (): number => nextId++
+
+  const toParam = (p: SnapshotParam, parent: number): AbletonDeviceParameter => ({
+    id: id(),
+    name: p.name,
+    value: p.defaultValue,
+    min: p.min,
+    max: p.max,
+    display_value: '',
+    is_quantized: p.isQuantized,
+    is_enabled: true,
+    parent
+  })
+
+  const toDevice = (d: SnapshotDevice): AbletonDevice => {
+    const deviceId = id()
+    return {
+      id: deviceId,
+      name: d.name,
+      class_display_name: d.name,
+      is_active: true,
+      parameters: d.parameters.map((p) => toParam(p, deviceId))
+    }
+  }
+
+  const toClip = (c: SnapshotClip): AbletonClip => ({
+    id: id(),
+    name: c.name,
+    color: c.color,
+    is_playing: false,
+    is_recording: false,
+    is_triggered: false,
+    length: c.duration,
+    looping: c.looping,
+    muted: c.muted
+  })
+
+  const toSlot = (s: SnapshotClipSlot, parent: number): AbletonClipSlot => ({
+    id: id(),
+    has_clip: s.hasClip,
+    clip_data: s.clip ? toClip(s.clip) : null,
+    is_playing: false,
+    is_recording: false,
+    is_triggered: false,
+    parent
+  })
+
+  const toTrack = (t: SnapshotTrack): AbletonTrack => {
+    const trackId = id()
+    return {
+      id: trackId,
+      name: t.name,
+      // tracks have no color in the SDK — borrow the first clip's
+      color: t.clipSlots.find((s) => s.clip)?.clip?.color ?? 0x44403c,
+      mute: t.mute,
+      solo: t.solo,
+      arm: t.arm,
+      is_foldable: false,
+      is_grouped: false,
+      is_visible: true,
+      clip_slots_data: t.clipSlots.map((s) => toSlot(s, trackId)),
+      device_data: t.devices.map(toDevice)
+    }
+  }
+
+  return {
+    id: id(),
+    track_data_arr: snap.tracks.map(toTrack),
+    return_track_data_arr: snap.returnTracks.map(toTrack),
+    master_track: toTrack(snap.masterTrack)
+  }
+}
+
+// ============================================================================
 // Fetchers & selection subscription
 // ============================================================================
 
