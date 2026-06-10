@@ -9,6 +9,7 @@ write-up. Result: ✅ background-timer reads + diffing + a localhost server all 
 ## What it does
 
 In `activate` it:
+
 1. Polls `song / tracks / devices / clipSlots` every second from a background timer
    (the key test — reads from **outside** a command callback).
 2. Diffs each snapshot and logs only on change.

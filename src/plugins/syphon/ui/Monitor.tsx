@@ -7,8 +7,14 @@ export default function Monitor({ instanceId, ...props }: UIProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<SyphonState>
-  const { canvas: sourceCanvas, frameWidth, frameHeight, frameCount, connectedServerUUID, servers } =
-    instance.useStore()
+  const {
+    canvas: sourceCanvas,
+    frameWidth,
+    frameHeight,
+    frameCount,
+    connectedServerUUID,
+    servers
+  } = instance.useStore()
 
   const connectedServer = servers.find((s) => s.uuid === connectedServerUUID)
 
@@ -35,7 +41,10 @@ export default function Monitor({ instanceId, ...props }: UIProps) {
 
   return (
     <div className="flex flex-col gap-3 p-4 size-full" {...props}>
-      <div className="relative bg-stone-900 rounded overflow-hidden" style={{ aspectRatio: '16/9', maxWidth: 480 }}>
+      <div
+        className="relative bg-stone-900 rounded overflow-hidden"
+        style={{ aspectRatio: '16/9', maxWidth: 480 }}
+      >
         {connectedServerUUID ? (
           <canvas ref={canvasRef} className="size-full object-contain" />
         ) : (

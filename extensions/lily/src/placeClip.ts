@@ -1,6 +1,6 @@
-import type { ClipSlot } from "@ableton-extensions/sdk";
-import { AudioClip, Clip, MidiClip } from "@ableton-extensions/sdk";
-import { clipContentLength } from "./util.js";
+import type { ClipSlot } from '@ableton-extensions/sdk'
+import { AudioClip, Clip, MidiClip } from '@ableton-extensions/sdk'
+import { clipContentLength } from './util.js'
 
 /**
  * Recreate a source arrangement clip in a session slot. MIDI is faithful (notes
@@ -8,22 +8,22 @@ import { clipContentLength } from "./util.js";
  * back to the untrimmed file if Live rejects the settings.
  */
 export async function recreateInSlot(
-  slot: ClipSlot<"1.0.0">,
-  source: Clip<"1.0.0">,
+  slot: ClipSlot<'1.0.0'>,
+  source: Clip<'1.0.0'>,
   name: string,
   /** Override the clip color; defaults to the source clip's color. */
-  color?: number,
+  color?: number
 ): Promise<void> {
   if (source instanceof MidiClip) {
-    const clip = await slot.createMidiClip(clipContentLength(source));
-    clip.notes = source.notes;
-    clip.name = name;
-    clip.color = color ?? source.color;
-    return;
+    const clip = await slot.createMidiClip(clipContentLength(source))
+    clip.notes = source.notes
+    clip.name = name
+    clip.color = color ?? source.color
+    return
   }
 
   if (source instanceof AudioClip) {
-    let clip: AudioClip<"1.0.0">;
+    let clip: AudioClip<'1.0.0'>
     try {
       clip = await slot.createAudioClip({
         filePath: source.filePath,
@@ -33,13 +33,13 @@ export async function recreateInSlot(
           startMarker: source.startMarker,
           endMarker: source.endMarker,
           loopStart: source.loopStart,
-          loopEnd: source.loopEnd,
-        },
-      });
+          loopEnd: source.loopEnd
+        }
+      })
     } catch {
-      clip = await slot.createAudioClip({ filePath: source.filePath });
+      clip = await slot.createAudioClip({ filePath: source.filePath })
     }
-    clip.name = name;
-    clip.color = color ?? source.color;
+    clip.name = name
+    clip.color = color ?? source.color
   }
 }

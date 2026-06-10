@@ -50,7 +50,10 @@ function ScopeCanvas({ instanceId: _instanceId }: { instanceId: string }) {
       // zero-crossing trigger for stable display
       let start = 0
       for (let i = 1; i < data.length; i++) {
-        if (data[i - 1] < 0 && data[i] >= 0) { start = i; break }
+        if (data[i - 1] < 0 && data[i] >= 0) {
+          start = i
+          break
+        }
       }
 
       const step = w / (data.length - start)
@@ -68,12 +71,7 @@ function ScopeCanvas({ instanceId: _instanceId }: { instanceId: string }) {
 
   return (
     <div className="size-full flex flex-col">
-      <canvas
-        ref={canvasRef}
-        width={400}
-        height={120}
-        className="w-full h-full"
-      />
+      <canvas ref={canvasRef} width={400} height={120} className="w-full h-full" />
       <p className="text-stone-600 text-xs font-mono text-center pb-1">
         add <span className="text-stone-400">.scope()</span> to enable
       </p>
@@ -128,7 +126,7 @@ function PianorollCanvas({ instanceId }: { instanceId: string }) {
           background: 'transparent',
           inactive: '#57534e',
           active: '#6ee7b7',
-          playheadColor: '#6ee7b7',
+          playheadColor: '#6ee7b7'
         })
       } catch {
         // pattern may not have note values
@@ -139,14 +137,7 @@ function PianorollCanvas({ instanceId }: { instanceId: string }) {
     return () => cancelAnimationFrame(rafId)
   }, [instanceId])
 
-  return (
-    <canvas
-      ref={canvasRef}
-      width={400}
-      height={150}
-      className="w-full h-full"
-    />
-  )
+  return <canvas ref={canvasRef} width={400} height={150} className="w-full h-full" />
 }
 
 // ─── Monitor root ─────────────────────────────────────────────────────────────
@@ -179,7 +170,9 @@ export default function Monitor({ instanceId }: UIProps) {
         {tab === 'info' && (
           <div className="p-4 flex flex-col gap-3 text-stone-300">
             <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isPlaying ? 'bg-emerald-400' : 'bg-stone-600'}`} />
+              <span
+                className={`w-2 h-2 rounded-full flex-shrink-0 ${isPlaying ? 'bg-emerald-400' : 'bg-stone-600'}`}
+              />
               <span className="text-stone-400">{isPlaying ? 'playing' : 'stopped'}</span>
             </div>
             <div>

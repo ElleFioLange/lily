@@ -324,10 +324,7 @@ const api = {
     listServers: (): Promise<{ name: string; appName: string; uuid: string }[]> =>
       ipcRenderer.invoke('syphon:list-servers'),
 
-    connect: (
-      instanceId: string,
-      serverUUID: string
-    ): Promise<{ success: boolean }> =>
+    connect: (instanceId: string, serverUUID: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke('syphon:connect', instanceId, serverUUID),
 
     disconnect: (instanceId: string): Promise<{ success: boolean }> =>

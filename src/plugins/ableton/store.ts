@@ -96,7 +96,9 @@ export interface AbletonState {
   setKeywordInputValue: (value: string) => void
   setPoemText: (text: string) => void
   setKeywordInputExpanded: (expanded: boolean) => void
-  setConnectionDraft: (draft: { ableton: AbletonConfigurationKey; args: Record<string, KeyArgument> } | null) => void
+  setConnectionDraft: (
+    draft: { ableton: AbletonConfigurationKey; args: Record<string, KeyArgument> } | null
+  ) => void
 
   // --- Extension-bridge slice (GET /snapshot + /lily/select) ---------------
   snapshot: ProjectSnapshot | null

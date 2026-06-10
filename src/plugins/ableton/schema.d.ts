@@ -46,7 +46,6 @@ declare interface AbletonClipSlot {
   parent: number
 }
 
-
 declare interface AbletonTrack {
   id: number
   name: string

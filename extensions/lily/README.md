@@ -5,12 +5,14 @@ app; see [`../../docs/ABLETON_EXTENSION.md`](../../docs/ABLETON_EXTENSION.md) fo
 capabilities/limits these are built on.
 
 It also runs an **always-on localhost bridge** that gives the Lily app a read path
-into the Set (see *Bridge* below).
+into the Set (see _Bridge_ below).
 
 Right-click any track in Live to run the tools (Show in Lily is also on clips):
 
 ### Lily: Mark Inflections
+
 Analyzes the **arrangement** and drops locators at structural inflection points.
+
 - **Sections** — where several clips start on the same bar (snapped to the 4-bar grid).
 - **Risers/Fills** — short (≤1 bar) clips landing just before a section.
 - Assumes **4/4**. Markers are tagged `✦` and the command is **idempotent** (re-running
@@ -18,7 +20,9 @@ Analyzes the **arrangement** and drops locators at structural inflection points.
   an optional audio-render riser pass is stubbed in `markInflections.ts`.
 
 ### Lily: Dedupe to Session
+
 Collects **unique** arrangement clips per track and lays them into **Session view**.
+
 - **Non-destructive** — the arrangement is untouched.
 - Fills from the **first empty scene** down (creating scenes if needed), one column per track.
 - **Autonamed** `"<track> <n>"`.
@@ -26,10 +30,12 @@ Collects **unique** arrangement clips per track and lays them into **Session vie
   carry across via `loopSettings`, falling back to the untrimmed file if Live rejects it.
 
 ### Lily: Reconstruct to Session
+
 Rebuilds the arrangement as a **labeled Session grid**: one scene per inflection
 section, each scene named after the section (`✦ Build 3 (7 trk)`) and its row filled
 with each track's representative clip for that section (most-overlapping clip).
-- Combines the analysis of *Mark Inflections* with the placement of *Dedupe to Session*.
+
+- Combines the analysis of _Mark Inflections_ with the placement of _Dedupe to Session_.
 - Appends fresh scenes (non-destructive); **idempotent** — clears its own `✦` scenes first.
 - Clips are **colored by section energy** (blue=sparse → red=full) and **autonamed**
   evocatively (`Hushed Ember` → `Blazing Ember`): noun = track identity, adjective =
@@ -38,8 +44,10 @@ with each track's representative clip for that section (most-overlapping clip).
 - Launching a reconstructed scene recalls that section's layout.
 
 ### Lily: Show in Lily
+
 Pushes the right-clicked **track or clip** to the Lily app so its Ableton monitor
 pane can highlight it.
+
 - Sends OSC `/lily/select` to Lily (`127.0.0.1:5460`) with one JSON string arg:
   `{ type, name, maxPath, trackName, trackPath, clipKind?, inArrangement? }`.
 - Also exposed at `GET /selection` on the bridge (for when Lily launches later).
@@ -56,7 +64,7 @@ curl -s http://127.0.0.1:7879/selection  # last "Show in Lily" payload
 ```
 
 `/snapshot` re-serializes the Set on every request — Lily's **Refresh** is just this
-fetch. Device-parameter *values* are excluded (async in the SDK); the snapshot is
+fetch. Device-parameter _values_ are excluded (async in the SDK); the snapshot is
 structural/sync only. See `src/snapshot.ts` for the SDK→LOM path mapping.
 
 ## Setup & run

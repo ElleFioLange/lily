@@ -32,93 +32,93 @@ import {
   Song,
   Track,
   TrackMixer
-} from "@ableton-extensions/sdk";
+} from '@ableton-extensions/sdk'
 
-type V = "1.0.0";
+type V = '1.0.0'
 
 // Several SDK numeric getters return `bigint` at runtime (their .d.ts says
 // `number`). JSON.stringify can't serialize bigint and consumers expect
 // numbers, so coerce every numeric field through this.
-const num = (v: number): number => Number(v);
+const num = (v: number): number => Number(v)
 
-export type TrackKind = "track" | "return" | "master";
-export type ClipKind = "midi" | "audio" | "clip";
+export type TrackKind = 'track' | 'return' | 'master'
+export type ClipKind = 'midi' | 'audio' | 'clip'
 
 export interface ParamNode {
-  name: string;
-  maxPath: string;
-  min: number;
-  max: number;
-  isQuantized: boolean;
-  defaultValue: number;
+  name: string
+  maxPath: string
+  min: number
+  max: number
+  isQuantized: boolean
+  defaultValue: number
 }
 
 export interface DeviceNode {
-  name: string;
-  maxPath: string;
-  parameters: ParamNode[];
+  name: string
+  maxPath: string
+  parameters: ParamNode[]
 }
 
 export interface ClipNode {
-  name: string;
-  maxPath: string;
-  kind: ClipKind;
-  color: number;
-  looping: boolean;
-  muted: boolean;
-  startTime: number;
-  endTime: number;
-  duration: number;
+  name: string
+  maxPath: string
+  kind: ClipKind
+  color: number
+  looping: boolean
+  muted: boolean
+  startTime: number
+  endTime: number
+  duration: number
 }
 
 export interface ClipSlotNode {
-  maxPath: string;
-  hasClip: boolean;
-  clip: ClipNode | null;
+  maxPath: string
+  hasClip: boolean
+  clip: ClipNode | null
 }
 
 export interface MixerNode {
-  maxPath: string;
-  volume: ParamNode;
-  panning: ParamNode;
-  sends: ParamNode[];
+  maxPath: string
+  volume: ParamNode
+  panning: ParamNode
+  sends: ParamNode[]
 }
 
 export interface TrackNode {
-  name: string;
-  maxPath: string;
-  kind: TrackKind;
-  mute: boolean;
-  solo: boolean;
-  arm: boolean;
-  devices: DeviceNode[];
-  mixer: MixerNode;
+  name: string
+  maxPath: string
+  kind: TrackKind
+  mute: boolean
+  solo: boolean
+  arm: boolean
+  devices: DeviceNode[]
+  mixer: MixerNode
   /** Session slots — only regular tracks have them (returns/master are empty). */
-  clipSlots: ClipSlotNode[];
+  clipSlots: ClipSlotNode[]
 }
 
 export interface SceneNode {
-  name: string;
-  maxPath: string;
-  tempo: number;
-  signatureNumerator: number;
-  signatureDenominator: number;
+  name: string
+  maxPath: string
+  tempo: number
+  signatureNumerator: number
+  signatureDenominator: number
 }
 
 export interface CuePointNode {
-  name: string;
-  maxPath: string;
-  time: number;
+  name: string
+  maxPath: string
+  time: number
 }
 
 export interface ProjectSnapshot {
-  maxPath: "live_set";
-  tempo: number;
-  tracks: TrackNode[];
-  returnTracks: TrackNode[];
-  masterTrack: TrackNode;
-  scenes: SceneNode[];
-  cuePoints: CuePointNode[];
+  maxPath: 'live_set'
+  tempo: number
+  tracks: TrackNode[]
+  returnTracks: TrackNode[]
+  masterTrack: TrackNode
+  scenes: SceneNode[]
+  cuePoints: CuePointNode[]
 }
 
 function serializeParam(p: DeviceParameter<V>, maxPath: string): ParamNode {
@@ -129,7 +129,7 @@ function serializeParam(p: DeviceParameter<V>, maxPath: string): ParamNode {
     max: num(p.max),
     isQuantized: p.isQuantized,
     defaultValue: num(p.defaultValue)
-  };
+  }
 }
 
 function serializeDevice(d: Device<V>, maxPath: string): DeviceNode {
@@ -137,13 +137,13 @@ function serializeDevice(d: Device<V>, maxPath: string): DeviceNode {
     name: d.name,
     maxPath,
     parameters: d.parameters.map((p, i) => serializeParam(p, `${maxPath} parameters ${i}`))
-  };
+  }
 }
 
 function clipKindOf(c: Clip<V>): ClipKind {
-  if (c instanceof MidiClip) return "midi";
-  if (c instanceof AudioClip) return "audio";
-  return "clip";
+  if (c instanceof MidiClip) return 'midi'
+  if (c instanceof AudioClip) return 'audio'
+  return 'clip'
 }
 
 function serializeClip(c: Clip<V>, maxPath: string): ClipNode {
@@ -157,34 +157,34 @@ function serializeClip(c: Clip<V>, maxPath: string): ClipNode {
     startTime: num(c.startTime),
     endTime: num(c.endTime),
     duration: num(c.duration)
-  };
+  }
 }
 
 function serializeMixer(m: TrackMixer<V>, trackPath: string): MixerNode {
-  const maxPath = `${trackPath} mixer_device`;
+  const maxPath = `${trackPath} mixer_device`
   return {
     maxPath,
     volume: serializeParam(m.volume, `${maxPath} volume`),
     panning: serializeParam(m.panning, `${maxPath} panning`),
     sends: m.sends.map((s, i) => serializeParam(s, `${maxPath} sends ${i}`))
-  };
+  }
 }
 
 function serializeTrack(t: Track<V>, maxPath: string, kind: TrackKind): TrackNode {
   // Only regular tracks have session clip slots; addressing
   // `master_track clip_slots N` / `return_tracks N clip_slots N` is invalid.
   const clipSlots: ClipSlotNode[] =
-    kind === "track"
+    kind === 'track'
       ? t.clipSlots.map((slot, i) => {
-          const slotPath = `${maxPath} clip_slots ${i}`;
-          const clip = slot.clip;
+          const slotPath = `${maxPath} clip_slots ${i}`
+          const clip = slot.clip
           return {
             maxPath: slotPath,
             hasClip: clip !== null,
             clip: clip ? serializeClip(clip, `${slotPath} clip`) : null
-          };
+          }
         })
-      : [];
+      : []
 
   return {
     name: t.name,
@@ -196,19 +196,19 @@ function serializeTrack(t: Track<V>, maxPath: string, kind: TrackKind): TrackNod
     devices: t.devices.map((d, i) => serializeDevice(d, `${maxPath} devices ${i}`)),
     mixer: serializeMixer(t.mixer, maxPath),
     clipSlots
-  };
+  }
 }
 
 /** Walk the whole Live Set into a path-annotated tree. */
 export function serializeSong(song: Song<V>): ProjectSnapshot {
   return {
-    maxPath: "live_set",
+    maxPath: 'live_set',
     tempo: num(song.tempo),
-    tracks: song.tracks.map((t, i) => serializeTrack(t, `live_set tracks ${i}`, "track")),
+    tracks: song.tracks.map((t, i) => serializeTrack(t, `live_set tracks ${i}`, 'track')),
     returnTracks: song.returnTracks.map((t, i) =>
-      serializeTrack(t, `live_set return_tracks ${i}`, "return")
+      serializeTrack(t, `live_set return_tracks ${i}`, 'return')
     ),
-    masterTrack: serializeTrack(song.mainTrack, "live_set master_track", "master"),
+    masterTrack: serializeTrack(song.mainTrack, 'live_set master_track', 'master'),
     scenes: song.scenes.map((s, i) => ({
       name: s.name,
       maxPath: `live_set scenes ${i}`,
@@ -221,5 +221,5 @@ export function serializeSong(song: Song<V>): ProjectSnapshot {
       maxPath: `live_set cue_points ${i}`,
       time: num(c.time)
     }))
-  };
+  }
 }

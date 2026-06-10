@@ -407,7 +407,7 @@ function ConnectionForm({
     return m ? parseInt(m[1]) : 0
   })()
   const [audioReactivity, setAudioReactivity] = useState({
-    enabled: !!(existing?.audio_reactivity),
+    enabled: !!existing?.audio_reactivity,
     audioChannel: existing?.audio_reactivity?.audioChannel ?? defaultAudioChannel,
     visualEffect: (existing?.audio_reactivity?.visualEffect ?? 'waveform') as 'waveform' | 'voltage'
   })
@@ -448,7 +448,9 @@ function ConnectionForm({
     // Insert device on first-time connection creation with audio reactivity enabled
     if (audioReactivity.enabled && abl.path && !existing?.ableton) {
       postInsertAudioEffect(abl.path, audioReactivity.audioChannel)
-        .then(({ notice }) => { if (notice) setInsertNotice(notice) })
+        .then(({ notice }) => {
+          if (notice) setInsertNotice(notice)
+        })
         .catch((e) => console.error('[ableton] insert-audio-effect failed:', e))
     }
     onSave(entry)

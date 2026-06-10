@@ -1,6 +1,14 @@
 import { useRef, useEffect, useCallback } from 'react'
 import { EditorState, StateEffect, StateField } from '@codemirror/state'
-import { EditorView, Decoration, DecorationSet, WidgetType, highlightActiveLine, keymap, lineNumbers } from '@codemirror/view'
+import {
+  EditorView,
+  Decoration,
+  DecorationSet,
+  WidgetType,
+  highlightActiveLine,
+  keymap,
+  lineNumbers
+} from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { javascript } from '@codemirror/lang-javascript'
 import { search, searchKeymap } from '@codemirror/search'
@@ -23,9 +31,13 @@ class SliderInputWidget extends WidgetType {
   constructor(
     readonly widget: SliderWidget,
     readonly onChange: (id: string, val: number) => void
-  ) { super() }
+  ) {
+    super()
+  }
 
-  eq(other: SliderInputWidget) { return other.widget.id === this.widget.id }
+  eq(other: SliderInputWidget) {
+    return other.widget.id === this.widget.id
+  }
 
   toDOM() {
     const { id, min, max, step, value: rawVal } = this.widget
@@ -33,7 +45,8 @@ class SliderInputWidget extends WidgetType {
 
     const wrap = document.createElement('span')
     wrap.className = 'cm-slider-widget'
-    wrap.style.cssText = 'display:inline-flex;align-items:center;gap:4px;margin-left:6px;vertical-align:middle;'
+    wrap.style.cssText =
+      'display:inline-flex;align-items:center;gap:4px;margin-left:6px;vertical-align:middle;'
 
     const input = document.createElement('input')
     input.type = 'range'
@@ -58,7 +71,9 @@ class SliderInputWidget extends WidgetType {
     return wrap
   }
 
-  ignoreEvent() { return false }
+  ignoreEvent() {
+    return false
+  }
 }
 
 function buildSliderDecorations(
@@ -132,14 +147,22 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     const { isPlaying: playing, setIsPlaying } = instance.useStore.getState()
     const repl = getRepl(instanceId)
     if (!repl) return
-    if (playing) { repl.stop(); setIsPlaying(false) }
-    else { repl.start(); setIsPlaying(true) }
+    if (playing) {
+      repl.stop()
+      setIsPlaying(false)
+    } else {
+      repl.start()
+      setIsPlaying(true)
+    }
   }, [instance, instanceId])
 
-  const handleBpmChange = useCallback((newBpm: number) => {
-    setBpm(newBpm)
-    getRepl(instanceId)?.setCps(newBpm / 60 / 4)
-  }, [instanceId, setBpm])
+  const handleBpmChange = useCallback(
+    (newBpm: number) => {
+      setBpm(newBpm)
+      getRepl(instanceId)?.setCps(newBpm / 60 / 4)
+    },
+    [instanceId, setBpm]
+  )
 
   // Slider value change: update live value + rebuild decorations
   const handleSliderChange = useCallback((id: string, val: number) => {
@@ -152,7 +175,12 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     const theme = EditorView.theme({
       '&': { height: '100%', fontSize: '14px' },
       '.cm-content': { caretColor: '#f5f5f4', fontFamily: 'Monaspace Neon', padding: '0' },
-      '.cm-gutters': { backgroundColor: '#2925245a', color: '#e7e5e4', border: 'none', paddingRight: '8px' },
+      '.cm-gutters': {
+        backgroundColor: '#2925245a',
+        color: '#e7e5e4',
+        border: 'none',
+        paddingRight: '8px'
+      },
       '.cm-lineNumbers .cm-gutterElement': { padding: '0 8px', minWidth: '32px' },
       '.cm-activeLine': { backgroundColor: '#78716cd0 !important' },
       '& .cm-line': { width: 'fit-content', backgroundColor: '#29252480' },
@@ -189,8 +217,17 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
         EditorView.lineWrapping,
         history(),
         keymap.of([
-          { key: 'Shift-Enter', run: () => { handleRun(); return true } },
-          ...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab
+          {
+            key: 'Shift-Enter',
+            run: () => {
+              handleRun()
+              return true
+            }
+          },
+          ...defaultKeymap,
+          ...historyKeymap,
+          ...searchKeymap,
+          indentWithTab
         ]),
         sliderField,
         EditorView.updateListener.of((update) => {
@@ -202,7 +239,10 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     const view = new EditorView({ state: startState, parent: editorRef.current })
     viewRef.current = view
 
-    return () => { view.destroy(); viewRef.current = null }
+    return () => {
+      view.destroy()
+      viewRef.current = null
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -242,7 +282,10 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
         <div className="flex items-center gap-1.5 ml-auto text-stone-400">
           <span>bpm</span>
           <input
-            type="number" min={20} max={300} value={bpm}
+            type="number"
+            min={20}
+            max={300}
+            value={bpm}
             onChange={(e) => handleBpmChange(Number(e.target.value))}
             className="w-14 bg-transparent border border-stone-600 px-1 py-0.5 text-stone-200 text-center"
           />

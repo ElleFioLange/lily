@@ -15,7 +15,10 @@ export default function init(instanceId: string) {
   addGraphicsSource({ id: instanceId, canvas })
 
   // Listen for frames from main process
-  const handleFrame = (_: unknown, payload: { instanceId: string; buffer: ArrayBuffer; width: number; height: number }) => {
+  const handleFrame = (
+    _: unknown,
+    payload: { instanceId: string; buffer: ArrayBuffer; width: number; height: number }
+  ) => {
     if (payload.instanceId !== instanceId) return
 
     const store = useStore.getState()

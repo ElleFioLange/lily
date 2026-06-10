@@ -26,11 +26,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
   }
 
   return (
-    <Panel
-      title="Syphon Input"
-      className="size-full"
-      contentClassName="flex flex-col gap-4 p-4"
-    >
+    <Panel title="Syphon Input" className="size-full" contentClassName="flex flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
         <span className="text-stone-400 text-sm">Available Servers</span>
         <button
@@ -80,7 +76,8 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
 
       {connectedServerUUID && (
         <div className="mt-auto text-xs text-stone-400">
-          Connected: {servers.find((s) => s.uuid === connectedServerUUID)?.name ?? connectedServerUUID}
+          Connected:{' '}
+          {servers.find((s) => s.uuid === connectedServerUUID)?.name ?? connectedServerUUID}
         </div>
       )}
     </Panel>
