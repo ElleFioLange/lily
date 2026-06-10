@@ -1,14 +1,16 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { editorRegistry } from '../stores/editorRegistry'
 import run from '../utils/actions/run'
 
 // MIDI channel 9 (0-indexed), note-on status byte = 0x90 | 9 = 0x99
 const NOTE_ON = 0x99
 
+type NoteAction = string | 'RUN' | 'CAPS' | 'ENTER' | 'BACKSPACE'
+
 // Natural notes (C D E F G A B repeating) → consonants in alphabetical order
 // Accidentals → vowels and punctuation
 // C0 = MIDI note 12 (using standard C4 = 60 convention)
-const NOTE_MAP: Record<number, string | 'RUN'> = {
+const NOTE_MAP: Record<number, NoteAction> = {
   // Natural notes → consonants: B C D F G H J K L M N P Q R S T V W X Y Z
   12: 'b', // C0
   14: 'c', // D0
@@ -36,23 +38,26 @@ const NOTE_MAP: Record<number, string | 'RUN'> = {
   // Accidentals → vowels and punctuation
   13: 'a', // C#0
   15: 'e', // D#0
-
   18: 'i', // F#0
   20: 'o', // G#0
   22: 'u', // A#0
 
   25: '(', // C#1
   27: ')', // D#1
-
   30: ' ', // F#1 → space
   32: ',', // G#1
   34: '.', // A#1
 
   37: '?', // C#2
-  39: '!' // D#2
+  39: '!', // D#2
+  42: 'CAPS', // F#2 → caps lock toggle
+  44: 'ENTER', // G#2 → enter
+  46: 'BACKSPACE' // A#2 → backspace
 }
 
 export function useMalletKeyboard(enabled: boolean): void {
+  const capsLock = useRef(false)
+
   useEffect(() => {
     if (!enabled) return
     if (!navigator.requestMIDIAccess) {
@@ -67,11 +72,9 @@ export function useMalletKeyboard(enabled: boolean): void {
       const status = event.data[0]
       const note = event.data[1]
       const velocity = event.data[2]
-      console.log('midi status', status)
       if (status !== NOTE_ON || velocity === 0) return
 
       const action = NOTE_MAP[note]
-      console.log('midi action', action)
       if (action === undefined) return
 
       if (action === 'RUN') {
@@ -79,13 +82,46 @@ export function useMalletKeyboard(enabled: boolean): void {
         return
       }
 
+      if (action === 'CAPS') {
+        capsLock.current = !capsLock.current
+        return
+      }
+
       const view = editorRegistry.get()
       if (!view) return
 
+      if (action === 'BACKSPACE') {
+        const { from, to } = view.state.selection.main
+        if (from !== to) {
+          view.dispatch({ changes: { from, to, insert: '' }, selection: { anchor: from } })
+        } else if (from > 0) {
+          view.dispatch({
+            changes: { from: from - 1, to: from, insert: '' },
+            selection: { anchor: from - 1 }
+          })
+        }
+        view.focus()
+        return
+      }
+
+      if (action === 'ENTER') {
+        const { from, to } = view.state.selection.main
+        view.dispatch({
+          changes: { from, to, insert: '\n' },
+          selection: { anchor: from + 1 }
+        })
+        view.focus()
+        return
+      }
+
       const { from, to } = view.state.selection.main
+      const char =
+        capsLock.current && action.length === 1 && action >= 'a' && action <= 'z'
+          ? action.toUpperCase()
+          : action
       view.dispatch({
-        changes: { from, to, insert: action },
-        selection: { anchor: from + action.length }
+        changes: { from, to, insert: char },
+        selection: { anchor: from + char.length }
       })
       view.focus()
     }
