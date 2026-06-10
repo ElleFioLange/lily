@@ -49,29 +49,51 @@ function list() {
 
 function clip(action, path) {
   var clip_slot = new LiveAPI(path)
-  if (action === 'active') clip_slot.call('fire')
-  else if (action === 'inactive') clip_slot.call('stop')
+  var is_playing = parseInt(clip_slot.get('is_playing'))
+  if (action === 'active') {
+    if (is_playing === 1) { log('clip already playing, skipping: ' + path); return }
+    clip_slot.call('fire')
+  } else if (action === 'inactive') {
+    if (is_playing === 0) { log('clip already stopped, skipping: ' + path); return }
+    clip_slot.call('stop')
+  }
 }
 
 function track(action, path) {
   var t = new LiveAPI(path)
-  if (action === 'active') t.set('mute', 0)
-  else if (action === 'inactive') t.set('mute', 1)
+  var mute = parseInt(t.get('mute'))
+  if (action === 'active') {
+    if (mute === 0) return
+    t.set('mute', 0)
+  } else if (action === 'inactive') {
+    if (mute === 1) return
+    t.set('mute', 1)
+  }
 }
 
 function device(action, path) {
   var dev = new LiveAPI(path)
-  if (action === 'active') dev.set('is_active', 1)
-  else if (action === 'inactive') dev.set('is_active', 0)
+  var is_active = parseInt(dev.get('is_active'))
+  if (action === 'active') {
+    if (is_active === 1) return
+    dev.set('is_active', 1)
+  } else if (action === 'inactive') {
+    if (is_active === 0) return
+    dev.set('is_active', 0)
+  }
 }
 
 function device_parameter(action, path, value) {
   var obj = new LiveAPI(path)
-  if (action === 'value') obj.set('value', value)
+  if (action === 'value') {
+    if (parseFloat(obj.get('value')) === parseFloat(value)) return
+    obj.set('value', value)
+  }
 }
 
 function send(path, value) {
   var obj = new LiveAPI(path)
+  if (parseFloat(obj.get('value')) === parseFloat(value)) return
   obj.set('value', value)
 }
 
