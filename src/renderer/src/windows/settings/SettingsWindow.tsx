@@ -105,7 +105,7 @@ export default function SettingsWindow() {
       </div>
 
       {/* Audio Section */}
-      <div className="flex-1">
+      <div className="flex-1 overflow-auto">
         <div className="mb-6">
           <h2 className="mb-4 text-lg font-medium text-stone-100">Audio</h2>
 
