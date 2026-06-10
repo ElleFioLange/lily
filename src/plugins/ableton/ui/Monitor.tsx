@@ -5,7 +5,7 @@ import { PoiesisState } from '@renderer/surfaces/poiesis/store'
 import { AbletonState } from '../store'
 import { LiveDevice, LiveTrack, postAutoname } from '../bridge'
 import { deriveAutonameItems } from '../autoname'
-import { colorStyle } from './colors'
+import { colorStyle, darkenHex } from './colors'
 
 // Session-style monitor of the open Live Set, read from the extension bridge.
 // One column per track: name header, clips, then devices (expandable to their
@@ -179,6 +179,15 @@ function TrackColumn({
   // restarting the CSS animation even when the same node is re-selected.
   const nodeKey = (id: string) => (id === selectedPath ? `${id}:${selectionSeq}` : id)
 
+  // Ableton numbers its tracks ("1 Wavetable"). Auto-named tracks report
+  // "N-DeviceName" through the API (Live's UI shows "N Name") — normalize the
+  // hyphen to a space. Names without a leading digit (e.g. after autoname)
+  // get the 1-based track index prefixed for display.
+  const trackNumber = (idx(track.id, /^live_set tracks (\d+)/) ?? 0) + 1
+  const displayName = /^\d/.test(track.name)
+    ? track.name.replace(/^(\d+)-/, '$1 ')
+    : `${trackNumber} ${track.name}`
+
   return (
     <div ref={ref} className="flex flex-col gap-1 w-36 shrink-0 min-h-0">
       <div
@@ -189,16 +198,16 @@ function TrackColumn({
           if (e.shiftKey && trackIndex !== null) pick.shiftTrack(track, trackIndex)
           else pick.track(track)
         }}
-        className={`relative px-2 py-1 font-bold shrink-0 cursor-pointer flex items-center min-w-0 ${pulse(
+        className={`relative px-2 py-1 font-bold shrink-0 cursor-pointer flex items-center min-w-0 border-b-4 ${pulse(
           track.id === selectedPath
         )}`}
-        style={colorStyle(track.color)}
+        style={{ ...colorStyle(track.color), borderBottomColor: darkenHex(track.color, 0.45) }}
         title={`${track.id} · shift+click to connect keyword to track clips`}
       >
         <Accent
           on={track.id === selectedPath || (mapped !== null && mapped.id === pick.ids.track)}
         />
-        <span className="truncate">{track.name}</span>
+        <span className="truncate">{displayName}</span>
       </div>
 
       <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar">

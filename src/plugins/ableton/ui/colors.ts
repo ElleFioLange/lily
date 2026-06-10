@@ -20,3 +20,14 @@ export function colorStyle(hex?: string | null): CSSProperties {
   const bg = hex ?? FALLBACK_BG
   return { backgroundColor: bg, color: textColorFor(bg) }
 }
+
+// Darkened shade of a hex color (track-header underline, à la Ableton).
+export function darkenHex(hex: string, factor = 0.5): string {
+  const c = hex.replace('#', '')
+  if (c.length < 6) return hex
+  const ch = (i: number): string =>
+    Math.round(parseInt(c.slice(i, i + 2), 16) * factor)
+      .toString(16)
+      .padStart(2, '0')
+  return `#${ch(0)}${ch(2)}${ch(4)}`
+}

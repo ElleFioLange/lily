@@ -1,4 +1,5 @@
 import jsyaml from 'js-yaml'
+import { resolveConnectionPaths } from '../autoname'
 import { useEffect, useMemo, useState } from 'react'
 import type { PoiesisState } from '@renderer/surfaces/poiesis/store'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
@@ -124,6 +125,25 @@ function defaultsForSelection(
   if (clipSlot) return { type: 'clip', path, object: 'active', present: true, absent: false }
   if (device) return { type: 'device', path, object: 'active', present: true, absent: false }
   return { type: 'track', path, object: 'active', present: true, absent: false }
+}
+
+function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!value)}
+      className={`relative w-9 h-5 rounded-full transition-colors outline-none ${
+        value ? 'bg-green-700' : 'bg-stone-700'
+      }`}
+      title={value ? 'true' : 'false'}
+    >
+      <span
+        className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-stone-100 transition-transform ${
+          value ? 'translate-x-4' : ''
+        }`}
+      />
+    </button>
+  )
 }
 
 function parseVal(s: string): boolean | number {
@@ -377,6 +397,7 @@ function ConnectionForm({
   existing,
   defaultAbleton,
   draft,
+  project,
   onSave,
   onRemove
 }: {
@@ -384,6 +405,7 @@ function ConnectionForm({
   existing: ConfigurationKey | undefined
   defaultAbleton: AbletonConfigurationKey | null
   draft: { ableton: AbletonConfigurationKey; args: Record<string, KeyArgument> } | null
+  project: AbletonProject | null
   onSave: (entry: ConfigurationKey) => void
   onRemove: () => void
 }) {
@@ -407,7 +429,7 @@ function ConnectionForm({
     return m ? parseInt(m[1]) : 0
   })()
   const [audioReactivity, setAudioReactivity] = useState({
-    enabled: !!(existing?.audio_reactivity),
+    enabled: !!existing?.audio_reactivity,
     audioChannel: existing?.audio_reactivity?.audioChannel ?? defaultAudioChannel,
     visualEffect: (existing?.audio_reactivity?.visualEffect ?? 'waveform') as 'waveform' | 'voltage'
   })
@@ -448,7 +470,9 @@ function ConnectionForm({
     // Insert device on first-time connection creation with audio reactivity enabled
     if (audioReactivity.enabled && abl.path && !existing?.ableton) {
       postInsertAudioEffect(abl.path, audioReactivity.audioChannel)
-        .then(({ notice }) => { if (notice) setInsertNotice(notice) })
+        .then(({ notice }) => {
+          if (notice) setInsertNotice(notice)
+        })
         .catch((e) => console.error('[ableton] insert-audio-effect failed:', e))
     }
     onSave(entry)
@@ -457,7 +481,14 @@ function ConnectionForm({
   return (
     <div className="flex flex-col gap-4 p-3">
       <p className="text-xs text-stone-400">
-        Connecting <span className="text-stone-200 font-mono">{keyword}</span>
+        Connecting{' '}
+        <KeywordPill
+          keyword={keyword}
+          keyConfig={existing}
+          project={project}
+          selected={false}
+          onClick={() => {}}
+        />
       </p>
 
       {/* Ableton config */}
@@ -500,9 +531,17 @@ function ConnectionForm({
         <Field label="Object">
           <select
             value={abl.object}
-            onChange={(e) =>
-              setAbl((f) => ({ ...f, object: e.target.value as 'active' | 'value' }))
-            }
+            onChange={(e) => {
+              const object = e.target.value as 'active' | 'value'
+              // active is boolean semantics, value is numeric — coerce so a
+              // stale true/false can't be sent as a raw parameter value.
+              setAbl((f) => ({
+                ...f,
+                object,
+                present: object === 'active' ? Boolean(f.present) : Number(f.present),
+                absent: object === 'active' ? Boolean(f.absent) : Number(f.absent)
+              }))
+            }}
             className={inputCls}
           >
             <option value="active">Active</option>
@@ -511,33 +550,30 @@ function ConnectionForm({
         </Field>
       )}
 
+      {/* active → boolean (toggles); value / device_parameter → numeric */}
       <div className="flex gap-2">
-        <Field label="Present">
-          <input
-            type={isParam ? 'number' : 'text'}
-            value={String(abl.present)}
-            onChange={(e) =>
-              setAbl((f) => ({
-                ...f,
-                present: isParam ? parseFloat(e.target.value) : parseVal(e.target.value)
-              }))
-            }
-            className={`${inputCls} font-mono`}
-          />
-        </Field>
-        <Field label="Absent">
-          <input
-            type={isParam ? 'number' : 'text'}
-            value={String(abl.absent)}
-            onChange={(e) =>
-              setAbl((f) => ({
-                ...f,
-                absent: isParam ? parseFloat(e.target.value) : parseVal(e.target.value)
-              }))
-            }
-            className={`${inputCls} font-mono`}
-          />
-        </Field>
+        {(['present', 'absent'] as const).map((which) => (
+          <Field key={which} label={which === 'present' ? 'Present' : 'Absent'}>
+            {!isParam && abl.object === 'active' ? (
+              <div className="py-1.5">
+                <Toggle
+                  value={Boolean(abl[which])}
+                  onChange={(v) => setAbl((f) => ({ ...f, [which]: v }))}
+                />
+              </div>
+            ) : (
+              <input
+                type="number"
+                step="any"
+                value={String(Number(abl[which]))}
+                onChange={(e) =>
+                  setAbl((f) => ({ ...f, [which]: parseFloat(e.target.value) || 0 }))
+                }
+                className={`${inputCls} font-mono`}
+              />
+            )}
+          </Field>
+        ))}
       </div>
 
       {/* Arguments */}
@@ -675,12 +711,14 @@ function ObjectInfo({
   track,
   clipSlot,
   device,
-  param
+  param,
+  keywords
 }: {
   track: AbletonTrack | null
   clipSlot: AbletonClipSlot | null
   device: AbletonDevice | null
   param: AbletonDeviceParameter | null
+  keywords?: React.ReactNode
 }) {
   if (!track && !device && !param && !clipSlot) {
     return (
@@ -695,8 +733,25 @@ function ObjectInfo({
       <div className="flex flex-col gap-4 p-3">
         <div>
           <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Parameter</p>
-          <p className="text-stone-100 text-sm">{param.name}</p>
+          <p className="text-stone-100 text-sm flex items-center gap-1.5 min-w-0">
+            {track && (
+              <>
+                <span className="shrink-0" style={{ color: colorToHex(track.color) }}>
+                  {track.name}
+                </span>
+                <span className="text-stone-600 shrink-0">›</span>
+              </>
+            )}
+            {device && (
+              <>
+                <span className="shrink-0 text-stone-400">{device.name}</span>
+                <span className="text-stone-600 shrink-0">›</span>
+              </>
+            )}
+            <span className="truncate">{param.name}</span>
+          </p>
         </div>
+        {keywords}
         <div className="grid grid-cols-2 gap-3 text-xs">
           {(
             [
@@ -723,8 +778,19 @@ function ObjectInfo({
       <div className="flex flex-col gap-4 p-3">
         <div>
           <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Clip</p>
-          <p className="text-stone-100 text-sm">{clip?.name || 'Untitled'}</p>
+          <p className="text-stone-100 text-sm flex items-center gap-1.5 min-w-0">
+            {track && (
+              <>
+                <span className="shrink-0" style={{ color: colorToHex(track.color) }}>
+                  {track.name}
+                </span>
+                <span className="text-stone-600 shrink-0">›</span>
+              </>
+            )}
+            <span className="truncate">{clip?.name || 'Untitled'}</span>
+          </p>
         </div>
+        {keywords}
         <div className="flex items-center gap-2 text-xs">
           <span
             className={`w-1.5 h-1.5 rounded-full ${clip?.is_playing ? 'bg-green-400' : 'bg-stone-600'}`}
@@ -759,14 +825,32 @@ function ObjectInfo({
       <div className="flex flex-col gap-4 p-3 overflow-y-auto">
         <div>
           <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Device</p>
-          <p className="text-stone-100 text-sm">{device.name}</p>
-          <p className="text-stone-500 text-xs">{device.class_display_name}</p>
+          <p className="text-stone-100 text-sm flex items-center gap-1.5 min-w-0">
+            {track && (
+              <>
+                <span className="shrink-0" style={{ color: colorToHex(track.color) }}>
+                  {track.name}
+                </span>
+                <span className="text-stone-600 shrink-0">›</span>
+              </>
+            )}
+            <span className="truncate">{device.name}</span>
+          </p>
         </div>
+        {keywords}
         <div className="flex items-center gap-2 text-xs">
           <span
             className={`w-1.5 h-1.5 rounded-full ${device.is_active ? 'bg-green-400' : 'bg-stone-600'}`}
           />
           <span className="text-stone-400">{device.is_active ? 'Active' : 'Inactive'}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          {([['Class', device.class_display_name]] as [string, string][]).map(([label, val]) => (
+            <div key={label}>
+              <p className="text-stone-500">{label}</p>
+              <p className="text-stone-200 font-mono">{val}</p>
+            </div>
+          ))}
         </div>
         {(device.parameters?.length ?? 0) > 0 && (
           <div>
@@ -794,16 +878,13 @@ function ObjectInfo({
   // Track
   return (
     <div className="flex flex-col gap-4 p-3 overflow-y-auto">
-      <div className="flex items-center gap-2">
-        <span
-          className="w-3 h-3 rounded-full shrink-0"
-          style={{ backgroundColor: colorToHex(track!.color) }}
-        />
-        <div>
-          <p className="text-xs text-stone-500 uppercase tracking-wider">Track</p>
-          <p className="text-stone-100 text-sm">{track!.name}</p>
-        </div>
+      <div>
+        <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Track</p>
+        <p className="text-sm" style={{ color: colorToHex(track!.color) }}>
+          {track!.name}
+        </p>
       </div>
+      {keywords}
       <div className="flex gap-4 text-xs">
         {[
           track!.mute !== undefined ? { label: 'Mute', val: track!.mute ? 'On' : 'Off' } : null,
@@ -958,6 +1039,30 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
   const hasSelection = !!(selectedTrack || selectedDevice || selectedParam || selectedClipSlot)
   const showForm = !!(selectedKeyword && (hasSelection || connectionDraft))
 
+  // Keywords whose connection resolves to (or under) the selected object —
+  // shown as pills in the object-info pane.
+  const selectedLivePath =
+    project && selectedTrack
+      ? generateLivePath(project, selectedTrack, selectedClipSlot, selectedDevice, selectedParam)
+      : null
+  const assignedKeywords = useMemo(() => {
+    if (!selectedLivePath || !parsedConfig) return []
+    const out: { keyword: string; label: string }[] = []
+    for (const [kw, entry] of Object.entries(parsedConfig)) {
+      const seen = new Set<string>()
+      for (const { path, preset } of resolveConnectionPaths(entry)) {
+        if (path === selectedLivePath || path.startsWith(selectedLivePath + ' ')) {
+          const label = preset ? `${kw}(${preset})` : kw
+          if (!seen.has(label)) {
+            seen.add(label)
+            out.push({ keyword: kw, label })
+          }
+        }
+      }
+    }
+    return out
+  }, [selectedLivePath, parsedConfig])
+
   const defaultAbleton = project
     ? defaultsForSelection(project, selectedTrack, selectedClipSlot, selectedDevice, selectedParam)
     : null
@@ -1029,7 +1134,11 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
               <p className="text-stone-600 text-xs">Double-click a word to add as keyword</p>
             </div>
           ) : (
-            <div className="flex items-center gap-1">
+            <div
+              className={`flex items-stretch bg-stone-900 border border-stone-700 rounded overflow-hidden focus-within:border-stone-500 ${
+                !poiesisEntry ? 'opacity-50' : ''
+              }`}
+            >
               <input
                 type="text"
                 value={keywordInputValue}
@@ -1038,14 +1147,22 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
                 disabled={!poiesisEntry}
                 placeholder={poiesisEntry ? 'Add keyword...' : 'Load a Poiesis plugin first…'}
                 title={poiesisEntry ? undefined : 'Keywords are written into the Poiesis config'}
-                className={`flex-1 ${inputCls} disabled:opacity-50`}
+                className="flex-1 min-w-0 bg-transparent px-2 py-1 text-xs text-stone-200 focus:outline-none"
               />
               <button
-                onClick={() => setKeywordInputExpanded(true)}
-                className="text-stone-500 hover:text-stone-300 px-1 text-base leading-none transition-colors"
-                title="Paste poem"
+                onClick={() => {
+                  if (inputValue.trim()) {
+                    addKeyword(inputValue)
+                    setInputValue('')
+                  } else {
+                    setKeywordInputExpanded(true)
+                  }
+                }}
+                disabled={!poiesisEntry}
+                className="px-2.5 bg-stone-600 hover:bg-stone-500 text-stone-100 outline-none leading-none transition-colors"
+                title={inputValue.trim() ? 'Add keyword' : 'Paste a poem'}
               >
-                ↑
+                +
               </button>
             </div>
           )}
@@ -1055,9 +1172,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
       {/* ── Middle: Connection form ── */}
       <div className="flex flex-col w-72 border-r border-stone-700 shrink-0">
         <ColumnHeader>
-          <span className={!poiesisEntry ? 'text-stone-600' : ''}>
-            {showForm && selectedKeyword ? `"${selectedKeyword}"` : 'Connection'}
-          </span>
+          <span className={!poiesisEntry ? 'text-stone-600' : ''}>Connection</span>
         </ColumnHeader>
         <div className="flex-1 overflow-y-auto">
           {!poiesisEntry ? (
@@ -1071,6 +1186,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
               key={formKey}
               keyword={selectedKeyword!}
               existing={parsedConfig?.[selectedKeyword!]}
+              project={project}
               defaultAbleton={defaultAbleton}
               draft={connectionDraft}
               onSave={(entry) => {
@@ -1112,6 +1228,25 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
             clipSlot={selectedClipSlot}
             device={selectedDevice}
             param={selectedParam}
+            keywords={
+              assignedKeywords.length > 0 ? (
+                <div>
+                  <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Keywords</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {assignedKeywords.map(({ keyword, label }) => (
+                      <KeywordPill
+                        key={label}
+                        keyword={label}
+                        keyConfig={parsedConfig?.[keyword]}
+                        project={project}
+                        selected={selectedKeyword === keyword}
+                        onClick={() => setSelectedKeyword(keyword)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : undefined
+            }
           />
         </div>
       </div>
