@@ -36,16 +36,20 @@ const NOTE_MAP: Record<number, string | 'RUN'> = {
   // Accidentals → vowels and punctuation
   13: 'a', // C#0
   15: 'e', // D#0
+
   18: 'i', // F#0
   20: 'o', // G#0
-  34: 'u', // A#1
+  22: 'u', // A#0
+
   25: '(', // C#1
   27: ')', // D#1
+
   30: ' ', // F#1 → space
   32: ',', // G#1
+  34: '.', // A#1
+
   37: '?', // C#2
-  39: '!', // D#2
-  46: '.', // A#2
+  39: '!' // D#2
 }
 
 export function useMalletKeyboard(enabled: boolean): void {
@@ -63,9 +67,11 @@ export function useMalletKeyboard(enabled: boolean): void {
       const status = event.data[0]
       const note = event.data[1]
       const velocity = event.data[2]
+      console.log('midi status', status)
       if (status !== NOTE_ON || velocity === 0) return
 
       const action = NOTE_MAP[note]
+      console.log('midi action', action)
       if (action === undefined) return
 
       if (action === 'RUN') {
