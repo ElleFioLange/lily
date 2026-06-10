@@ -11,6 +11,7 @@ export default function SettingsWindow() {
   const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([])
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
   const [autoDetect, setAutoDetect] = useState(true)
+  const [malletEnabled, setMalletEnabled] = useState(false)
   const [permissionError, setPermissionError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -22,6 +23,7 @@ export default function SettingsWindow() {
         setSettings(currentSettings)
         setSelectedDeviceId(currentSettings.audio.deviceId)
         setAutoDetect(currentSettings.audio.autoDetect)
+        setMalletEnabled(currentSettings.malletKeyboard.enabled)
       } catch (err) {
         console.error('Failed to load settings:', err)
       } finally {
@@ -68,6 +70,9 @@ export default function SettingsWindow() {
       audio: {
         deviceId: autoDetect ? null : selectedDeviceId,
         autoDetect
+      },
+      malletKeyboard: {
+        enabled: malletEnabled
       }
     }
 
@@ -158,6 +163,29 @@ export default function SettingsWindow() {
                 effect
               </div>
             )} */}
+          </div>
+        </div>
+        {/* Mallet Keyboard Section */}
+        <div className="mb-6">
+          <h2 className="mb-4 text-lg font-medium text-stone-100">Input</h2>
+
+          <div className="space-y-4 rounded-lg bg-stone-900 p-4">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="mallet-keyboard"
+                checked={malletEnabled}
+                onChange={(e) => setMalletEnabled(e.target.checked)}
+                className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-stone-500 focus:ring-2 focus:ring-stone-500 focus:ring-offset-0"
+              />
+              <label htmlFor="mallet-keyboard" className="ml-2 text-sm text-stone-200">
+                Mallet keyboard mode
+              </label>
+            </div>
+            <p className="text-xs text-stone-500">
+              Map MIDI channel 9 note-ons to typing in the Poiesis editor. Natural notes =
+              consonants (B–Z from C0), accidentals = vowels and punctuation. C3 triggers Run.
+            </p>
           </div>
         </div>
       </div>

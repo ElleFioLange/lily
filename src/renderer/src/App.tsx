@@ -11,12 +11,25 @@ import PoiesisPlugin from './surfaces/poiesis'
 import { usePluginsStore } from './stores/usePluginsStore'
 import { loadPlugins } from './utils/loadPlugins'
 import run from './utils/actions/run'
+import { useMalletKeyboard } from './hooks/useMalletKeyboard'
 
 function App(): React.JSX.Element {
   const togglePerformanceWindow = usePerformanceStore((state) => state.toggleWindow)
   const { setCompositorRef } = useGraphicsStore()
   const { registerPlugin } = usePluginsStore()
   const [pluginsLoaded, setPluginsLoaded] = useState(false)
+  const [malletEnabled, setMalletEnabled] = useState(false)
+
+  useMalletKeyboard(malletEnabled)
+
+  // Reload settings on mount and whenever this window regains focus (e.g. after closing settings)
+  useEffect(() => {
+    const load = () =>
+      window.api.settings.get().then((s) => setMalletEnabled(s.malletKeyboard.enabled))
+    load()
+    window.addEventListener('focus', load)
+    return () => window.removeEventListener('focus', load)
+  }, [])
 
   // Initialize keyboard shortcuts
   // useKeyboardShortcuts()

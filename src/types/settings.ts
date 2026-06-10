@@ -9,10 +9,18 @@ export interface AudioSettings {
 }
 
 /**
+ * Mallet keyboard settings — maps MIDI channel 9 note-ons to typing
+ */
+export interface MalletKeyboardSettings {
+  enabled: boolean
+}
+
+/**
  * Application settings
  */
 export interface Settings {
   audio: AudioSettings
+  malletKeyboard: MalletKeyboardSettings
 }
 
 /**
@@ -22,5 +30,8 @@ export const DEFAULT_SETTINGS: Settings = {
   audio: {
     deviceId: null,
     autoDetect: true
+  },
+  malletKeyboard: {
+    enabled: false
   }
 }

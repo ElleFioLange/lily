@@ -31,6 +31,10 @@ export class SettingsManager {
         audio: {
           ...DEFAULT_SETTINGS.audio,
           ...parsed.audio
+        },
+        malletKeyboard: {
+          ...DEFAULT_SETTINGS.malletKeyboard,
+          ...parsed.malletKeyboard
         }
       }
 

@@ -7,6 +7,7 @@ import { ActivePlugin } from '@plugins/utils'
 import { PoiesisState } from '../../../store'
 import { AudioManager } from '@renderer/audio/AudioManager'
 import { KeywordShaderManager } from '@renderer/surfaces/poiesis/lib/KeywordShaderManager'
+import { editorRegistry } from '@renderer/stores/editorRegistry'
 import TextOverlay from './TextOverlay'
 
 type PoiesisEditorProps = {
@@ -80,6 +81,12 @@ export default function PoiesisEditor({ instanceId, environment }: PoiesisEditor
             const newValue = update.state.doc.toString()
             setPoiesis(newValue)
           }
+        }),
+        EditorView.domEventHandlers({
+          focus: (_event, view) => {
+            editorRegistry.set(view)
+            return false
+          }
         })
       ]
     })
@@ -91,9 +98,11 @@ export default function PoiesisEditor({ instanceId, environment }: PoiesisEditor
     })
 
     viewRef.current = view
+    editorRegistry.set(view)
 
     // Cleanup
     return () => {
+      if (editorRegistry.get() === view) editorRegistry.set(null)
       view.destroy()
       viewRef.current = null
     }
