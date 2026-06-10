@@ -51,10 +51,16 @@ function clip(action, path) {
   var clip_slot = new LiveAPI(path)
   var is_playing = parseInt(clip_slot.get('is_playing'))
   if (action === 'active') {
-    if (is_playing === 1) { log('clip already playing, skipping: ' + path); return }
+    if (is_playing === 1) {
+      log('clip already playing, skipping: ' + path)
+      return
+    }
     clip_slot.call('fire')
   } else if (action === 'inactive') {
-    if (is_playing === 0) { log('clip already stopped, skipping: ' + path); return }
+    if (is_playing === 0) {
+      log('clip already stopped, skipping: ' + path)
+      return
+    }
     clip_slot.call('stop')
   }
 }
