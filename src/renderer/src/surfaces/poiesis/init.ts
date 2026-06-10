@@ -5,7 +5,7 @@ export default function init(instanceId) {
   const usePoiesisStore = createPoiesisStore(instanceId)
   const { addEditorSource } = useGraphicsStore.getState()
 
-  addEditorSource({ id: instanceId })
+  addEditorSource({ id: instanceId, initParams: { enabled: true } })
 
   return usePoiesisStore
 }
