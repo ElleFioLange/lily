@@ -78,7 +78,11 @@ function parseArgValue(raw: string, expected: 'number' | 'boolean'): number | bo
   return undefined
 }
 
-const process: PluginDefinition['process'] = (_instanceId, inputs) => {
+// Last resolved path activated per instance+key, so deactivation targets the
+// path that was actually activated even after args change or the keyword disappears
+const lastActivePaths = new Map<string, string>()
+
+const process: PluginDefinition['process'] = (instanceId, inputs) => {
   for (const { poiesis, config, flags } of inputs) {
     if (config === null) throw new Error('Cannot parse input with invalid config')
 
@@ -126,13 +130,28 @@ const process: PluginDefinition['process'] = (_instanceId, inputs) => {
             }
           )
         }
+        const stateKey = `${instanceId}:${key}`
+        const lastPath = lastActivePaths.get(stateKey)
+        // When absent, deactivate the path that was last activated — args may
+        // have pointed it somewhere other than the default-resolved path
+        const targetPath = isPresent ? path : (lastPath ?? path)
+
+        if (isPresent) {
+          // Args moved the path: deactivate the old target and reset its sends
+          if (lastPath !== undefined && lastPath !== path) {
+            window.api.osc.send('/control', [type, 'inactive', lastPath])
+            if (flags) processPunctuationModifiers(poiesis, [], lastPath, flags)
+          }
+          lastActivePaths.set(stateKey, path)
+        }
+
         const action = isPresent ? 'active' : 'inactive'
-        window.api.osc.send('/control', [type, action, path])
+        window.api.osc.send('/control', [type, action, targetPath])
 
         // Punctuation modifiers — send to return tracks based on wrappers,
         // resetting to 0 when the keyword is absent
         if (flags) {
-          processPunctuationModifiers(poiesis, instances, path, flags)
+          processPunctuationModifiers(poiesis, instances, targetPath, flags)
         }
       } else if (type === 'device_parameter') {
         // Resolve value — args with acts_on: 'value' can override present/absent
