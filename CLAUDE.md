@@ -18,7 +18,11 @@ Lily is an Electron application for live visual performance. It features a plugi
 - **hydra** - Hydra graphics synthesis (graphics output)
 - **ableton** - Ableton Live control. Today this drives Live via a bundled Max for Live
   device (`maxdevice/lily-controller.amxd`) over OSC; `process.ts` scans Poiesis text for
-  `keyword(...)` patterns and emits `/set/clip|track/active` messages. UI components are
+  `keyword(...)` patterns and emits `/control` messages (`[type, action, path]` for
+  clip/track/device, `[type, object, path, value]` for device parameters, plus `send`
+  messages for punctuation modifiers) routed by `maxdevice/control.js`. Comma-separated
+  args inside `keyword(...)` resolve presets or literals; `_arg` tokens in config paths
+  are substituted per-arg. UI components are
   still stubs. See `docs/ABLETON_EXTENSION.md` for the planned migration to the official
   Ableton Extensions SDK.
 - **llm-poiesis** - LLM-assisted Poiesis text processing
