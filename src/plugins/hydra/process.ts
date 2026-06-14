@@ -62,9 +62,11 @@ export async function processMonitor({
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
 
-  // Create function with all Hydra methods in scope
-  const evalFunc = new AsyncFunction(...Object.keys(synth), 'synth', 'loadScript', shader)
-  evalFunc(...Object.values(synth), synth, loadScript)
+  // Evaluate with `with (synth)` so live synth properties (time, bpm, mouse, ...)
+  // resolve against the synth object each frame instead of being captured as
+  // fixed values at eval time.
+  const evalFunc = new AsyncFunction('synth', 'loadScript', `with (synth) {\n${shader}\n}`)
+  await evalFunc(synth, loadScript)
   console.log('Shader evaluated successfully for monitor')
 }
 
@@ -80,9 +82,11 @@ export default async function process(
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
 
-  // Create function with all Hydra methods in scope
-  const evalFunc = new AsyncFunction(...Object.keys(synth), 'synth', 'loadScript', shader)
-  evalFunc(...Object.values(synth), synth, loadScript)
+  // Evaluate with `with (synth)` so live synth properties (time, bpm, mouse, ...)
+  // resolve against the synth object each frame instead of being captured as
+  // fixed values at eval time.
+  const evalFunc = new AsyncFunction('synth', 'loadScript', `with (synth) {\n${shader}\n}`)
+  await evalFunc(synth, loadScript)
   console.log('Shader evaluated successfully')
   document.dispatchEvent(new CustomEvent('hydra-process'))
 }
