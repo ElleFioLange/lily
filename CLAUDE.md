@@ -18,10 +18,11 @@ Lily is an Electron application for live visual performance. It features a plugi
 - **hydra** - Hydra graphics synthesis (graphics output). Patches are evaluated into a synth via
   `evalPatch` (`process.ts`) inside a `with (synth)` block so live properties like `time` stay
   live. **Cmd+Shift+M** toggles a synced monitor: a second `autoLoop: false` Hydra instance
-  (`ui/Renderer.tsx`) that renders the same patch with `render()` appended (4-up split of o0–o3),
-  driven by a rAF loop that copies the main signal's `time` each frame. The monitor shows in the
-  workspace in place of the main signal but is never added to the compositor. Monitor state
-  (`monitorActive`, `monitorHydra`, `monitorCanvas`, `toggleMonitor`) lives in `store.ts`.
+  (owned by `ui/Monitor.tsx`) that renders the same patch with `render()` appended (4-up split of
+  o0–o3), driven by a rAF loop that copies the main signal's `time` each frame. The monitor is
+  never added to the compositor; instead the Monitors panel shows four horizontal canvases, each
+  drawn from one quadrant of the monitor canvas (column-major: o0 TL, o1 BL, o2 TR, o3 BR). Monitor
+  state (`monitorActive`, `monitorHydra`, `monitorCanvas`, `toggleMonitor`) lives in `store.ts`.
 - **ableton** - Ableton Live control. Today this drives Live via a bundled Max for Live
   device (`maxdevice/lily-controller.amxd`) over OSC; `process.ts` scans Poiesis text for
   `keyword(...)` patterns and emits `/control` messages (`[type, action, path]` for
