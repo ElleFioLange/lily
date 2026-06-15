@@ -66,6 +66,19 @@ function App(): React.JSX.Element {
 
     const unsubActions = window.api.actions.onRun(run)
 
+    // Toggle the focused hydra instance's monitor (Cmd+Shift+M). No-op when the
+    // focused surface isn't a hydra instance.
+    const unsubToggleMonitor = window.api.actions.onToggleMonitor(() => {
+      const { active, focused } = usePluginsStore.getState()
+      if (!focused) return
+      const plugin = active[focused]
+      if (!plugin || plugin.manifest.id !== 'hydra') return
+      const { useStore } = plugin as unknown as {
+        useStore?: { getState: () => { toggleMonitor: () => void } }
+      }
+      useStore?.getState().toggleMonitor()
+    })
+
     console.log('hello')
 
     window.api.osc.send('/request/connection/confirm')
@@ -73,6 +86,7 @@ function App(): React.JSX.Element {
     return () => {
       unsubPerformance()
       unsubActions()
+      unsubToggleMonitor()
       setCompositorRef(null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

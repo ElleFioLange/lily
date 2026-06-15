@@ -172,6 +172,13 @@ function createMenu(): void {
           click: () => {
             mainWindowRef?.webContents.send('actions:run')
           }
+        },
+        {
+          label: 'Toggle Hydra Monitor',
+          accelerator: 'CmdOrCtrl+Shift+M',
+          click: () => {
+            mainWindowRef?.webContents.send('hydra:toggle-monitor')
+          }
         }
       ]
     }

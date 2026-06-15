@@ -48,26 +48,23 @@ import { ActivePlugin } from '@plugins/utils'
 
 // TODO Add poiesis interpretation for hydra
 
-// For running the shader to monitor specific hydra output layers
-export async function processMonitor({
-  shader,
-  hydra
-}: {
+/**
+ * Evaluate a hydra patch into a given synth.
+ *
+ * The shader runs inside a `with (synth)` block so that live synth properties
+ * (time, bpm, mouse, ...) resolve against the synth object on each access rather
+ * than being captured as fixed values at eval time. This is what keeps `() => time`
+ * style callbacks animating, and what lets a monitor synth read a time value we
+ * overwrite every frame to stay in sync with the main signal.
+ */
+export async function evalPatch(
+  synth: HydraState['hydra']['synth'],
   shader: string
-  hydra: HydraState['hydra']
-}) {
-  console.log(shader, 'shader from processMonitor')
-  const synth = hydra.synth
-
+): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
-
-  // Evaluate with `with (synth)` so live synth properties (time, bpm, mouse, ...)
-  // resolve against the synth object each frame instead of being captured as
-  // fixed values at eval time.
   const evalFunc = new AsyncFunction('synth', 'loadScript', `with (synth) {\n${shader}\n}`)
   await evalFunc(synth, loadScript)
-  console.log('Shader evaluated successfully for monitor')
 }
 
 export default async function process(
@@ -76,17 +73,15 @@ export default async function process(
 ) {
   const { getInstance } = usePluginsStore.getState()
   const instance = getInstance(instanceId) as ActivePlugin<HydraState>
-  const { shader, hydra } = instance.useStore.getState()
-  const synth = hydra.synth
+  const { shader, hydra, monitorActive, monitorHydra } = instance.useStore.getState()
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
-
-  // Evaluate with `with (synth)` so live synth properties (time, bpm, mouse, ...)
-  // resolve against the synth object each frame instead of being captured as
-  // fixed values at eval time.
-  const evalFunc = new AsyncFunction('synth', 'loadScript', `with (synth) {\n${shader}\n}`)
-  await evalFunc(synth, loadScript)
+  await evalPatch(hydra.synth, shader)
   console.log('Shader evaluated successfully')
+
+  // Keep the monitor's 4-up view in sync with the live patch.
+  if (monitorActive && monitorHydra) {
+    await evalPatch(monitorHydra.synth, `${shader}\nrender()`)
+  }
+
   document.dispatchEvent(new CustomEvent('hydra-process'))
 }

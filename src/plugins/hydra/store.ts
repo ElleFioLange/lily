@@ -20,8 +20,10 @@ export interface HydraState extends PluginState {
   isValid: boolean
   error: string | null
 
-  // Monitor
-  monitorsEnabled: boolean
+  // Monitor (synced second hydra instance shown in the workspace)
+  monitorActive: boolean
+  monitorHydra: HydraInstance | null
+  monitorCanvas: HTMLCanvasElement | null
 
   // Setters
   setHydra: (hydra: HydraInstance) => void
@@ -32,7 +34,9 @@ export interface HydraState extends PluginState {
   setShaderName: (name: string | null) => void
   setIsValid: (isValid: boolean) => void
   setError: (error: string | null) => void
-  setMonitorsEnabled: (enabled: boolean) => void
+  setMonitorHydra: (hydra: HydraInstance | null) => void
+  setMonitorCanvas: (canvas: HTMLCanvasElement | null) => void
+  toggleMonitor: () => void
   newShader: () => void
   openShader: (content: string, path: string) => void
 }
@@ -48,7 +52,9 @@ export const createHydraStore = (instanceId: string) => {
     shaderName: 'new-shader',
     isValid: true,
     error: null,
-    monitorsEnabled: false,
+    monitorActive: false,
+    monitorHydra: null,
+    monitorCanvas: null,
 
     setHydra: (hydra) => set({ hydra }),
 
@@ -85,6 +91,10 @@ export const createHydraStore = (instanceId: string) => {
 
     setError: (error) => set({ error }),
 
-    setMonitorsEnabled: (monitorsEnabled) => set({ monitorsEnabled })
+    setMonitorHydra: (monitorHydra) => set({ monitorHydra }),
+
+    setMonitorCanvas: (monitorCanvas) => set({ monitorCanvas }),
+
+    toggleMonitor: () => set((state) => ({ monitorActive: !state.monitorActive }))
   }))
 }

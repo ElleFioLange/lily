@@ -141,6 +141,7 @@ interface LilyAPI {
    */
   actions: {
     onRun: (callback: () => void) => () => void
+    onToggleMonitor: (callback: () => void) => () => void
   }
 
   /**
