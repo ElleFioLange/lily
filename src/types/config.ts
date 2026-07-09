@@ -26,6 +26,14 @@ export type HydraConfigurationKey = {
   absent: number | string | boolean
 }
 
+// Maps a poiesis keyword to a `let <name>: any` variable in an Operator patch.
+// The value is sent over Operator's WebSocket control channel as JSON data.
+export type OperatorConfigurationKey = {
+  name: string
+  present: number | string | boolean
+  absent: number | string | boolean
+}
+
 export type AudioReactivityConfig = {
   audioChannel: number // 0-15 (BlackHole channel index)
   visualEffect: string // Effect preset name (e.g., 'kaleidoscope')
@@ -35,6 +43,7 @@ export type AudioReactivityConfig = {
 export type ConfigurationKey = {
   ableton?: AbletonConfigurationKey
   hydra?: HydraConfigurationKey
+  operator?: OperatorConfigurationKey
   args?: { [arg: string]: KeyArgument }
   audio_reactivity?: AudioReactivityConfig // NEW: Optional audio-reactive shader config
 }

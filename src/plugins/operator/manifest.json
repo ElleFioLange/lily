@@ -1,0 +1,9 @@
+{
+  "id": "operator",
+  "name": "Operator",
+  "repo": "",
+  "author": "sysfem.err",
+  "version": "1.0.0",
+  "outputTypes": ["graphics"],
+  "allowMultiple": false
+}
