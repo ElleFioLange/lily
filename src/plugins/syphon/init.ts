@@ -14,6 +14,11 @@ export default function init(instanceId: string) {
   const { addGraphicsSource } = useGraphicsStore.getState()
   addGraphicsSource({ id: instanceId, canvas })
 
+  // Syphon frames arrive with OpenGL's bottom-up row order, so they must be
+  // flipped vertically. putImageData ignores canvas transforms, so stage the
+  // raw frame here first, then drawImage it with a Y-flip.
+  const scratch = document.createElement('canvas')
+
   // Listen for frames from main process
   const handleFrame = (
     _: unknown,
@@ -34,8 +39,21 @@ export default function init(instanceId: string) {
       store.setFrameDimensions(width, height)
     }
 
+    if (scratch.width !== width || scratch.height !== height) {
+      scratch.width = width
+      scratch.height = height
+    }
+
     const imageData = new ImageData(new Uint8ClampedArray(buffer), width, height)
-    ctx.putImageData(imageData, 0, 0)
+    const scratchCtx = scratch.getContext('2d')
+    if (!scratchCtx) return
+    scratchCtx.putImageData(imageData, 0, 0)
+
+    ctx.save()
+    ctx.translate(0, height)
+    ctx.scale(1, -1)
+    ctx.drawImage(scratch, 0, 0)
+    ctx.restore()
     store.incrementFrameCount()
   }
 
