@@ -62,6 +62,9 @@ Lily is an Electron application for live visual performance. It features a plugi
 - `pnpm format` - Format code with Prettier
 - `pnpm build` - Type check and build for development
 - `pnpm build:mac` / `build:win` / `build:linux` - Build platform distributables
+  - `build:mac` packages the Electron already installed in `node_modules/electron/dist`
+    (`-c.electronDist`) instead of downloading from GitHub, which is unreachable on the dev
+    network. This only produces builds for the host arch (arm64).
 
 ## Plugin System
 
