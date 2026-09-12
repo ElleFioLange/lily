@@ -254,7 +254,7 @@ export default function Mixer() {
         {preview.active ? (
           <>
             <span className="font-bold my-1 text-sm text-amber-400">PREVIEW MIX</span>
-            <div className="flex gap-2 overflow-auto">
+            <div className="flex gap-2 flex-wrap shrink-0">
               <button onClick={preview.copyFromLive}>copy from live</button>
               <button onClick={preview.sendToLive}>send to live</button>
             </div>
