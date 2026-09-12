@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { Compositor } from '@renderer/graphics/Compositor'
 import { GraphicsState, MixerParams, useGraphicsStore } from './useGraphicsStore'
+import { MixSnapshot, mergeOrder, snapshotMix, useMixerPresetsStore } from './useMixerPresetsStore'
 
 type SourceType = 'graphics' | 'editors'
 
@@ -22,6 +23,7 @@ interface PreviewState {
   updateParams: (id: string, type: SourceType, updates: Partial<MixerParams>) => void
   reorderSource: (type: SourceType, fromIndex: number, toIndex: number) => void
   syncSources: (live: GraphicsState) => void
+  applyMix: (mix: MixSnapshot) => void
   copyFromLive: () => void
   sendToLive: () => void
 }
@@ -30,12 +32,6 @@ const liveCanvas = (live: GraphicsState, id: string) => live.compositorRef?.getS
 
 const sameMembers = (a: string[], b: string[]) =>
   a.length === b.length && a.every((id) => b.includes(id))
-
-// Preview order for ids still live, followed by any live ids the preview doesn't know about
-const mergeOrder = (preview: string[], live: string[]) => [
-  ...preview.filter((id) => live.includes(id)),
-  ...live.filter((id) => !preview.includes(id))
-]
 
 export const usePreviewStore = create<PreviewState>((set, get) => ({
   active: false,
@@ -117,33 +113,33 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     })
   },
 
-  copyFromLive: () => {
-    const { compositor } = get()
-    const live = useGraphicsStore.getState()
-    const graphicsOrder = live.graphicsOrder.filter((id) => compositor.getSource(id))
-    graphicsOrder.forEach((id) => compositor.updateSource(id, live.graphics[id]))
+  // Instantly applies a mix (preset or live snapshot) to the layers the preview knows about;
+  // layers missing from the mix keep their preview params.
+  applyMix: (mix) => {
+    const { compositor, graphics, editors, graphicsOrder, editorsOrder } = get()
+    const newGraphicsOrder = mergeOrder(mix.graphicsOrder, graphicsOrder)
+    const newEditorsOrder = mergeOrder(mix.editorsOrder, editorsOrder)
+    const newGraphics: Record<string, MixerParams> = {}
+    newGraphicsOrder.forEach((id, zIndex) => {
+      newGraphics[id] = { ...(mix.graphics[id] ?? graphics[id]), zIndex }
+      compositor.updateSource(id, newGraphics[id])
+    })
+    const newEditors: Record<string, MixerParams> = {}
+    newEditorsOrder.forEach((id, zIndex) => {
+      newEditors[id] = { ...(mix.editors[id] ?? editors[id]), zIndex }
+    })
     set({
-      graphics: Object.fromEntries(graphicsOrder.map((id) => [id, live.graphics[id]])),
-      editors: { ...live.editors },
-      graphicsOrder,
-      editorsOrder: [...live.editorsOrder]
+      graphics: newGraphics,
+      editors: newEditors,
+      graphicsOrder: newGraphicsOrder,
+      editorsOrder: newEditorsOrder
     })
   },
 
-  sendToLive: () => {
-    const { graphics, editors, graphicsOrder, editorsOrder } = get()
-    const live = useGraphicsStore.getState()
-    for (const [type, sources] of [
-      ['graphics', graphics],
-      ['editors', editors]
-    ] as const) {
-      for (const [id, { alpha, enabled, blendMode }] of Object.entries(sources)) {
-        if (live[type][id] !== undefined) live.updateParams(id, type, { alpha, enabled, blendMode })
-      }
-    }
-    live.setOrder('graphics', mergeOrder(graphicsOrder, live.graphicsOrder))
-    live.setOrder('editors', mergeOrder(editorsOrder, live.editorsOrder))
-  }
+  copyFromLive: () => get().applyMix(snapshotMix(useGraphicsStore.getState())),
+
+  // Crossfades the live mix to the preview mix using the preset fade time
+  sendToLive: () => useMixerPresetsStore.getState().fadeLiveTo(snapshotMix(get()))
 }))
 
 /** Keeps the preview mix in sync with the live source list. Returns an unsubscribe function. */

@@ -2,6 +2,11 @@ import { useRef, useState } from 'react'
 import { BlendMode, GraphicsState, useGraphicsStore } from '@renderer/stores/useGraphicsStore'
 import { BLEND_MODES } from '@renderer/graphics/blendModes'
 import { usePreviewStore } from '@renderer/stores/usePreviewStore'
+import {
+  MixSnapshot,
+  MixerPreset,
+  useMixerPresetsStore
+} from '@renderer/stores/useMixerPresetsStore'
 import Header from './common/Header'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 
@@ -162,9 +167,76 @@ export function MixerSections({
   )
 }
 
+type PresetsProps = {
+  mix: MixSnapshot // The mix saved by "+ save" / Shift+click
+  onRecall: (preset: MixerPreset) => void
+}
+
+// Shared preset list; the live mixer recalls with a crossfade, the preview mixer instantly
+function Presets({ mix, onRecall }: PresetsProps) {
+  const {
+    presets,
+    fadeSeconds,
+    fading,
+    savePreset,
+    overwritePreset,
+    deletePreset,
+    setFadeSeconds
+  } = useMixerPresetsStore()
+
+  return (
+    <>
+      <div className="flex justify-between items-center gap-2 my-1">
+        <span className="font-bold text-sm">PRESETS</span>
+        <label
+          className="flex items-center gap-2"
+          title="Crossfade time for recalling presets on the live mix and for send to live"
+        >
+          <span className={fading ? 'text-amber-400' : ''}>{fading ? 'fading' : 'fade'}</span>
+          <input
+            type="range"
+            className="w-20"
+            value={fadeSeconds}
+            onChange={({ target: { value } }) => setFadeSeconds(parseFloat(value))}
+            step={0.1}
+            min={0}
+            max={10}
+          />
+          <span className="w-8 text-right text-stone-400">{fadeSeconds.toFixed(1)}s</span>
+        </label>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {presets.map((preset) => (
+          <div key={preset.id} className="relative group">
+            <button
+              onClick={(e) => (e.shiftKey ? overwritePreset(preset.id, mix) : onRecall(preset))}
+              title="Click to recall, Shift+click to overwrite with the current mix"
+            >
+              {preset.name}
+            </button>
+            <button
+              className="absolute -top-2 -right-2 border-none bg-transparent hover:bg-transparent text-xs leading-none text-stone-400 hover:text-stone-100 opacity-0 group-hover:opacity-100"
+              onClick={() => deletePreset(preset.id)}
+              title="Delete preset"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button onClick={() => savePreset(mix)} title="Save the current mix as a new preset">
+          + save
+        </button>
+      </div>
+    </>
+  )
+}
+
 export default function Mixer() {
   const live = useGraphicsStore()
   const preview = usePreviewStore()
+  const fadeLiveTo = useMixerPresetsStore((state) => state.fadeLiveTo)
+  // Touching the live mix by hand takes over from any running crossfade
+  const cancelFade = () => useMixerPresetsStore.getState().cancelFade()
 
   return (
     <div className="flex flex-col h-full">
@@ -186,16 +258,24 @@ export default function Mixer() {
               <button onClick={preview.copyFromLive}>copy from live</button>
               <button onClick={preview.sendToLive}>send to live</button>
             </div>
+            <Presets mix={preview} onRecall={preview.applyMix} />
             <MixerSections key="preview" {...preview} />
           </>
         ) : (
           <>
-            <span className="font-bold my-1 text-sm">PRESETS</span>
-            <div className="flex gap-2 overflow-auto">
-              <button>preset 1</button>
-              <button>preset 2</button>
-            </div>
-            <MixerSections key="live" {...live} />
+            <Presets mix={live} onRecall={fadeLiveTo} />
+            <MixerSections
+              key="live"
+              {...live}
+              updateParams={(...args) => {
+                cancelFade()
+                live.updateParams(...args)
+              }}
+              reorderSource={(...args) => {
+                cancelFade()
+                live.reorderSource(...args)
+              }}
+            />
           </>
         )}
       </div>

@@ -231,7 +231,7 @@ the right of the Mixer header or **Cmd+Alt+P** (Window menu → `preview:toggle`
   `reorderSource`) whose names mirror `useGraphicsStore`. `setupPreviewSync()` (called in `App.tsx`)
   subscribes to the graphics store and mirrors source add/remove; new sources inherit their live
   params and canvases come from `compositorRef.getSource(id).canvas`. `copyFromLive()` re-syncs
-  the preview; `sendToLive()` pushes alpha/enabled/blendMode and order onto the live mix. The
+  the preview (via `applyMix()`); `sendToLive()` crossfades the live mix to the preview mix. The
   preview mix is kept across toggles.
 - **Stage** (`components/PreviewStage.tsx`) - Replaces the Workspace body while active. Lays out
   at the performance window's size (1920×1080 when closed), CSS-scaled to fit; composites into a
@@ -242,6 +242,14 @@ the right of the Mixer header or **Cmd+Alt+P** (Window menu → `preview:toggle`
   (`graphics/blendModes.ts`, `BLEND_MODES`) are stored as canvas `globalCompositeOperation` names;
   `cssBlendMode()` maps them to CSS `mix-blend-mode` for editor overlays (`source-over`→`normal`,
   `lighter`→`plus-lighter`).
+- **Presets** (`stores/useMixerPresetsStore.ts`) - Session-only list shared by both mixers.
+  Presets are `MixSnapshot`s (`graphics`, `editors`, orders) keyed by instance id; `+ save` adds
+  the current mixer's mix, Shift+click overwrites, × deletes. The live mixer recalls with
+  `fadeLiveTo()` (alpha crossfade over `fadeSeconds`, ticked on the performance window's rAF when
+  open; blend/order/newly-enabled switch at the start, disabled layers switch off at the end).
+  Manual live mixer edits call `cancelFade()`. The preview mixer recalls instantly via
+  `usePreviewStore.applyMix()` and never touches live; `sendToLive()` uses `fadeLiveTo()` too.
+  `snapshotMix` and `mergeOrder` live here and are reused by the preview store.
 - **`environment: 'preview'`** - Workspaces rendered in the preview must be side-effect free.
   Poiesis renders `TextOverlay` without keyword shaders (they're keyed by keyword on the shared
   shader manager) and skips audio/shader init; Hydra applies `performanceText` as in performance.
