@@ -207,6 +207,8 @@ class Compositor {
 The Performance Window (`src/renderer/src/windows/performance/PerformanceWindow.tsx`) renders to a child window via React Portal:
 
 - Opens via Window menu or Cmd/Ctrl+Shift+P
+- Cmd/Ctrl+Shift+F toggles it full screen (main process tracks the child `BrowserWindow` as
+  `performanceWindowRef` via `did-create-window` and calls `setFullScreen`)
 - Renders compositor canvas (graphics sources)
 - Overlays editor sources with CSS `mixBlendMode` via `components/EditorOverlays.tsx` (iterates
   `editorsOrder`; shared with the preview stage)

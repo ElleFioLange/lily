@@ -40,6 +40,7 @@ const syphonManager = getSyphonManager()
 
 let mainWindowRef: BrowserWindow | null = null
 let settingsWindowRef: BrowserWindow | null = null
+let performanceWindowRef: BrowserWindow | null = null
 
 /**
  * Get local IP address for camera streaming
@@ -152,6 +153,14 @@ function createMenu(): void {
           }
         },
         {
+          label: 'Toggle Performance Full Screen',
+          accelerator: 'CmdOrCtrl+Shift+F',
+          click: () => {
+            const win = performanceWindowRef
+            if (win && !win.isDestroyed()) win.setFullScreen(!win.isFullScreen())
+          }
+        },
+        {
           label: 'Toggle Preview',
           accelerator: 'CmdOrCtrl+Alt+P',
           click: () => {
@@ -244,6 +253,14 @@ function createWindow(): void {
     // External URLs open in system browser
     shell.openExternal(url)
     return { action: 'deny' }
+  })
+
+  // The performance window is the only child window allowed above
+  mainWindow.webContents.on('did-create-window', (win) => {
+    performanceWindowRef = win
+    win.on('closed', () => {
+      if (performanceWindowRef === win) performanceWindowRef = null
+    })
   })
 
   // HMR for renderer base on electron-vite cli.
