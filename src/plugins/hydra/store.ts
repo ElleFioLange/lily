@@ -20,7 +20,8 @@ export interface HydraState extends PluginState {
 
   // Input objects
   shader: string
-  scrollPercentage: number
+  // Doc position of the first visible character in the main editor; performance views scroll to it
+  scrollPos: number
 
   // File objects
   shaderPath: string | null
@@ -42,7 +43,7 @@ export interface HydraState extends PluginState {
   setHydra: (hydra: HydraInstance) => void
   setCanvas: (canvas: HTMLCanvasElement) => void
   setShader: (shader: string) => void
-  setScrollPercentage: (scrollPercentage: number) => void
+  setScrollPos: (scrollPos: number) => void
   setShaderPath: (path: string | null) => void
   setShaderName: (name: string | null) => void
   setIsValid: (isValid: boolean) => void
@@ -61,7 +62,7 @@ export const createHydraStore = (instanceId: string) => {
     hydra: null,
     canvas: null,
     shader: '',
-    scrollPercentage: 0,
+    scrollPos: 0,
     shaderPath: null,
     shaderName: 'new-shader',
     isValid: true,
@@ -77,7 +78,7 @@ export const createHydraStore = (instanceId: string) => {
 
     setShader: (shader) => set({ shader }),
 
-    setScrollPercentage: (scrollPercentage) => set({ scrollPercentage }),
+    setScrollPos: (scrollPos) => set({ scrollPos }),
 
     setShaderPath: (shaderPath) => set({ shaderPath }),
 

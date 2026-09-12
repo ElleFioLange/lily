@@ -28,6 +28,10 @@ Lily is an Electron application for live visual performance. It features a plugi
   merges partial updates, `DEFAULT_PERFORMANCE_TEXT` resets). `ui/Options.tsx` exposes sliders;
   `ui/Workspace.tsx` applies them only when `environment === 'performance'` (font size via a
   CodeMirror `Compartment`, position via absolute `left`/`top`). The main editor stays at 14px.
+  Scroll sync: the main editor writes `scrollPos` (doc position of its first visible character,
+  read from CodeMirror's `scrollDOM` and mapped through edits); performance/preview editors
+  `scrollIntoView(scrollPos, { y: 'start' })` so the same text stays at the top despite
+  different font size and wrapping. Line numbers are hidden in performance/preview.
 - **ableton** - Ableton Live control. Today this drives Live via a bundled Max for Live
   device (`maxdevice/lily-controller.amxd`) over OSC; `process.ts` scans Poiesis text for
   `keyword(...)` patterns and emits `/control` messages (`[type, action, path]` for

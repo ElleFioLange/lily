@@ -26,7 +26,7 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
   const fontSizeCompartment = useRef(new Compartment())
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<HydraState>
-  const { shader, setShader, setScrollPercentage, performanceText } = instance.useStore()
+  const { shader, setShader, scrollPos, setScrollPos, performanceText } = instance.useStore()
   const isPerformance = environment === 'performance' || environment === 'preview'
   const fontSize = isPerformance ? performanceText.fontSize : MAIN_FONT_SIZE
 
@@ -105,6 +105,10 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
             if (update.docChanged) {
               const newValue = update.state.doc.toString()
               setShader(newValue)
+              // Keep the synced scroll anchor on the same text when editing above it
+              if (!isPerformance) {
+                setScrollPos(update.changes.mapPos(instance.useStore.getState().scrollPos))
+              }
             }
           })
         ]
@@ -118,8 +122,18 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
 
       viewRef.current = view
 
+      // Main editor publishes the first visible character so performance views can follow it.
+      // Synced by doc position rather than percentage since font size and wrapping differ.
+      const handleScroll = () => {
+        const scroller = view.scrollDOM.getBoundingClientRect()
+        const content = view.contentDOM.getBoundingClientRect()
+        setScrollPos(view.posAtCoords({ x: content.left + 1, y: scroller.top + 1 }, false))
+      }
+      if (!isPerformance) view.scrollDOM.addEventListener('scroll', handleScroll)
+
       // Cleanup
       return () => {
+        view.scrollDOM.removeEventListener('scroll', handleScroll)
         view.destroy()
         viewRef.current = null
       }
@@ -147,20 +161,15 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
     }
   }, [shader])
 
-  const handleScroll = () => {
-    const editor = editorRef.current!
-    const { clientHeight, scrollTop } = editor
-
-    const container = editor.children[0]
-    const containerHeight = container.clientHeight
-
-    const maxScroll = containerHeight - clientHeight
-
-    // From 0 to 1
-    const scrollPercentage = scrollTop / maxScroll
-
-    setScrollPercentage(scrollPercentage)
-  }
+  // Performance views follow the main editor's scroll. Declared after the content sync so the
+  // doc is up to date, and re-run when layout changes (font size, position) rewrap the text.
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view || !isPerformance) return
+    view.dispatch({
+      effects: EditorView.scrollIntoView(Math.min(scrollPos, view.state.doc.length), { y: 'start' })
+    })
+  }, [isPerformance, scrollPos, shader, performanceText])
 
   return (
     <Panel
@@ -171,8 +180,6 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
     >
       <div
         ref={editorRef}
-        onWheel={handleScroll}
-        onScroll={handleScroll}
         className={`overflow-auto outline-none ${isPerformance ? 'absolute right-0 bottom-0' : 'size-full relative'}`}
         style={
           isPerformance
