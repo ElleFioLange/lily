@@ -90,7 +90,8 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
       const startState = EditorState.create({
         doc: '',
         extensions: [
-          lineNumbers(),
+          // Performance/preview show the bare code without a gutter
+          ...(isPerformance ? [] : [lineNumbers()]),
           highlightActiveLine(),
           javascript(),
           search(),
