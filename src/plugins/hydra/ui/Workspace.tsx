@@ -27,7 +27,7 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<HydraState>
   const { shader, setShader, setScrollPercentage, performanceText } = instance.useStore()
-  const isPerformance = environment === 'performance'
+  const isPerformance = environment === 'performance' || environment === 'preview'
   const fontSize = isPerformance ? performanceText.fontSize : MAIN_FONT_SIZE
 
   useEffect(

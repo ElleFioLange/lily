@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
-import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
+import { GraphicsState, useGraphicsStore } from '@renderer/stores/useGraphicsStore'
+import { usePreviewStore } from '@renderer/stores/usePreviewStore'
 import Header from './common/Header'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 
@@ -64,9 +65,20 @@ function SourceControl({
   )
 }
 
-export default function Mixer() {
-  const { editors, graphics, editorsOrder, graphicsOrder, updateParams, reorderSource } =
-    useGraphicsStore()
+type MixerSectionsProps = Pick<
+  GraphicsState,
+  'editors' | 'graphics' | 'editorsOrder' | 'graphicsOrder' | 'updateParams' | 'reorderSource'
+>
+
+// Editor + graphics source controls. Driven by either the live graphics store or the preview store.
+export function MixerSections({
+  editors,
+  graphics,
+  editorsOrder,
+  graphicsOrder,
+  updateParams,
+  reorderSource
+}: MixerSectionsProps) {
   const { getInstance } = usePluginsStore()
   const dragIndex = useRef<{ type: 'graphics' | 'editors'; index: number } | null>(null)
 
@@ -90,49 +102,81 @@ export default function Mixer() {
   }
 
   return (
+    <>
+      <span className="font-bold my-1 text-sm">EDITORS</span>
+      {editorsOrder.map((id, index) => {
+        const params = editors[id]
+        const plugin = getInstance(id)
+        if (!params || !plugin) return null
+        return (
+          <SourceControl
+            key={id}
+            name={plugin.manifest.name}
+            alpha={params.alpha ?? 0}
+            enabled={params.enabled ?? false}
+            setAlpha={(alpha) => updateParams(id, 'editors', { alpha })}
+            setEnabled={(enabled) => updateParams(id, 'editors', { enabled })}
+            {...makeDragHandlers('editors', index)}
+          />
+        )
+      })}
+      <span className="font-bold my-1 text-sm">GRAPHICS</span>
+      {graphicsOrder.map((id, index) => {
+        const params = graphics[id]
+        const plugin = getInstance(id)
+        if (!params || !plugin) return null
+        return (
+          <SourceControl
+            key={id}
+            name={plugin.manifest.name}
+            alpha={params.alpha ?? 0}
+            enabled={params.enabled ?? false}
+            setAlpha={(alpha) => updateParams(id, 'graphics', { alpha })}
+            setEnabled={(enabled) => updateParams(id, 'graphics', { enabled })}
+            {...makeDragHandlers('graphics', index)}
+          />
+        )
+      })}
+    </>
+  )
+}
+
+export default function Mixer() {
+  const live = useGraphicsStore()
+  const preview = usePreviewStore()
+
+  return (
     <div className="flex flex-col h-full">
-      <Header title="MIXER" />
+      <Header title="MIXER">
+        <button
+          className={`ml-auto shrink-0 text-xs ${preview.active ? 'bg-amber-400 text-stone-950 hover:bg-amber-300' : ''}`}
+          onClick={preview.toggle}
+          title="Toggle preview mode (Cmd+Alt+P)"
+        >
+          preview
+        </button>
+      </Header>
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pt-2 pb-8 text-xs flex flex-col gap-1 *:align-center font-neon">
-        <span className="font-bold my-1 text-sm">PRESETS</span>
-        <div className="flex gap-2 overflow-auto">
-          <button>preset 1</button>
-          <button>preset 2</button>
-        </div>
-        <span className="font-bold my-1 text-sm">EDITORS</span>
-        {editorsOrder.map((id, index) => {
-          const params = editors[id]
-          const plugin = getInstance(id)
-          if (!params || !plugin) return null
-          return (
-            <SourceControl
-              key={id}
-              name={plugin.manifest.name}
-              alpha={params.alpha ?? 0}
-              enabled={params.enabled ?? false}
-              setAlpha={(alpha) => updateParams(id, 'editors', { alpha })}
-              setEnabled={(enabled) => updateParams(id, 'editors', { enabled })}
-              {...makeDragHandlers('editors', index)}
-            />
-          )
-        })}
-        <span className="font-bold my-1 text-sm">GRAPHICS</span>
-        {graphicsOrder.map((id, index) => {
-          const params = graphics[id]
-          const plugin = getInstance(id)
-          if (!params || !plugin) return null
-          return (
-            <SourceControl
-              key={id}
-              name={plugin.manifest.name}
-              alpha={params.alpha ?? 0}
-              enabled={params.enabled ?? false}
-              setAlpha={(alpha) => updateParams(id, 'graphics', { alpha })}
-              setEnabled={(enabled) => updateParams(id, 'graphics', { enabled })}
-              {...makeDragHandlers('graphics', index)}
-            />
-          )
-        })}
+        {preview.active ? (
+          <>
+            <span className="font-bold my-1 text-sm text-amber-400">PREVIEW MIX</span>
+            <div className="flex gap-2 overflow-auto">
+              <button onClick={preview.copyFromLive}>copy from live</button>
+              <button onClick={preview.sendToLive}>send to live</button>
+            </div>
+            <MixerSections key="preview" {...preview} />
+          </>
+        ) : (
+          <>
+            <span className="font-bold my-1 text-sm">PRESETS</span>
+            <div className="flex gap-2 overflow-auto">
+              <button>preset 1</button>
+              <button>preset 2</button>
+            </div>
+            <MixerSections key="live" {...live} />
+          </>
+        )}
       </div>
     </div>
   )

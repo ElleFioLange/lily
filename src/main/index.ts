@@ -151,6 +151,13 @@ function createMenu(): void {
             mainWindowRef?.webContents.send('performance:toggle')
           }
         },
+        {
+          label: 'Toggle Preview',
+          accelerator: 'CmdOrCtrl+Alt+P',
+          click: () => {
+            mainWindowRef?.webContents.send('preview:toggle')
+          }
+        },
         ...(isMac
           ? [
               { type: 'separator' as const },

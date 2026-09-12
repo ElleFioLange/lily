@@ -12,7 +12,7 @@ import TextOverlay from './TextOverlay'
 
 type PoiesisEditorProps = {
   instanceId: string
-  environment: 'main' | 'performance'
+  environment: 'main' | 'performance' | 'preview'
 }
 
 export default function PoiesisEditor({ instanceId, environment }: PoiesisEditorProps) {
@@ -198,5 +198,5 @@ export default function PoiesisEditor({ instanceId, environment }: PoiesisEditor
         />
       </div>
     )
-  else return <TextOverlay instanceId={instanceId} />
+  else return <TextOverlay instanceId={instanceId} environment={environment} />
 }

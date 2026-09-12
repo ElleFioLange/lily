@@ -166,11 +166,15 @@ type MixerParams = {
 interface GraphicsState {
   graphics: Record<string, MixerParams>  // Canvas sources
   editors: Record<string, MixerParams>   // Editor overlays
+  graphicsOrder: string[]                // Mixer order (index = zIndex)
+  editorsOrder: string[]
   compositorRef: Compositor | null
 
   addGraphicsSource: ({ id, canvas, initParams? }) => void
   addEditorSource: ({ id, initParams? }) => void
   updateParams: (id, type, updates) => void
+  reorderSource: (type, fromIndex, toIndex) => void
+  setOrder: (type, ids) => void          // Replace an order wholesale, re-applying zIndex
   removeSource: (id) => void
   addOutput: ({ id, canvas, window }) => void
   startRenderLoop: (outputId) => void
@@ -200,8 +204,31 @@ The Performance Window (`src/renderer/src/windows/performance/PerformanceWindow.
 
 - Opens via Window menu or Cmd/Ctrl+Shift+P
 - Renders compositor canvas (graphics sources)
-- Overlays editor sources with CSS `mixBlendMode`
+- Overlays editor sources with CSS `mixBlendMode` via `components/EditorOverlays.tsx` (iterates
+  `editorsOrder`; shared with the preview stage)
 - Shares Zustand stores with main window (same renderer process)
+
+## Preview Mode
+
+App-level preview of the performance window with its own mix, toggled by the **preview** button on
+the right of the Mixer header or **Cmd+Alt+P** (Window menu → `preview:toggle` IPC →
+`window.api.actions.onTogglePreview` → `usePreviewStore.toggle()` in `App.tsx`).
+
+- **Store** (`stores/usePreviewStore.ts`) - Global store with its own `Compositor` instance and a
+  preview mix (`graphics`, `editors`, `graphicsOrder`, `editorsOrder`, `updateParams`,
+  `reorderSource`) whose names mirror `useGraphicsStore`. `setupPreviewSync()` (called in `App.tsx`)
+  subscribes to the graphics store and mirrors source add/remove; new sources inherit their live
+  params and canvases come from `compositorRef.getSource(id).canvas`. `copyFromLive()` re-syncs
+  the preview; `sendToLive()` pushes alpha/enabled/blendMode and order onto the live mix. The
+  preview mix is kept across toggles.
+- **Stage** (`components/PreviewStage.tsx`) - Replaces the Workspace body while active. Lays out
+  at the performance window's size (1920×1080 when closed), CSS-scaled to fit; composites into a
+  canvas at displayed resolution and overlays editors with `environment="preview"`.
+- **Mixer** (`components/Mixer.tsx`) - `MixerSections` renders editor/graphics controls from any
+  store shaped like `GraphicsState`; the Mixer feeds it the live store or the preview store.
+- **`environment: 'preview'`** - Workspaces rendered in the preview must be side-effect free.
+  Poiesis renders `TextOverlay` without keyword shaders (they're keyed by keyword on the shared
+  shader manager) and skips audio/shader init; Hydra applies `performanceText` as in performance.
 
 ## UI Layout
 

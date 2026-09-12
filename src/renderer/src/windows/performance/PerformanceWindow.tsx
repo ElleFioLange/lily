@@ -1,10 +1,10 @@
-import { useEffect, useState, useRef, CSSProperties } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { usePerformanceStore } from '../../stores/usePerformanceStore'
 // import HydraPlugin from '@plugins/hydra'
 // import PoiesisRenderer from '../../surfaces/poiesis/ui/Renderer'
 import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
-import { usePluginsStore } from '@renderer/stores/usePluginsStore'
+import EditorOverlays from '@renderer/components/EditorOverlays'
 
 /**
  * PerformanceWindow renders a full-screen compositor canvas into a child window.
@@ -13,8 +13,7 @@ import { usePluginsStore } from '@renderer/stores/usePluginsStore'
  */
 export function PerformanceWindow() {
   const { isOpen, closeWindow, setWindowRef } = usePerformanceStore()
-  const { editors, addOutput, startRenderLoop } = useGraphicsStore()
-  const { getInstance } = usePluginsStore()
+  const { editors, editorsOrder, addOutput, startRenderLoop } = useGraphicsStore()
   const [childWindow, setChildWindow] = useState<Window | null>(null)
   const [container, setContainer] = useState<HTMLElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -135,23 +134,7 @@ export function PerformanceWindow() {
   return createPortal(
     <div className="w-screen h-screen relative">
       <canvas className="size-full block absolute" ref={canvasRef} />
-      {Object.entries(editors).map(([id, { alpha, enabled, blendMode }]) => {
-        if (!enabled) return null
-        const plugin = getInstance(id)
-        if (plugin === undefined || plugin.Workspace === undefined) return null
-        return (
-          <div
-            className="absolute size-full"
-            key={id}
-            style={{
-              opacity: alpha,
-              mixBlendMode: blendMode as CSSProperties['mixBlendMode']
-            }}
-          >
-            <plugin.Workspace instanceId={id} environment="performance" />
-          </div>
-        )
-      })}
+      <EditorOverlays editors={editors} editorsOrder={editorsOrder} environment="performance" />
     </div>,
     container
   )
