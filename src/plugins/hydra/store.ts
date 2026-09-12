@@ -39,6 +39,9 @@ export interface HydraState extends PluginState {
   // Performance window text layout
   performanceText: PerformanceText
 
+  // Multiplier on how fast `time` advances (frame rate is unaffected)
+  speed: number
+
   // Setters
   setHydra: (hydra: HydraInstance) => void
   setCanvas: (canvas: HTMLCanvasElement) => void
@@ -52,12 +55,13 @@ export interface HydraState extends PluginState {
   setMonitorCanvas: (canvas: HTMLCanvasElement | null) => void
   toggleMonitor: () => void
   setPerformanceText: (updates: Partial<PerformanceText>) => void
+  setSpeed: (speed: number) => void
   newShader: () => void
   openShader: (content: string, path: string) => void
 }
 
 export const createHydraStore = (instanceId: string) => {
-  return create<HydraState>((set) => ({
+  return create<HydraState>((set, get) => ({
     instanceId,
     hydra: null,
     canvas: null,
@@ -71,6 +75,7 @@ export const createHydraStore = (instanceId: string) => {
     monitorHydra: null,
     monitorCanvas: null,
     performanceText: DEFAULT_PERFORMANCE_TEXT,
+    speed: 1,
 
     setHydra: (hydra) => set({ hydra }),
 
@@ -114,6 +119,12 @@ export const createHydraStore = (instanceId: string) => {
     toggleMonitor: () => set((state) => ({ monitorActive: !state.monitorActive })),
 
     setPerformanceText: (updates) =>
-      set((state) => ({ performanceText: { ...state.performanceText, ...updates } }))
+      set((state) => ({ performanceText: { ...state.performanceText, ...updates } })),
+
+    setSpeed: (speed) => {
+      set({ speed })
+      const { hydra } = get()
+      if (hydra) hydra.synth.speed = speed
+    }
   }))
 }

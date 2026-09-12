@@ -32,6 +32,9 @@ Lily is an Electron application for live visual performance. It features a plugi
   read from CodeMirror's `scrollDOM` and mapped through edits); performance/preview editors
   `scrollIntoView(scrollPos, { y: 'start' })` so the same text stays at the top despite
   different font size and wrapping. Line numbers are hidden in performance/preview.
+  Speed: `speed`/`setSpeed` in the store sets `hydra.synth.speed` (hydra-synth advances `time`
+  by `dt * speed`, so frame rate is unchanged). `process.ts` re-applies it after each eval, so the
+  Options slider (0–2×) overrides any `speed = ...` in a patch.
 - **ableton** - Ableton Live control. Today this drives Live via a bundled Max for Live
   device (`maxdevice/lily-controller.amxd`) over OSC; `process.ts` scans Poiesis text for
   `keyword(...)` patterns and emits `/control` messages (`[type, action, path]` for

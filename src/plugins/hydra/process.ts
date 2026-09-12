@@ -73,9 +73,11 @@ export default async function process(
 ) {
   const { getInstance } = usePluginsStore.getState()
   const instance = getInstance(instanceId) as ActivePlugin<HydraState>
-  const { shader, hydra, monitorActive, monitorHydra } = instance.useStore.getState()
+  const { shader, hydra, monitorActive, monitorHydra, speed } = instance.useStore.getState()
 
   await evalPatch(hydra.synth, shader)
+  // The speed control wins over any `speed = ...` in the patch
+  hydra.synth.speed = speed
   console.log('Shader evaluated successfully')
 
   // Keep the monitor's 4-up view in sync with the live patch.

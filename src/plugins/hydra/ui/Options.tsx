@@ -18,7 +18,7 @@ const PERFORMANCE_TEXT_CONTROLS: {
 export default function Options({ instanceId }: UIProps) {
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<HydraState>
-  const { shader, shaderPath, shaderName, performanceText, setPerformanceText } =
+  const { shader, shaderPath, shaderName, performanceText, setPerformanceText, speed, setSpeed } =
     instance.useStore()
 
   const files: Record<string, FileData> = shaderPath
@@ -76,6 +76,22 @@ export default function Options({ instanceId }: UIProps) {
         files={files}
       />
       <div className="px-4 pb-4 text-xs flex flex-col gap-1 font-neon">
+        <div className="flex justify-between items-center my-1">
+          <span className="font-bold text-sm">PATCH</span>
+          <button onClick={() => setSpeed(1)}>reset</button>
+        </div>
+        <label className="grid grid-cols-[40px_auto_48px] gap-2 items-center">
+          <span>speed</span>
+          <input
+            type="range"
+            value={speed}
+            onChange={({ target: { value } }) => setSpeed(parseFloat(value))}
+            step={0.01}
+            min={0}
+            max={2}
+          />
+          <span className="text-right text-stone-400">{speed.toFixed(2)}×</span>
+        </label>
         <div className="flex justify-between items-center my-1">
           <span className="font-bold text-sm">PERFORMANCE TEXT</span>
           <button onClick={() => setPerformanceText(DEFAULT_PERFORMANCE_TEXT)}>reset</button>
