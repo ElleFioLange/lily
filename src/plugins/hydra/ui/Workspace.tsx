@@ -119,6 +119,7 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
         state: startState,
         parent: editorRef.current
       })
+      view.scrollDOM.classList.add('no-scrollbar')
 
       viewRef.current = view
 
