@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
-import { GraphicsState, useGraphicsStore } from '@renderer/stores/useGraphicsStore'
+import { BlendMode, GraphicsState, useGraphicsStore } from '@renderer/stores/useGraphicsStore'
+import { BLEND_MODES } from '@renderer/graphics/blendModes'
 import { usePreviewStore } from '@renderer/stores/usePreviewStore'
 import Header from './common/Header'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
@@ -8,8 +9,10 @@ type SourceControlProps = {
   name: string
   alpha: number
   enabled: boolean
+  blendMode: BlendMode
   setAlpha: (alpha: number) => void
   setEnabled: (enabled: boolean) => void
+  setBlendMode: (blendMode: BlendMode) => void
   onDragStart: () => void
   onDragOver: (e: React.DragEvent) => void
   onDrop: () => void
@@ -19,8 +22,10 @@ function SourceControl({
   name,
   alpha,
   enabled,
+  blendMode,
   setAlpha,
   setEnabled,
+  setBlendMode,
   onDragStart,
   onDragOver,
   onDrop
@@ -38,7 +43,7 @@ function SourceControl({
         onDragOver(e)
       }}
       onDrop={onDrop}
-      className="grid grid-cols-[12px_72px_auto] gap-2 items-center"
+      className="grid grid-cols-[12px_72px_minmax(0,1fr)_auto] gap-2 items-center"
     >
       <span
         className="text-stone-500 select-none cursor-grab active:cursor-grabbing"
@@ -61,6 +66,18 @@ function SourceControl({
         min={0}
         max={1}
       />
+      <select
+        value={blendMode as string}
+        onChange={({ target: { value } }) => setBlendMode(value as BlendMode)}
+        className="bg-stone-900 border border-stone-700 text-xs px-1 cursor-pointer"
+        title="Blend mode"
+      >
+        {BLEND_MODES.map(({ value, label }) => (
+          <option key={value as string} value={value as string}>
+            {label}
+          </option>
+        ))}
+      </select>
     </div>
   )
 }
@@ -116,6 +133,8 @@ export function MixerSections({
             enabled={params.enabled ?? false}
             setAlpha={(alpha) => updateParams(id, 'editors', { alpha })}
             setEnabled={(enabled) => updateParams(id, 'editors', { enabled })}
+            blendMode={params.blendMode ?? 'source-over'}
+            setBlendMode={(blendMode) => updateParams(id, 'editors', { blendMode })}
             {...makeDragHandlers('editors', index)}
           />
         )
@@ -133,6 +152,8 @@ export function MixerSections({
             enabled={params.enabled ?? false}
             setAlpha={(alpha) => updateParams(id, 'graphics', { alpha })}
             setEnabled={(enabled) => updateParams(id, 'graphics', { enabled })}
+            blendMode={params.blendMode ?? 'source-over'}
+            setBlendMode={(blendMode) => updateParams(id, 'graphics', { blendMode })}
             {...makeDragHandlers('graphics', index)}
           />
         )

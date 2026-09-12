@@ -238,6 +238,10 @@ the right of the Mixer header or **Cmd+Alt+P** (Window menu → `preview:toggle`
   canvas at displayed resolution and overlays editors with `environment="preview"`.
 - **Mixer** (`components/Mixer.tsx`) - `MixerSections` renders editor/graphics controls from any
   store shaped like `GraphicsState`; the Mixer feeds it the live store or the preview store.
+  Each row has alpha, enable, drag-reorder, and a blend mode select. Blend modes
+  (`graphics/blendModes.ts`, `BLEND_MODES`) are stored as canvas `globalCompositeOperation` names;
+  `cssBlendMode()` maps them to CSS `mix-blend-mode` for editor overlays (`source-over`→`normal`,
+  `lighter`→`plus-lighter`).
 - **`environment: 'preview'`** - Workspaces rendered in the preview must be side-effect free.
   Poiesis renders `TextOverlay` without keyword shaders (they're keyed by keyword on the shared
   shader manager) and skips audio/shader init; Hydra applies `performanceText` as in performance.

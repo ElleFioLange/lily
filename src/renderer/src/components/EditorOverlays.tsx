@@ -1,4 +1,4 @@
-import { CSSProperties } from 'react'
+import { cssBlendMode } from '@renderer/graphics/blendModes'
 import { MixerParams } from '@renderer/stores/useGraphicsStore'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { UIProps } from 'src/types/plugins'
@@ -33,7 +33,7 @@ export default function EditorOverlays({
             key={id}
             style={{
               opacity: params.alpha,
-              mixBlendMode: params.blendMode as CSSProperties['mixBlendMode']
+              mixBlendMode: cssBlendMode(params.blendMode)
             }}
           >
             <plugin.Workspace instanceId={id} environment={environment} />
