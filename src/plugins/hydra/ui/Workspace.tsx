@@ -173,7 +173,7 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
         ref={editorRef}
         onWheel={handleScroll}
         onScroll={handleScroll}
-        className={`overflow-auto outline-none border-t border-stone-400 ${isPerformance ? 'absolute right-0 bottom-0' : 'size-full relative'}`}
+        className={`overflow-auto outline-none ${isPerformance ? 'absolute right-0 bottom-0' : 'size-full relative'}`}
         style={
           isPerformance
             ? { left: `${performanceText.x}%`, top: `${performanceText.y}%` }
