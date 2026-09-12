@@ -23,6 +23,11 @@ Lily is an Electron application for live visual performance. It features a plugi
   never added to the compositor; instead the Monitors panel shows four horizontal canvases, each
   drawn from one quadrant of the monitor canvas (column-major: o0 TL, o1 BL, o2 TR, o3 BR). Monitor
   state (`monitorActive`, `monitorHydra`, `monitorCanvas`, `toggleMonitor`) lives in `store.ts`.
+  The shader text shown in the performance window is laid out by `performanceText`
+  (`{ fontSize, x, y }` — px, and % of window for the top-left offset; `setPerformanceText`
+  merges partial updates, `DEFAULT_PERFORMANCE_TEXT` resets). `ui/Options.tsx` exposes sliders;
+  `ui/Workspace.tsx` applies them only when `environment === 'performance'` (font size via a
+  CodeMirror `Compartment`, position via absolute `left`/`top`). The main editor stays at 14px.
 - **ableton** - Ableton Live control. Today this drives Live via a bundled Max for Live
   device (`maxdevice/lily-controller.amxd`) over OSC; `process.ts` scans Poiesis text for
   `keyword(...)` patterns and emits `/control` messages (`[type, action, path]` for

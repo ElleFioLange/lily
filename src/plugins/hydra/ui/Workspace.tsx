@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import { EditorState } from '@codemirror/state'
+import { Compartment, EditorState } from '@codemirror/state'
 import { EditorView, highlightActiveLine, keymap, lineNumbers } from '@codemirror/view'
 import { defaultKeymap, history, indentWithTab } from '@codemirror/commands'
 import Panel from '@renderer/components/common/Panel'
@@ -16,12 +16,19 @@ import { WorkspaceProps } from 'src/types/plugins'
 // TODO needs cursor navigation shortcuts, formatting, and search (? maybe search?)
 // TODO handle the extra HTMLDivProps from the
 
-export default function Workspace({ instanceId }: WorkspaceProps) {
+const MAIN_FONT_SIZE = 14
+
+const fontSizeTheme = (fontSize: number) => EditorView.theme({ '&': { fontSize: `${fontSize}px` } })
+
+export default function Workspace({ instanceId, environment }: WorkspaceProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
+  const fontSizeCompartment = useRef(new Compartment())
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<HydraState>
-  const { shader, setShader, setScrollPercentage } = instance.useStore()
+  const { shader, setShader, setScrollPercentage, performanceText } = instance.useStore()
+  const isPerformance = environment === 'performance'
+  const fontSize = isPerformance ? performanceText.fontSize : MAIN_FONT_SIZE
 
   useEffect(
     () => {
@@ -30,8 +37,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
       // Stone color theme for CodeMirror
       const hydraTheme = EditorView.theme({
         '&': {
-          height: '100%',
-          fontSize: '14px'
+          height: '100%'
         },
         '.cm-content': {
           caretColor: '#f5f5f4',
@@ -89,6 +95,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
           javascript(),
           search(),
           hydraTheme,
+          fontSizeCompartment.current.of(fontSizeTheme(fontSize)),
           syntaxHighlighting(highlightStyle),
           EditorView.lineWrapping,
           history(),
@@ -119,6 +126,12 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   )
+
+  useEffect(() => {
+    viewRef.current?.dispatch({
+      effects: fontSizeCompartment.current.reconfigure(fontSizeTheme(fontSize))
+    })
+  }, [fontSize])
 
   // Update editor content when input changes from outside
   useEffect(() => {
@@ -159,7 +172,12 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
         ref={editorRef}
         onWheel={handleScroll}
         onScroll={handleScroll}
-        className="size-full overflow-auto outline-none relative border-t border-stone-400"
+        className={`overflow-auto outline-none border-t border-stone-400 ${isPerformance ? 'absolute right-0 bottom-0' : 'size-full relative'}`}
+        style={
+          isPerformance
+            ? { left: `${performanceText.x}%`, top: `${performanceText.y}%` }
+            : undefined
+        }
       />
     </Panel>
   )

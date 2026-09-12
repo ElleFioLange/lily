@@ -3,6 +3,16 @@ import { create } from 'zustand'
 
 type HydraInstance = any
 
+// Layout of the shader text overlay in the performance window.
+// x/y are the text box's top-left offset as a percentage of the window.
+export type PerformanceText = {
+  fontSize: number
+  x: number
+  y: number
+}
+
+export const DEFAULT_PERFORMANCE_TEXT: PerformanceText = { fontSize: 14, x: 0, y: 0 }
+
 export interface HydraState extends PluginState {
   // Hydra objects
   hydra: HydraInstance | null
@@ -25,6 +35,9 @@ export interface HydraState extends PluginState {
   monitorHydra: HydraInstance | null
   monitorCanvas: HTMLCanvasElement | null
 
+  // Performance window text layout
+  performanceText: PerformanceText
+
   // Setters
   setHydra: (hydra: HydraInstance) => void
   setCanvas: (canvas: HTMLCanvasElement) => void
@@ -37,6 +50,7 @@ export interface HydraState extends PluginState {
   setMonitorHydra: (hydra: HydraInstance | null) => void
   setMonitorCanvas: (canvas: HTMLCanvasElement | null) => void
   toggleMonitor: () => void
+  setPerformanceText: (updates: Partial<PerformanceText>) => void
   newShader: () => void
   openShader: (content: string, path: string) => void
 }
@@ -55,6 +69,7 @@ export const createHydraStore = (instanceId: string) => {
     monitorActive: false,
     monitorHydra: null,
     monitorCanvas: null,
+    performanceText: DEFAULT_PERFORMANCE_TEXT,
 
     setHydra: (hydra) => set({ hydra }),
 
@@ -95,6 +110,9 @@ export const createHydraStore = (instanceId: string) => {
 
     setMonitorCanvas: (monitorCanvas) => set({ monitorCanvas }),
 
-    toggleMonitor: () => set((state) => ({ monitorActive: !state.monitorActive }))
+    toggleMonitor: () => set((state) => ({ monitorActive: !state.monitorActive })),
+
+    setPerformanceText: (updates) =>
+      set((state) => ({ performanceText: { ...state.performanceText, ...updates } }))
   }))
 }
