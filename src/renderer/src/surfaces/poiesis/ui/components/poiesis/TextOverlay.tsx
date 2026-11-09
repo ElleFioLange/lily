@@ -7,9 +7,10 @@ import { PoiesisState } from '@renderer/surfaces/poiesis/store'
 
 type TextOverlayProps = {
   instanceId: string
+  environment: 'performance' | 'preview'
 }
 
-export default function TextOverlay({ instanceId }: TextOverlayProps) {
+export default function TextOverlay({ instanceId, environment }: TextOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
 
   const { getInstance } = usePluginsStore()
@@ -88,8 +89,10 @@ export default function TextOverlay({ instanceId }: TextOverlayProps) {
       }
 
       // Add keyword renderer or plain keyword
+      // Keyword shaders are registered by keyword name on the shared shader manager, so the
+      // preview renders plain keywords to avoid clobbering the performance window's shaders.
       const keywordConfig = parsedConfig[key]
-      if (keywordConfig.audio_reactivity) {
+      if (keywordConfig.audio_reactivity && environment === 'performance') {
         elements.push(
           <KeywordRenderer
             key={`keyword-${key}-${index}`}

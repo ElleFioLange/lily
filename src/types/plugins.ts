@@ -22,7 +22,7 @@ export type PluginManifest = {
 
 export type UIProps = {
   instanceId: string
-  environment?: 'main' | 'performance'
+  environment?: 'main' | 'performance' | 'preview'
 }
 
 export type WorkspaceProps = UIProps & HTMLProps<HTMLDivElement>

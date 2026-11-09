@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import { EditorState } from '@codemirror/state'
+import { Compartment, EditorState } from '@codemirror/state'
 import { EditorView, highlightActiveLine, keymap, lineNumbers } from '@codemirror/view'
 import { defaultKeymap, history, indentWithTab } from '@codemirror/commands'
 import Panel from '@renderer/components/common/Panel'
@@ -16,12 +16,19 @@ import { WorkspaceProps } from 'src/types/plugins'
 // TODO needs cursor navigation shortcuts, formatting, and search (? maybe search?)
 // TODO handle the extra HTMLDivProps from the
 
-export default function Workspace({ instanceId }: WorkspaceProps) {
+const MAIN_FONT_SIZE = 14
+
+const fontSizeTheme = (fontSize: number) => EditorView.theme({ '&': { fontSize: `${fontSize}px` } })
+
+export default function Workspace({ instanceId, environment }: WorkspaceProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
+  const fontSizeCompartment = useRef(new Compartment())
   const { getInstance } = usePluginsStore()
   const instance = getInstance(instanceId) as ActivePlugin<HydraState>
-  const { shader, setShader, setScrollPercentage } = instance.useStore()
+  const { shader, setShader, scrollPos, setScrollPos, performanceText } = instance.useStore()
+  const isPerformance = environment === 'performance' || environment === 'preview'
+  const fontSize = isPerformance ? performanceText.fontSize : MAIN_FONT_SIZE
 
   useEffect(
     () => {
@@ -30,8 +37,7 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
       // Stone color theme for CodeMirror
       const hydraTheme = EditorView.theme({
         '&': {
-          height: '100%',
-          fontSize: '14px'
+          height: '100%'
         },
         '.cm-content': {
           caretColor: '#f5f5f4',
@@ -84,11 +90,13 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
       const startState = EditorState.create({
         doc: '',
         extensions: [
-          lineNumbers(),
+          // Performance/preview show the bare code without a gutter
+          ...(isPerformance ? [] : [lineNumbers()]),
           highlightActiveLine(),
           javascript(),
           search(),
           hydraTheme,
+          fontSizeCompartment.current.of(fontSizeTheme(fontSize)),
           syntaxHighlighting(highlightStyle),
           EditorView.lineWrapping,
           history(),
@@ -97,6 +105,10 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
             if (update.docChanged) {
               const newValue = update.state.doc.toString()
               setShader(newValue)
+              // Keep the synced scroll anchor on the same text when editing above it
+              if (!isPerformance) {
+                setScrollPos(update.changes.mapPos(instance.useStore.getState().scrollPos))
+              }
             }
           })
         ]
@@ -107,11 +119,22 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
         state: startState,
         parent: editorRef.current
       })
+      view.scrollDOM.classList.add('no-scrollbar')
 
       viewRef.current = view
 
+      // Main editor publishes the first visible character so performance views can follow it.
+      // Synced by doc position rather than percentage since font size and wrapping differ.
+      const handleScroll = () => {
+        const scroller = view.scrollDOM.getBoundingClientRect()
+        const content = view.contentDOM.getBoundingClientRect()
+        setScrollPos(view.posAtCoords({ x: content.left + 1, y: scroller.top + 1 }, false))
+      }
+      if (!isPerformance) view.scrollDOM.addEventListener('scroll', handleScroll)
+
       // Cleanup
       return () => {
+        view.scrollDOM.removeEventListener('scroll', handleScroll)
         view.destroy()
         viewRef.current = null
       }
@@ -119,6 +142,12 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   )
+
+  useEffect(() => {
+    viewRef.current?.dispatch({
+      effects: fontSizeCompartment.current.reconfigure(fontSizeTheme(fontSize))
+    })
+  }, [fontSize])
 
   // Update editor content when input changes from outside
   useEffect(() => {
@@ -133,20 +162,15 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     }
   }, [shader])
 
-  const handleScroll = () => {
-    const editor = editorRef.current!
-    const { clientHeight, scrollTop } = editor
-
-    const container = editor.children[0]
-    const containerHeight = container.clientHeight
-
-    const maxScroll = containerHeight - clientHeight
-
-    // From 0 to 1
-    const scrollPercentage = scrollTop / maxScroll
-
-    setScrollPercentage(scrollPercentage)
-  }
+  // Performance views follow the main editor's scroll. Declared after the content sync so the
+  // doc is up to date, and re-run when layout changes (font size, position) rewrap the text.
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view || !isPerformance) return
+    view.dispatch({
+      effects: EditorView.scrollIntoView(Math.min(scrollPos, view.state.doc.length), { y: 'start' })
+    })
+  }, [isPerformance, scrollPos, shader, performanceText])
 
   return (
     <Panel
@@ -157,9 +181,12 @@ export default function Workspace({ instanceId }: WorkspaceProps) {
     >
       <div
         ref={editorRef}
-        onWheel={handleScroll}
-        onScroll={handleScroll}
-        className="size-full overflow-auto outline-none relative border-t border-stone-400"
+        className={`overflow-auto outline-none ${isPerformance ? 'absolute right-0 bottom-0' : 'size-full relative'}`}
+        style={
+          isPerformance
+            ? { left: `${performanceText.x}%`, top: `${performanceText.y}%` }
+            : undefined
+        }
       />
     </Panel>
   )

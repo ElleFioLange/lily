@@ -9,6 +9,7 @@ import { useGraphicsStore } from './stores/useGraphicsStore'
 import { Compositor } from './graphics/Compositor'
 import PoiesisPlugin from './surfaces/poiesis'
 import { usePluginsStore } from './stores/usePluginsStore'
+import { setupPreviewSync, usePreviewStore } from './stores/usePreviewStore'
 import { loadPlugins } from './utils/loadPlugins'
 import run from './utils/actions/run'
 import { useMalletKeyboard } from './hooks/useMalletKeyboard'
@@ -38,6 +39,9 @@ function App(): React.JSX.Element {
     // Initialize the compositor
     const compositor = new Compositor()
     setCompositorRef(compositor)
+
+    // Mirror live sources into the preview mix (preview mode, Cmd+Alt+P)
+    const unsubPreviewSync = setupPreviewSync()
 
     // Register Poiesis plug-in
     registerPlugin(PoiesisPlugin)
@@ -79,6 +83,10 @@ function App(): React.JSX.Element {
       useStore?.getState().toggleMonitor()
     })
 
+    const unsubTogglePreview = window.api.actions.onTogglePreview(() =>
+      usePreviewStore.getState().toggle()
+    )
+
     console.log('hello')
 
     window.api.osc.send('/request/connection/confirm')
@@ -87,6 +95,8 @@ function App(): React.JSX.Element {
       unsubPerformance()
       unsubActions()
       unsubToggleMonitor()
+      unsubTogglePreview()
+      unsubPreviewSync()
       setCompositorRef(null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -26,7 +26,7 @@ const editorDefaultParams = {
   enabled: false
 }
 
-interface GraphicsState {
+export interface GraphicsState {
   graphics: Record<string, MixerParams>
   editors: Record<string, MixerParams>
   graphicsOrder: string[]
@@ -35,6 +35,7 @@ interface GraphicsState {
 
   updateParams: (id: string, type: 'graphics' | 'editors', updates: Partial<MixerParams>) => void
   reorderSource: (type: 'graphics' | 'editors', fromIndex: number, toIndex: number) => void
+  setOrder: (type: 'graphics' | 'editors', ids: string[]) => void
   setCompositorRef: (compositor: Compositor | null) => void
   addGraphicsSource: (source: {
     id: string
@@ -79,26 +80,27 @@ export const useGraphicsStore = create<GraphicsState>((set, get) => ({
   },
 
   reorderSource: (type, fromIndex, toIndex) => {
-    const { compositorRef, graphics, graphicsOrder, editors, editorsOrder } = get()
+    const newOrder = [...get()[type === 'graphics' ? 'graphicsOrder' : 'editorsOrder']]
+    const [moved] = newOrder.splice(fromIndex, 1)
+    newOrder.splice(toIndex, 0, moved)
+    get().setOrder(type, newOrder)
+  },
+
+  setOrder: (type, ids) => {
+    const { compositorRef, graphics, editors } = get()
     if (type === 'graphics') {
-      const newOrder = [...graphicsOrder]
-      const [moved] = newOrder.splice(fromIndex, 1)
-      newOrder.splice(toIndex, 0, moved)
       const newGraphics = { ...graphics }
-      newOrder.forEach((id, i) => {
+      ids.forEach((id, i) => {
         newGraphics[id] = { ...newGraphics[id], zIndex: i }
         compositorRef?.updateSource(id, { zIndex: i })
       })
-      set({ graphicsOrder: newOrder, graphics: newGraphics })
+      set({ graphicsOrder: ids, graphics: newGraphics })
     } else {
-      const newOrder = [...editorsOrder]
-      const [moved] = newOrder.splice(fromIndex, 1)
-      newOrder.splice(toIndex, 0, moved)
       const newEditors = { ...editors }
-      newOrder.forEach((id, i) => {
+      ids.forEach((id, i) => {
         newEditors[id] = { ...newEditors[id], zIndex: i }
       })
-      set({ editorsOrder: newOrder, editors: newEditors })
+      set({ editorsOrder: ids, editors: newEditors })
     }
   },
 

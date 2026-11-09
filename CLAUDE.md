@@ -23,6 +23,18 @@ Lily is an Electron application for live visual performance. It features a plugi
   never added to the compositor; instead the Monitors panel shows four horizontal canvases, each
   drawn from one quadrant of the monitor canvas (column-major: o0 TL, o1 BL, o2 TR, o3 BR). Monitor
   state (`monitorActive`, `monitorHydra`, `monitorCanvas`, `toggleMonitor`) lives in `store.ts`.
+  The shader text shown in the performance window is laid out by `performanceText`
+  (`{ fontSize, x, y }` — px, and % of window for the top-left offset; `setPerformanceText`
+  merges partial updates, `DEFAULT_PERFORMANCE_TEXT` resets). `ui/Options.tsx` exposes sliders;
+  `ui/Workspace.tsx` applies them only when `environment === 'performance'` (font size via a
+  CodeMirror `Compartment`, position via absolute `left`/`top`). The main editor stays at 14px.
+  Scroll sync: the main editor writes `scrollPos` (doc position of its first visible character,
+  read from CodeMirror's `scrollDOM` and mapped through edits); performance/preview editors
+  `scrollIntoView(scrollPos, { y: 'start' })` so the same text stays at the top despite
+  different font size and wrapping. Line numbers are hidden in performance/preview.
+  Speed: `speed`/`setSpeed` in the store sets `hydra.synth.speed` (hydra-synth advances `time`
+  by `dt * speed`, so frame rate is unchanged). `process.ts` re-applies it after each eval, so the
+  Options slider (0–2×) overrides any `speed = ...` in a patch.
 - **ableton** - Ableton Live control. Today this drives Live via a bundled Max for Live
   device (`maxdevice/lily-controller.amxd`) over OSC; `process.ts` scans Poiesis text for
   `keyword(...)` patterns and emits `/control` messages (`[type, action, path]` for
@@ -53,6 +65,9 @@ Lily is an Electron application for live visual performance. It features a plugi
 - `pnpm format` - Format code with Prettier
 - `pnpm build` - Type check and build for development
 - `pnpm build:mac` / `build:win` / `build:linux` - Build platform distributables
+  - `build:mac` packages the Electron already installed in `node_modules/electron/dist`
+    (`-c.electronDist`) instead of downloading from GitHub, which is unreachable on the dev
+    network. This only produces builds for the host arch (arm64).
 
 ## Plugin System
 
@@ -161,11 +176,15 @@ type MixerParams = {
 interface GraphicsState {
   graphics: Record<string, MixerParams>  // Canvas sources
   editors: Record<string, MixerParams>   // Editor overlays
+  graphicsOrder: string[]                // Mixer order (index = zIndex)
+  editorsOrder: string[]
   compositorRef: Compositor | null
 
   addGraphicsSource: ({ id, canvas, initParams? }) => void
   addEditorSource: ({ id, initParams? }) => void
   updateParams: (id, type, updates) => void
+  reorderSource: (type, fromIndex, toIndex) => void
+  setOrder: (type, ids) => void          // Replace an order wholesale, re-applying zIndex
   removeSource: (id) => void
   addOutput: ({ id, canvas, window }) => void
   startRenderLoop: (outputId) => void
@@ -194,9 +213,46 @@ class Compositor {
 The Performance Window (`src/renderer/src/windows/performance/PerformanceWindow.tsx`) renders to a child window via React Portal:
 
 - Opens via Window menu or Cmd/Ctrl+Shift+P
+- Cmd/Ctrl+Shift+F toggles it full screen (main process tracks the child `BrowserWindow` as
+  `performanceWindowRef` via `did-create-window` and calls `setFullScreen`)
 - Renders compositor canvas (graphics sources)
-- Overlays editor sources with CSS `mixBlendMode`
+- Overlays editor sources with CSS `mixBlendMode` via `components/EditorOverlays.tsx` (iterates
+  `editorsOrder`; shared with the preview stage)
 - Shares Zustand stores with main window (same renderer process)
+
+## Preview Mode
+
+App-level preview of the performance window with its own mix, toggled by the **preview** button on
+the right of the Mixer header or **Cmd+Alt+P** (Window menu → `preview:toggle` IPC →
+`window.api.actions.onTogglePreview` → `usePreviewStore.toggle()` in `App.tsx`).
+
+- **Store** (`stores/usePreviewStore.ts`) - Global store with its own `Compositor` instance and a
+  preview mix (`graphics`, `editors`, `graphicsOrder`, `editorsOrder`, `updateParams`,
+  `reorderSource`) whose names mirror `useGraphicsStore`. `setupPreviewSync()` (called in `App.tsx`)
+  subscribes to the graphics store and mirrors source add/remove; new sources inherit their live
+  params and canvases come from `compositorRef.getSource(id).canvas`. `copyFromLive()` re-syncs
+  the preview (via `applyMix()`); `sendToLive()` crossfades the live mix to the preview mix. The
+  preview mix is kept across toggles.
+- **Stage** (`components/PreviewStage.tsx`) - Replaces the Workspace body while active. Lays out
+  at the performance window's size (1920×1080 when closed), CSS-scaled to fit; composites into a
+  canvas at displayed resolution and overlays editors with `environment="preview"`.
+- **Mixer** (`components/Mixer.tsx`) - `MixerSections` renders editor/graphics controls from any
+  store shaped like `GraphicsState`; the Mixer feeds it the live store or the preview store.
+  Each row has alpha, enable, drag-reorder, and a blend mode select. Blend modes
+  (`graphics/blendModes.ts`, `BLEND_MODES`) are stored as canvas `globalCompositeOperation` names;
+  `cssBlendMode()` maps them to CSS `mix-blend-mode` for editor overlays (`source-over`→`normal`,
+  `lighter`→`plus-lighter`).
+- **Presets** (`stores/useMixerPresetsStore.ts`) - Session-only list shared by both mixers.
+  Presets are `MixSnapshot`s (`graphics`, `editors`, orders) keyed by instance id; `+ save` adds
+  the current mixer's mix, Shift+click overwrites, × deletes. The live mixer recalls with
+  `fadeLiveTo()` (alpha crossfade over `fadeSeconds`, ticked on the performance window's rAF when
+  open; blend/order/newly-enabled switch at the start, disabled layers switch off at the end).
+  Manual live mixer edits call `cancelFade()`. The preview mixer recalls instantly via
+  `usePreviewStore.applyMix()` and never touches live; `sendToLive()` uses `fadeLiveTo()` too.
+  `snapshotMix` and `mergeOrder` live here and are reused by the preview store.
+- **`environment: 'preview'`** - Workspaces rendered in the preview must be side-effect free.
+  Poiesis renders `TextOverlay` without keyword shaders (they're keyed by keyword on the shared
+  shader manager) and skips audio/shader init; Hydra applies `performanceText` as in performance.
 
 ## UI Layout
 

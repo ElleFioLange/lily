@@ -3,6 +3,8 @@
 import Header from './common/Header'
 import { usePluginsStore } from '@renderer/stores/usePluginsStore'
 import { useMemo, useState } from 'react'
+import { usePreviewStore } from '@renderer/stores/usePreviewStore'
+import PreviewStage from './PreviewStage'
 
 function AddPlugin() {
   const [open, setOpen] = useState(false)
@@ -46,6 +48,7 @@ function AddPlugin() {
 
 export default function Workspace() {
   const { active, focused } = usePluginsStore()
+  const previewActive = usePreviewStore((state) => state.active)
 
   const focusedSurface = useMemo(
     () => Object.values(active).find(({ instanceId }) => instanceId === focused),
@@ -58,7 +61,9 @@ export default function Workspace() {
         <AddPlugin />
       </Header>
       <div className="relative grow">
-        {focusedSurface === undefined ? (
+        {previewActive ? (
+          <PreviewStage />
+        ) : focusedSurface === undefined ? (
           <div className="grid place-items-center">No surface selected</div>
         ) : (
           <>
