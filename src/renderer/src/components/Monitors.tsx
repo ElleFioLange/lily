@@ -1,8 +1,8 @@
-import { usePluginsStore } from '@renderer/stores/usePluginsStore'
+import { useSourcesStore } from '@renderer/stores/useSourcesStore'
 import Header from './common/Header'
 
 export default function Monitors() {
-  const { focused, getInstance } = usePluginsStore()
+  const { focused, getInstance } = useSourcesStore()
   const instance = focused !== null ? getInstance(focused) : null
   return (
     <div className="flex flex-col h-full">

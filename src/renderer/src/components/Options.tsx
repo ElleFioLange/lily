@@ -1,8 +1,8 @@
 import Header from './common/Header'
-import { usePluginsStore } from '@renderer/stores/usePluginsStore'
+import { useSourcesStore } from '@renderer/stores/useSourcesStore'
 
 export default function Options() {
-  const { focused, getInstance } = usePluginsStore()
+  const { focused, getInstance } = useSourcesStore()
   const instance = focused !== null ? getInstance(focused) : null
 
   return (

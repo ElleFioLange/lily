@@ -1,19 +1,17 @@
-// TODO Dynamic imports of the plugins folder
-
 import Header from './common/Header'
-import { usePluginsStore } from '@renderer/stores/usePluginsStore'
+import { useSourcesStore } from '@renderer/stores/useSourcesStore'
 import { useMemo, useState } from 'react'
 import { usePreviewStore } from '@renderer/stores/usePreviewStore'
 import PreviewStage from './PreviewStage'
 
-function AddPlugin() {
+function AddSource() {
   const [open, setOpen] = useState(false)
-  const { registered, active, loadPlugin } = usePluginsStore()
+  const { registered, active, loadSource } = useSourcesStore()
 
-  const availablePlugins = useMemo(() => {
-    const activePluginIds = new Set(Object.values(active).map((p) => p.manifest.id))
+  const availableSources = useMemo(() => {
+    const activeSourceIds = new Set(Object.values(active).map((p) => p.manifest.id))
     return Object.values(registered).filter(
-      (plugin) => plugin.manifest.allowMultiple || !activePluginIds.has(plugin.manifest.id)
+      (source) => source.manifest.allowMultiple || !activeSourceIds.has(source.manifest.id)
     )
   }, [registered, active])
 
@@ -21,16 +19,16 @@ function AddPlugin() {
     <div className="relative mt-1">
       {open ? (
         <ul className="w-40 absolute text-xs">
-          {availablePlugins.map((plugin) => (
+          {availableSources.map((source) => (
             <li
               className="top-0 left-0 w-full text-left block"
-              key={plugin.manifest.id}
+              key={source.manifest.id}
               onClick={() => {
-                loadPlugin(plugin.manifest.id)
+                loadSource(source.manifest.id)
                 setOpen(false)
               }}
             >
-              {plugin.manifest.name}
+              {source.manifest.name}
             </li>
           ))}
         </ul>
@@ -47,7 +45,7 @@ function AddPlugin() {
 }
 
 export default function Workspace() {
-  const { active, focused } = usePluginsStore()
+  const { active, focused } = useSourcesStore()
   const previewActive = usePreviewStore((state) => state.active)
 
   const focusedSurface = useMemo(
@@ -58,7 +56,7 @@ export default function Workspace() {
   return (
     <div className="size-full flex flex-col">
       <Header title="LILY">
-        <AddPlugin />
+        <AddSource />
       </Header>
       <div className="relative grow">
         {previewActive ? (
@@ -74,7 +72,7 @@ export default function Workspace() {
               </div>
             ) : null}
 
-            {/* Plugin main layers (interactable) */}
+            {/* Source main layers (interactable) */}
             {focusedSurface.Workspace ? (
               <div className="absolute size-full overflow-hidden">
                 <focusedSurface.Workspace

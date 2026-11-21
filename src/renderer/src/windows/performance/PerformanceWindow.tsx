@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { usePerformanceStore } from '../../stores/usePerformanceStore'
-// import HydraPlugin from '@plugins/hydra'
+// import HydraPlugin from '@renderer/sources/hydra'
 // import PoiesisRenderer from '../../surfaces/poiesis/ui/Renderer'
 import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
 import EditorOverlays from '@renderer/components/EditorOverlays'

@@ -1,0 +1,6 @@
+{
+  "id": "poiesis",
+  "name": "Poiesis",
+  "outputTypes": ["editor"],
+  "allowMultiple": false
+}

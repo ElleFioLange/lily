@@ -4,18 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Lily is an Electron application for live visual performance. It features a plugin-based architecture for graphics synthesis (Hydra), text processing (Poiesis), Ableton Live control, and OSC communication. Built with React, TypeScript, and Vite using the electron-vite build system.
+Lily is an Electron application for live visual performance: a **Hydra-only video mixer**. You
+run any number of Hydra layers, mix them (alpha, blend mode, order, presets, crossfades) into a
+projector output, and rehearse a separate mix in preview. Built with React, TypeScript, and Vite
+using the electron-vite build system.
+
+The old plugin system (dynamic plugin discovery, Ableton, Strudel, Operator, Syphon, LLM Poiesis,
+OSC, Claude API, phone camera streaming) was removed in the `hydra-mixer` branch; see git history
+on `main` for it.
 
 ### Core Architecture
 
-1. **Plugin System** - Dynamic loading of graphics/audio/editor plugins from `src/plugins/`
-2. **Surfaces** - Built-in system plugins (Poiesis, Config) in `src/renderer/src/surfaces/`
-3. **Compositor** - Alpha-blends multiple canvas sources into performance output
-4. **Performance Window** - React Portal child window for projector output
+1. **Sources** - The two kinds of layer the mixer holds, registered statically in
+   `src/renderer/src/sources/index.ts` (no dynamic loading)
+2. **Compositor** - Alpha-blends multiple canvas sources into performance output
+3. **Performance Window** - React Portal child window for projector output
+4. **Preview** - A second mix you can rehearse and crossfade to live
 
-### Bundled Plugins (`src/plugins/`)
+### Sources (`src/renderer/src/sources/`)
 
-- **hydra** - Hydra graphics synthesis (graphics output). Patches are evaluated into a synth via
+- **hydra** (`sources/hydra/`) - Hydra graphics synthesis, one canvas per layer; any number of
+  instances. Patches are evaluated into a synth via
   `evalPatch` (`process.ts`) inside a `with (synth)` block so live properties like `time` stay
   live. **Cmd+Shift+M** toggles a synced monitor: a second `autoLoop: false` Hydra instance
   (owned by `ui/Monitor.tsx`) that renders the same patch with `render()` appended (4-up split of
@@ -35,22 +44,19 @@ Lily is an Electron application for live visual performance. It features a plugi
   Speed: `speed`/`setSpeed` in the store sets `hydra.synth.speed` (hydra-synth advances `time`
   by `dt * speed`, so frame rate is unchanged). `process.ts` re-applies it after each eval, so the
   Options slider (0–2×) overrides any `speed = ...` in a patch.
-- **ableton** - Ableton Live control. Today this drives Live via a bundled Max for Live
-  device (`maxdevice/lily-controller.amxd`) over OSC; `process.ts` scans Poiesis text for
-  `keyword(...)` patterns and emits `/control` messages (`[type, action, path]` for
-  clip/track/device, `[type, object, path, value]` for device parameters, plus `send`
-  messages for punctuation modifiers) routed by `maxdevice/control.js`. Comma-separated
-  args inside `keyword(...)` resolve presets or literals; `_arg` tokens in config paths
-  are substituted per-arg. UI components are
-  still stubs. See `docs/ABLETON_EXTENSION.md` for the planned migration to the official
-  Ableton Extensions SDK.
-- **llm-poiesis** - LLM-assisted Poiesis text processing
-- **utils** - Shared plugin helpers and types (`PluginDefinition`, `PluginManifest`). Plugins
-  import these from `'../utils'`.
+- **poiesis** (`sources/poiesis/`, optional) - The poetic text layer: typed text whose
+  config keywords (YAML) trigger audio-reactive shader effects on the text. Includes its config
+  editor, `AudioManager` (multichannel capture via audify in the main process), and the Mallet MIDI
+  keyboard (`mallet/`, mounted through `Background`). It is on by default; set
+  `VITE_LILY_POIESIS=false` to build/run without it (`sources/flags.ts`). When off, it is never
+  imported, and Settings shows nothing. Its config schema still accepts the old `ableton:` keys so
+  existing configs parse, but nothing acts on them. To drop it for good, delete `sources/poiesis/`,
+  `sources/flags.ts`'s flag and the Poiesis block in `sources/index.ts`, plus the audio and
+  config IPC in main/preload.
 
 ### Electron Process Architecture
 
-1. **Main Process** (`src/main/index.ts`) - App lifecycle, OSC server/client, IPC handlers
+1. **Main Process** (`src/main/index.ts`) - App lifecycle, menus, file dialogs, settings, audio capture, IPC handlers
 2. **Preload Script** (`src/preload/index.ts`) - Exposes APIs to renderer via `contextBridge`
 3. **Renderer Process** (`src/renderer/`) - React UI with Zustand state management
 
@@ -69,45 +75,18 @@ Lily is an Electron application for live visual performance. It features a plugi
     (`-c.electronDist`) instead of downloading from GitHub, which is unreachable on the dev
     network. This only produces builds for the host arch (arm64).
 
-## Plugin System
-
-### Plugin Structure
-
-Plugins live in `src/plugins/` and are dynamically loaded via Vite's `import.meta.glob()`. Each plugin folder contains:
-
-```
-src/plugins/hydra/
-├── manifest.json      # Plugin metadata (id, name, author, version, outputTypes)
-├── index.ts           # Plugin definition export
-├── init.ts            # Initialize plugin instance, create store
-├── process.ts         # Main processing logic (called with poiesis text + config)
-├── cleanup.ts         # Cleanup on instance unload
-├── store.ts           # Zustand store factory (createStore)
-├── schema.d.ts        # TypeScript types
-└── ui/
-    ├── Workspace.tsx  # Main editor/workspace UI
-    ├── Renderer.tsx   # Canvas/graphics renderer (optional)
-    ├── Monitor.tsx    # Bottom panel monitor view
-    └── Options.tsx   # Options panel view
-```
-
-### Plugin Types (`src/types/plugins.ts`)
+## Source Definitions (`src/renderer/src/sources/types.ts`)
 
 ```typescript
-type PluginManifest = {
-  id: string
-  name: string
-  repo: string
-  author: string
-  version: string
-  outputTypes: ('audio' | 'graphics' | 'editor')[]
-  allowMultiple: boolean
-}
-
-type PluginDefinition<StoreType> = {
-  manifest: PluginManifest
-  init: (instanceId: string) => UseStore<StoreType>
-  process: (instanceId: string, poiesis: string, config: ConfigurationJSON) => void
+type SourceDefinition<StoreType> = {
+  manifest: {
+    id: string
+    name: string
+    outputTypes: ('graphics' | 'editor')[]
+    allowMultiple: boolean
+  }
+  init: (instanceId: string) => UseStore<StoreType> // create store, register canvas/editor with the compositor
+  process: (instanceId: string) => void | Promise<void> // called for every active source on Run
   cleanup: (instanceId: string) => void
   createStore: (instanceId: string) => UseStore<StoreType>
   // UI Components (all optional)
@@ -115,49 +94,22 @@ type PluginDefinition<StoreType> = {
   Options?: FunctionComponent<UIProps>
   Monitor?: FunctionComponent<UIProps>
   Renderer?: FunctionComponent<RendererProps>
+  Background?: FunctionComponent // mounted once at app level while registered
 }
 ```
 
-### Plugin Instance Lifecycle
+Lifecycle: `loadSources()` returns the definitions, `App.tsx` registers them with
+`useSourcesStore.registerSource()`, the `+` button calls `loadSource(id)` which creates an
+instance with a UUID `instanceId` and calls `init`, Run (Cmd/Ctrl+Shift+Enter) calls `process` on
+every active instance, and closing a layer calls `cleanup` and removes its compositor source.
 
-1. **Registration** - Plugin definition registered via `usePluginsStore.registerPlugin()`
-2. **Loading** - `loadPlugin(pluginId)` creates new instance with unique `instanceId`
-3. **Initialization** - `init(instanceId)` called, creates and returns Zustand store
-4. **Processing** - `process(instanceId, poiesis, config)` called with input text
-5. **Cleanup** - `cleanup(instanceId)` called when instance unloaded
-
-### Adding Graphics Sources
-
-Plugins with graphics output register their canvas with the compositor:
+Graphics sources register their canvas in `init`:
 
 ```typescript
-// In init.ts
-import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
-
-export default function init(instanceId: string) {
-  const useStore = createStore(instanceId)
-
-  const canvas = document.createElement('canvas')
-  canvas.width = 1920
-  canvas.height = 1080
-  canvas.getContext('webgl', { preserveDrawingBuffer: true })
-
-  const { addGraphicsSource, addEditorSource } = useGraphicsStore.getState()
-  addGraphicsSource({ id: instanceId, canvas })
-  addEditorSource({ id: instanceId }) // If plugin has editor overlay
-
-  return useStore
-}
+const { addGraphicsSource, addEditorSource } = useGraphicsStore.getState()
+addGraphicsSource({ id: instanceId, canvas }) // WebGL canvas with preserveDrawingBuffer: true
+addEditorSource({ id: instanceId }) // if the source has a text overlay
 ```
-
-**Important:** Use `preserveDrawingBuffer: true` for WebGL contexts read by the Compositor.
-
-## Surfaces (System Plugins)
-
-Surfaces are built-in plugins in `src/renderer/src/surfaces/`. Same structure as plugins but registered directly at app startup:
-
-- **Poiesis** (`surfaces/poiesis/`) - Text input with keyword-based shader effects
-- **Config** (`surfaces/config/`) - YAML configuration editor
 
 ## Graphics System
 
@@ -261,11 +213,11 @@ the right of the Mixer header or **Cmd+Alt+P** (Window menu → `preview:toggle`
 ```
 ┌─────────────────────────────────────────────────┐
 │  Workspace (66%)        │  Options (34%)       │
-│  - Plugin Workspace     │  - Plugin Options    │
-│  - Plugin Renderer      │                       │
+│  - Source Workspace     │  - Source Options    │
+│  - Source Renderer      │                       │
 ├─────────────────────────┴───────────────────────┤
 │  Mixer (25%)            │  Monitors (75%)       │
-│  - Preset buttons       │  - Plugin Monitors    │
+│  - Preset buttons       │  - Source Monitors    │
 │  - Editor controls      │                       │
 │  - Graphics controls    │                       │
 └─────────────────────────────────────────────────┘
@@ -273,90 +225,26 @@ the right of the Mixer header or **Cmd+Alt+P** (Window menu → `preview:toggle`
 
 ### Main Components
 
-- **Workspace.tsx** - Displays focused plugin's Workspace + Renderer, AddPlugin dropdown
+- **Workspace.tsx** - Displays focused source's Workspace + Renderer, `+` dropdown to add a layer
 - **Mixer.tsx** - Alpha/enabled controls for editors and graphics sources
-- **Monitors.tsx** - Renders active plugins' Monitor components in tabs
-- **Options.tsx** - Renders active plugins' Options components in tabs
+- **Monitors.tsx** - Renders the focused source's Monitor components in tabs
+- **Options.tsx** - Renders the focused source's Options components in tabs
 
-### Plugins Store (`src/renderer/src/stores/usePluginsStore.ts`)
+### Sources Store (`src/renderer/src/stores/useSourcesStore.ts`)
 
 ```typescript
-interface PluginsManagerState {
-  registered: Record<string, PluginDefinition> // Available plugins
-  active: Record<string, ActivePlugin> // Running instances
+interface SourcesState {
+  registered: Record<string, SourceDefinition> // Available sources
+  active: Record<string, ActiveSource> // Running instances (layers)
   focused: string | null // Currently focused instanceId
 
-  registerPlugin: (plugin) => void
-  loadPlugin: (pluginId) => void
-  unloadPlugin: (instanceId) => void
-  getInstance: (instanceId) => ActivePlugin
+  registerSource: (source) => void
+  loadSource: (sourceId) => void
+  unloadSource: (instanceId) => void
+  getInstance: (instanceId) => ActiveSource
   setFocused: (focused) => void
 }
 ```
-
-## OSC Communication
-
-### Ports
-
-- **5459** - Electron sends OSC (outgoing)
-- **5460** - Electron receives OSC (incoming)
-
-### Server (`src/main/osc/server.ts`)
-
-- Pattern-based message routing with wildcards
-- EventEmitter architecture
-- Forwards all messages to renderer via `osc:message` event
-
-### Client (`src/main/osc/client.ts`)
-
-- Generic `send(address, args)` method
-- Handles type conversion (numbers, strings, booleans)
-
-## Claude API Communication
-
-The Claude API is accessed securely through the main process, keeping API keys out of the renderer.
-
-### Architecture
-
-1. **Main Process** (`src/main/claude/client.ts`) - Singleton client managing Anthropic SDK
-2. **IPC Handler** (`src/main/index.ts`) - `claude:sendMessage` handler
-3. **Preload Script** (`src/preload/index.ts`) - Exposes `window.api.claude.sendMessage()`
-4. **Types** (`src/types/claude.ts`) - TypeScript definitions for Claude API
-
-### Client (`src/main/claude/client.ts`)
-
-Singleton service that:
-
-- Initializes Anthropic client with API key from `process.env.CLAUDE_API_KEY`
-- Provides `sendMessage()` method for conversation-style interactions
-- Handles errors and returns structured results
-
-### Usage in Renderer
-
-```typescript
-const result = await window.api.claude.sendMessage({
-  messages: [
-    { role: 'user', content: 'Hello!' },
-    { role: 'assistant', content: 'Hi there!' },
-    { role: 'user', content: 'How are you?' }
-  ],
-  system: 'You are a helpful assistant...',
-  model: 'claude-sonnet-4-6', // Optional, defaults to sonnet-4-6
-  maxTokens: 128 // Optional, defaults to 128
-})
-
-if (result.success) {
-  console.log('Claude response:', result.content)
-} else {
-  console.error('Error:', result.error)
-}
-```
-
-### Security
-
-- API key is **only** accessible in the main process (Node.js environment)
-- Renderer process communicates via IPC, never directly with Anthropic API
-- Follows Electron security best practices for API key management
 
 ## Styling
 
@@ -368,7 +256,6 @@ if (result.success) {
 ## Path Aliases
 
 - `@renderer` → `src/renderer/src/`
-- `@plugins` → `src/plugins/`
 
 ## TypeScript Configuration
 
@@ -376,67 +263,11 @@ if (result.success) {
 - `tsconfig.web.json` - Renderer (DOM)
 - `tsconfig.json` - Root config
 
-## Creating a New Plugin
-
-1. Create folder: `src/plugins/my-plugin/`
-2. Add `manifest.json`:
-   ```json
-   {
-     "id": "my-plugin",
-     "name": "My Plugin",
-     "repo": "",
-     "author": "your-name",
-     "version": "1.0.0",
-     "outputTypes": ["graphics"],
-     "allowMultiple": true
-   }
-   ```
-3. Create store factory in `store.ts`:
-
-   ```typescript
-   import { PluginState } from 'src/types/plugins'
-   import { create } from 'zustand'
-
-   export interface MyPluginState extends PluginState {
-     // Your state here
-   }
-
-   export const createMyPluginStore = (instanceId: string) => {
-     return create<MyPluginState>((set) => ({
-       instanceId
-       // Initial state and setters
-     }))
-   }
-   ```
-
-4. Create `init.ts`, `process.ts`, `cleanup.ts`
-5. Create UI components in `ui/` folder
-6. Export in `index.ts`:
-
-   ```typescript
-   import { PluginDefinition } from '../utils'
-   import manifest from './manifest.json'
-   // ... imports
-
-   const MyPlugin: PluginDefinition<MyPluginState> = {
-     manifest,
-     init,
-     process,
-     cleanup,
-     Workspace,
-     createStore: createMyPluginStore
-   }
-
-   export default MyPlugin
-   ```
-
-Plugin will be automatically discovered and loaded at startup.
-
 ## Important Notes
 
-- Each plugin instance gets its own Zustand store via `createStore(instanceId)`
-- `instanceId` is a UUID generated when loading a plugin
-- Multiple instances of the same plugin can run simultaneously
+- Each source instance gets its own Zustand store via `createStore(instanceId)`
+- `instanceId` is a UUID generated when adding a layer
+- Multiple Hydra layers can run simultaneously
 - Graphics sources must use `preserveDrawingBuffer: true` for WebGL
 - Editor sources render as overlays in the performance window
 - The compositor uses the target window's `requestAnimationFrame` for timing

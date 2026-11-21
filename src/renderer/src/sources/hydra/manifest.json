@@ -1,0 +1,6 @@
+{
+  "id": "hydra",
+  "name": "Hydra",
+  "outputTypes": ["graphics"],
+  "allowMultiple": true
+}

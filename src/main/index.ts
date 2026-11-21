@@ -2,64 +2,18 @@ import { app, shell, BrowserWindow, ipcMain, Menu, dialog, FileFilter } from 'el
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { getOSCServer } from './osc/server'
-import { getOSCClient } from './osc/client'
-import {
-  exportMaxDevice,
-  quickInstallMaxDevice,
-  checkMaxDeviceExists
-} from '../plugins/ableton/maxdevice/export'
 import { promises as fs } from 'fs'
-import { getCameraWebSocketServer } from './camera/websocket-server'
-import { networkInterfaces } from 'os'
-import type { StartServerResult, StopServerResult } from '../types/camera'
 import { getSettingsManager } from './settings/manager'
 import type { Settings } from '../types/settings'
 import { getAudifyCapture } from './audio/audify-capture'
 import type { AudioDevice, AudioCaptureStatus } from '../types/audio'
-import 'dotenv/config'
-import { getClaudeClient } from './claude/client'
-import type { ClaudeSendMessageParams, ClaudeSendMessageResult } from '../types/claude'
-import { getSyphonManager } from './syphon/client'
-
-// Initialize OSC server and client
-const oscServer = getOSCServer({ port: 5460 })
-const oscClient = getOSCClient({ port: 5459 })
-
-// Initialize camera WebSocket server
-const cameraServer = getCameraWebSocketServer()
 
 // Initialize settings manager
 const settingsManager = getSettingsManager()
 
-// Initialize Claude API client
-const claudeClient = getClaudeClient()
-
-// Initialize Syphon manager (macOS only)
-const syphonManager = getSyphonManager()
-
 let mainWindowRef: BrowserWindow | null = null
 let settingsWindowRef: BrowserWindow | null = null
 let performanceWindowRef: BrowserWindow | null = null
-
-/**
- * Get local IP address for camera streaming
- */
-function getLocalIPAddress(): string {
-  const nets = networkInterfaces()
-  for (const name of Object.keys(nets)) {
-    const netGroup = nets[name]
-    if (!netGroup) continue
-
-    for (const net of netGroup) {
-      // Skip internal (loopback) and non-IPv4 addresses
-      if (net.family === 'IPv4' && !net.internal) {
-        return net.address
-      }
-    }
-  }
-  return 'localhost'
-}
 
 function createMenu(): void {
   const isMac = process.platform === 'darwin'
@@ -223,7 +177,7 @@ function createWindow(): void {
     mainWindow.show()
   })
 
-  // Store reference for OSC event forwarding
+  // Store reference for IPC event forwarding
   mainWindowRef = mainWindow
 
   // Create application menu
@@ -325,20 +279,7 @@ app.whenReady().then(async () => {
   // Load settings
   await settingsManager.load()
 
-  // Initialize Claude API client
-  claudeClient.init()
-
-  // Initialize Syphon (macOS only)
-  syphonManager.init()
-  initializeSyphonStreaming()
-
-  // Initialize OSC communication
-  initializeOSC()
-
-  // Initialize camera WebSocket forwarding
-  initializeCameraStreaming()
-
-  // Initialize audio capture streaming
+  // Initialize audio capture streaming (used by Poiesis audio-reactive keywords)
   initializeAudioStreaming()
 
   // Setup IPC handlers
@@ -364,88 +305,9 @@ app.on('window-all-closed', () => {
 
 // Cleanup on quit
 app.on('before-quit', () => {
-  oscServer.stop()
-  oscClient.close()
-  cameraServer.stop()
   const audioCapture = getAudifyCapture()
   audioCapture.stop()
-  syphonManager.cleanup()
 })
-
-// Initialize OSC communication
-async function initializeOSC(): Promise<void> {
-  try {
-    // Start OSC server
-    await oscServer.start()
-
-    // Initialize OSC client
-    await oscClient.init()
-
-    console.log('OSC communication initialized')
-
-    // ============================================================================
-    // Forward OSC Messages to Renderer
-    // ============================================================================
-    // The server emits 'message' events for all incoming OSC messages.
-    // We forward these to the renderer process via IPC.
-    //
-    // To add pattern-specific forwarding, register additional listeners here:
-    // Example:
-    //   oscServer.on('/your/pattern', (message) => {
-    //     mainWindowRef?.webContents.send('osc:pattern:/your/pattern', message)
-    //   })
-
-    oscServer.on('message', (message) => {
-      mainWindowRef?.webContents.send('osc:message', message)
-    })
-
-    // "Show in Lily" from the Ableton extension: foreground the app so the
-    // monitor pane (which receives the same message via osc:message) is visible.
-    oscServer.on('/lily/select', () => {
-      if (!mainWindowRef) return
-      if (mainWindowRef.isMinimized()) mainWindowRef.restore()
-      mainWindowRef.show()
-      mainWindowRef.focus()
-      app.focus({ steal: true })
-    })
-
-    // Example: Forward specific patterns
-    // Uncomment and modify these examples for your use case:
-    /*
-    oscServer.on('/synth/*', (message) => {
-      mainWindowRef?.webContents.send('osc:pattern:/synth/*', message)
-    })
-
-    oscServer.on('/transport/play', (message) => {
-      mainWindowRef?.webContents.send('osc:pattern:/transport/play', message)
-    })
-    */
-  } catch (err) {
-    console.error('Failed to initialize OSC:', err)
-  }
-}
-
-/**
- * Initialize camera WebSocket streaming
- * Forwards camera frames from WebSocket clients to renderer process
- */
-function initializeCameraStreaming(): void {
-  // Forward camera frames to renderer
-  cameraServer.on('frame', (frameBuffer: Buffer) => {
-    mainWindowRef?.webContents.send('camera:frame', frameBuffer)
-  })
-
-  // Forward connection status updates
-  cameraServer.on('clientConnected', ({ clientCount }) => {
-    mainWindowRef?.webContents.send('camera:client-connected', clientCount)
-  })
-
-  cameraServer.on('clientDisconnected', ({ clientCount }) => {
-    mainWindowRef?.webContents.send('camera:client-disconnected', clientCount)
-  })
-
-  console.log('Camera streaming initialized')
-}
 
 /**
  * Initialize audio capture streaming
@@ -482,40 +344,9 @@ function initializeAudioStreaming(): void {
 }
 
 /**
- * Initialize Syphon frame streaming (macOS only)
- * Forwards Syphon frames and server list changes to renderer process
- */
-function initializeSyphonStreaming(): void {
-  syphonManager.on('frame', (payload) => {
-    mainWindowRef?.webContents.send('syphon:frame', payload)
-  })
-
-  syphonManager.on('servers-changed', (servers) => {
-    mainWindowRef?.webContents.send('syphon:servers-changed', servers)
-  })
-
-  console.log('Syphon streaming initialized')
-}
-
-/**
  * Setup IPC Handlers
  *
  * Registers IPC handlers for communication between renderer and main process.
- * This includes the generic OSC send handler and other application-specific handlers.
- *
- * OSC Handler Pattern:
- * The generic 'osc:send' handler is the only OSC-related handler you need.
- * All application-specific OSC functionality should be built in the renderer
- * using this generic handler.
- *
- * Example (adding a custom handler if really needed):
- * ```typescript
- * ipcMain.handle('my-custom-action', async (_, param1, param2) => {
- *   // Do something complex that can't be done in renderer
- *   oscClient.send('/custom/address', [param1, param2])
- *   return { success: true }
- * })
- * ```
  */
 function setupIPCHandlers(): void {
   // ============================================================================
@@ -580,37 +411,6 @@ function setupIPCHandlers(): void {
       }
     }
   )
-  // ============================================================================
-  // OSC Communication Handler
-  // ============================================================================
-  /**
-   * Generic OSC send handler
-   * Forwards OSC messages from renderer to the OSC client
-   */
-  ipcMain.handle('osc:send', async (_, address: string, args: unknown[]) => {
-    oscClient.send(address, args as Array<number | string | boolean>)
-  })
-
-  // ============================================================================
-  // Max Device Export Handlers
-
-  // ============================================================================
-  ipcMain.handle('max-device:export', async () => {
-    return await exportMaxDevice()
-  })
-
-  ipcMain.handle('max-device:quick-install', async () => {
-    return await quickInstallMaxDevice()
-  })
-
-  ipcMain.handle('max-device:check-exists', async () => {
-    return await checkMaxDeviceExists()
-  })
-
-  // ============================================================================
-  // Configuration File Handlers
-  // ============================================================================
-
   // ============================================================================
   // Hydra File Handlers
   // ============================================================================
@@ -735,41 +535,6 @@ function setupIPCHandlers(): void {
   })
 
   // ============================================================================
-  // Camera WebSocket Streaming Handlers
-  // ============================================================================
-  ipcMain.handle('camera:start', async (_, wsPort: number = 8765): Promise<StartServerResult> => {
-    try {
-      const httpPort = wsPort + 1 // HTTP server on WS port + 1
-      await cameraServer.start(wsPort, httpPort)
-      const localIP = getLocalIPAddress()
-      return { success: true, ip: localIP, httpPort, wsPort }
-    } catch (error) {
-      return {
-        success: false,
-        ip: '',
-        httpPort: wsPort + 1,
-        wsPort,
-        error: error instanceof Error ? error.message : 'Failed to start camera server'
-      }
-    }
-  })
-
-  ipcMain.handle('camera:stop', async (): Promise<StopServerResult> => {
-    try {
-      cameraServer.stop()
-      return { success: true }
-    } catch (error) {
-      return { success: false }
-    }
-  })
-
-  ipcMain.handle('camera:get-status', async () => {
-    const status = cameraServer.getStatus()
-    status.ip = getLocalIPAddress()
-    return status
-  })
-
-  // ============================================================================
   // Audio Capture Handlers
   // ============================================================================
   ipcMain.handle('audio:list-devices', async (): Promise<AudioDevice[]> => {
@@ -809,23 +574,6 @@ function setupIPCHandlers(): void {
   })
 
   // ============================================================================
-  // Syphon Handlers (macOS only)
-  // ============================================================================
-  ipcMain.handle('syphon:list-servers', async () => {
-    return syphonManager.getServers()
-  })
-
-  ipcMain.handle('syphon:connect', async (_, instanceId: string, serverUUID: string) => {
-    const success = syphonManager.connect(instanceId, serverUUID)
-    return { success }
-  })
-
-  ipcMain.handle('syphon:disconnect', async (_, instanceId: string) => {
-    syphonManager.disconnect(instanceId)
-    return { success: true }
-  })
-
-  // ============================================================================
   // Settings Handlers
   // ============================================================================
   ipcMain.handle('settings:get', async (): Promise<Settings> => {
@@ -835,58 +583,4 @@ function setupIPCHandlers(): void {
   ipcMain.handle('settings:save', async (_, settings: Settings): Promise<void> => {
     await settingsManager.set(settings)
   })
-
-  // ============================================================================
-  // Claude API Handlers
-  // ============================================================================
-  ipcMain.handle(
-    'claude:sendMessage',
-    async (_, params: ClaudeSendMessageParams): Promise<ClaudeSendMessageResult> => {
-      return await claudeClient.sendMessage(params)
-    }
-  )
-
-  // Local LLM (LM Studio / OpenAI-compatible) Handler
-  // ============================================================================
-  ipcMain.handle(
-    'llm:sendLocal',
-    async (
-      _,
-      baseUrl: string,
-      messages: { role: string; content: string }[],
-      systemPrompt: string,
-      maxTokens: number
-    ): Promise<ClaudeSendMessageResult> => {
-      try {
-        const url = `${baseUrl}/chat/completions`
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'local-model',
-            max_tokens: maxTokens,
-            messages: [
-              ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-              ...messages
-            ]
-          })
-        })
-
-        if (!res.ok) {
-          return {
-            success: false,
-            error: `LM Studio returned ${res.status} ${res.statusText} from ${url}`
-          }
-        }
-
-        const data = await res.json()
-        const content = data.choices?.[0]?.message?.content
-        if (!content) return { success: false, error: 'No content in LM Studio response' }
-        return { success: true, content }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        return { success: false, error: `Failed to reach local model at ${baseUrl}: ${msg}` }
-      }
-    }
-  )
 }

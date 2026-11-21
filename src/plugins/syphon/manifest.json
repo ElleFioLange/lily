@@ -1,9 +1,0 @@
-{
-  "id": "syphon",
-  "name": "Syphon",
-  "repo": "",
-  "author": "sysfem.err",
-  "version": "1.0.0",
-  "outputTypes": ["graphics"],
-  "allowMultiple": true
-}

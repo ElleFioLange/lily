@@ -1,4 +1,4 @@
-import { usePluginsStore } from '@renderer/stores/usePluginsStore'
+import { useSourcesStore } from '@renderer/stores/useSourcesStore'
 import { ReactNode, useCallback } from 'react'
 
 export type HeaderProps = {
@@ -10,14 +10,14 @@ export type HeaderProps = {
 // basic solution causes problems with overflow: visible for the indicator https://stackoverflow.com/questions/6421966/css-overflow-x-visible-and-overflow-y-hidden-causing-scrollbar-issue
 
 export default function Header({ title, children }: HeaderProps) {
-  const { active, focused, setFocused, unloadPlugin } = usePluginsStore()
+  const { active, focused, setFocused, unloadSource } = useSourcesStore()
 
   const handleClose = useCallback(
     (e: React.MouseEvent, instanceId: string) => {
       e.stopPropagation()
-      unloadPlugin(instanceId)
+      unloadSource(instanceId)
     },
-    [unloadPlugin]
+    [unloadSource]
   )
 
   return (
@@ -35,7 +35,7 @@ export default function Header({ title, children }: HeaderProps) {
             <button
               className="text-xs border-none bg-transparent opacity-0 group-hover:opacity-100 text-stone-400 hover:text-stone-100 leading-none px-0.5 -mt-px"
               onClick={(e) => handleClose(e, instanceId)}
-              title="Close plugin"
+              title="Close source"
             >
               ×
             </button>

@@ -9,7 +9,7 @@ export interface AudioSettings {
 }
 
 /**
- * Mallet keyboard settings — maps MIDI channel 9 note-ons to typing
+ * Mallet keyboard settings (Poiesis only) — maps MIDI channel 9 note-ons to typing
  */
 export interface MalletKeyboardSettings {
   enabled: boolean

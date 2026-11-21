@@ -8,7 +8,7 @@ import {
   useMixerPresetsStore
 } from '@renderer/stores/useMixerPresetsStore'
 import Header from './common/Header'
-import { usePluginsStore } from '@renderer/stores/usePluginsStore'
+import { useSourcesStore } from '@renderer/stores/useSourcesStore'
 
 type SourceControlProps = {
   name: string
@@ -101,7 +101,7 @@ export function MixerSections({
   updateParams,
   reorderSource
 }: MixerSectionsProps) {
-  const { getInstance } = usePluginsStore()
+  const { getInstance } = useSourcesStore()
   const dragIndex = useRef<{ type: 'graphics' | 'editors'; index: number } | null>(null)
 
   function makeDragHandlers(type: 'graphics' | 'editors', index: number) {
@@ -128,12 +128,12 @@ export function MixerSections({
       <span className="font-bold my-1 text-sm">EDITORS</span>
       {editorsOrder.map((id, index) => {
         const params = editors[id]
-        const plugin = getInstance(id)
-        if (!params || !plugin) return null
+        const source = getInstance(id)
+        if (!params || !source) return null
         return (
           <SourceControl
             key={id}
-            name={plugin.manifest.name}
+            name={source.manifest.name}
             alpha={params.alpha ?? 0}
             enabled={params.enabled ?? false}
             setAlpha={(alpha) => updateParams(id, 'editors', { alpha })}
@@ -147,12 +147,12 @@ export function MixerSections({
       <span className="font-bold my-1 text-sm">GRAPHICS</span>
       {graphicsOrder.map((id, index) => {
         const params = graphics[id]
-        const plugin = getInstance(id)
-        if (!params || !plugin) return null
+        const source = getInstance(id)
+        if (!params || !source) return null
         return (
           <SourceControl
             key={id}
-            name={plugin.manifest.name}
+            name={source.manifest.name}
             alpha={params.alpha ?? 0}
             enabled={params.enabled ?? false}
             setAlpha={(alpha) => updateParams(id, 'graphics', { alpha })}
