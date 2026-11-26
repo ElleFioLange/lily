@@ -1,5 +1,10 @@
 import { useRef, useState } from 'react'
-import { BlendMode, GraphicsState, useGraphicsStore } from '@renderer/stores/useGraphicsStore'
+import {
+  BlendMode,
+  GraphicsState,
+  MixerParams,
+  useGraphicsStore
+} from '@renderer/stores/useGraphicsStore'
 import { BLEND_MODES } from '@renderer/graphics/blendModes'
 import { usePreviewStore } from '@renderer/stores/usePreviewStore'
 import {
@@ -10,72 +15,40 @@ import {
 import Header from './common/Header'
 import { useSourcesStore } from '@renderer/stores/useSourcesStore'
 
-type SourceControlProps = {
-  name: string
-  alpha: number
-  enabled: boolean
-  blendMode: BlendMode
-  setAlpha: (alpha: number) => void
-  setEnabled: (enabled: boolean) => void
-  setBlendMode: (blendMode: BlendMode) => void
-  onDragStart: () => void
-  onDragOver: (e: React.DragEvent) => void
-  onDrop: () => void
+type ChannelControlProps = {
+  label: string
+  title: string
+  params: Partial<MixerParams>
+  update: (updates: Partial<MixerParams>) => void
 }
 
-function SourceControl({
-  name,
-  alpha,
-  enabled,
-  blendMode,
-  setAlpha,
-  setEnabled,
-  setBlendMode,
-  onDragStart,
-  onDragOver,
-  onDrop
-}: SourceControlProps) {
-  // Row drag (reorder) only arms from the ⠿ grip — a draggable row swallows
-  // mousedown-drag on the range input, making the slider thumb undraggable.
-  const [dragArmed, setDragArmed] = useState(false)
+/** One channel of a layer (its code overlay or its visuals): on/off, opacity and blend mode. */
+function ChannelControl({ label, title, params, update }: ChannelControlProps) {
+  const enabled = params.enabled ?? false
   return (
-    <div
-      draggable={dragArmed}
-      onDragStart={onDragStart}
-      onDragEnd={() => setDragArmed(false)}
-      onDragOver={(e) => {
-        e.preventDefault()
-        onDragOver(e)
-      }}
-      onDrop={onDrop}
-      className="grid grid-cols-[12px_72px_minmax(0,1fr)_auto] gap-2 items-center"
-    >
-      <span
-        className="text-stone-500 select-none cursor-grab active:cursor-grabbing"
-        onMouseDown={() => setDragArmed(true)}
-        onMouseUp={() => setDragArmed(false)}
+    <div className="grid grid-cols-[12px_56px_minmax(0,1fr)_auto] gap-2 items-center">
+      <span />
+      <button
+        className={`text-left text-xs border-none bg-transparent hover:bg-transparent p-0 text-stone-400 ${enabled ? 'hover:line-through' : 'line-through opacity-60'}`}
+        onClick={() => update({ enabled: !enabled })}
+        title={`${title}: click to turn ${enabled ? 'off' : 'on'}`}
       >
-        ⠿
-      </span>
-      <span
-        className={`cursor-pointer ${enabled ? 'hover:line-through' : 'line-through'}`}
-        onClick={() => setEnabled(!enabled)}
-      >
-        {name}
-      </span>
+        {label}
+      </button>
       <input
         type="range"
-        value={alpha}
-        onChange={({ target: { value } }) => setAlpha(parseFloat(value))}
+        value={params.alpha ?? 0}
+        onChange={({ target: { value } }) => update({ alpha: parseFloat(value) })}
         step={0.01}
         min={0}
         max={1}
+        aria-label={`${title} opacity`}
       />
       <select
-        value={blendMode as string}
-        onChange={({ target: { value } }) => setBlendMode(value as BlendMode)}
+        value={(params.blendMode ?? 'source-over') as string}
+        onChange={({ target: { value } }) => update({ blendMode: value as BlendMode })}
         className="bg-stone-900 border border-stone-700 text-xs px-1 cursor-pointer"
-        title="Blend mode"
+        title={`${title} blend mode`}
       >
         {BLEND_MODES.map(({ value, label }) => (
           <option key={value as string} value={value as string}>
@@ -87,12 +60,86 @@ function SourceControl({
   )
 }
 
+type LayerGroupProps = {
+  id: string
+  name: string
+  focused: boolean
+  editor?: Partial<MixerParams>
+  graphics?: Partial<MixerParams>
+  updateParams: GraphicsState['updateParams']
+  /** Reordering is armed from the grip only; omitted for layers that don't move */
+  drag?: {
+    onDragStart: () => void
+    onDrop: () => void
+  }
+}
+
+/** A layer's channels grouped together: its visuals and the code shown over them. */
+function LayerGroup({ id, name, focused, editor, graphics, updateParams, drag }: LayerGroupProps) {
+  const setFocused = useSourcesStore((state) => state.setFocused)
+  // Row drag (reorder) only arms from the ⠿ grip — a draggable row swallows
+  // mousedown-drag on the range inputs, making the slider thumbs undraggable.
+  const [dragArmed, setDragArmed] = useState(false)
+  return (
+    <div
+      draggable={drag !== undefined && dragArmed}
+      onDragStart={drag?.onDragStart}
+      onDragEnd={() => setDragArmed(false)}
+      onDragOver={(e) => drag && e.preventDefault()}
+      onDrop={drag?.onDrop}
+      className={`flex flex-col gap-1 rounded-sm px-1 py-1.5 border ${focused ? 'border-stone-600 bg-stone-800/50' : 'border-transparent'}`}
+    >
+      <div className="grid grid-cols-[12px_minmax(0,1fr)] gap-2 items-center">
+        {drag ? (
+          <span
+            className="text-stone-500 select-none cursor-grab active:cursor-grabbing"
+            onMouseDown={() => setDragArmed(true)}
+            onMouseUp={() => setDragArmed(false)}
+            title="Drag to reorder"
+          >
+            ⠿
+          </span>
+        ) : (
+          <span />
+        )}
+        <button
+          className="text-left text-xs border-none bg-transparent hover:bg-transparent p-0 hover:underline truncate"
+          onClick={() => setFocused(id)}
+          title={`Show ${name}`}
+        >
+          {name}
+        </button>
+      </div>
+      {graphics && (
+        <ChannelControl
+          label="visuals"
+          title={`${name} visuals`}
+          params={graphics}
+          update={(updates) => updateParams(id, 'graphics', updates)}
+        />
+      )}
+      {editor && (
+        <ChannelControl
+          label="code"
+          title={`${name} code overlay`}
+          params={editor}
+          update={(updates) => updateParams(id, 'editors', updates)}
+        />
+      )}
+    </div>
+  )
+}
+
 type MixerSectionsProps = Pick<
   GraphicsState,
   'editors' | 'graphics' | 'editorsOrder' | 'graphicsOrder' | 'updateParams' | 'reorderSource'
 >
 
-// Editor + graphics source controls. Driven by either the live graphics store or the preview store.
+/**
+ * The mix grouped by layer: each layer's visuals and code overlay together, in stacking order.
+ * Moving a layer moves both. Layers with only a code overlay (Poiesis) come last and stay put.
+ * Driven by either the live graphics store or the preview store.
+ */
 export function MixerSections({
   editors,
   graphics,
@@ -101,68 +148,56 @@ export function MixerSections({
   updateParams,
   reorderSource
 }: MixerSectionsProps) {
-  const { getInstance } = useSourcesStore()
-  const dragIndex = useRef<{ type: 'graphics' | 'editors'; index: number } | null>(null)
+  const { getInstance, focused } = useSourcesStore()
+  const dragged = useRef<string | null>(null)
 
-  function makeDragHandlers(type: 'graphics' | 'editors', index: number) {
-    return {
-      onDragStart: () => {
-        dragIndex.current = { type, index }
-      },
-      onDragOver: () => {},
-      onDrop: () => {
-        if (
-          dragIndex.current &&
-          dragIndex.current.type === type &&
-          dragIndex.current.index !== index
-        ) {
-          reorderSource(type, dragIndex.current.index, index)
-        }
-        dragIndex.current = null
-      }
-    }
+  const layers = graphicsOrder.filter((id) => graphics[id] && getInstance(id))
+  const editorOnly = editorsOrder.filter((id) => !graphics[id] && editors[id] && getInstance(id))
+
+  // Move a layer's visuals and its code overlay to the target layer's place
+  function moveLayer(from: string, to: string) {
+    const gFrom = graphicsOrder.indexOf(from)
+    const gTo = graphicsOrder.indexOf(to)
+    if (gFrom !== -1 && gTo !== -1) reorderSource('graphics', gFrom, gTo)
+    const eFrom = editorsOrder.indexOf(from)
+    const eTo = editorsOrder.indexOf(to)
+    if (eFrom !== -1 && eTo !== -1) reorderSource('editors', eFrom, eTo)
   }
 
   return (
     <>
-      <span className="font-bold my-1 text-sm">EDITORS</span>
-      {editorsOrder.map((id, index) => {
-        const params = editors[id]
-        const source = getInstance(id)
-        if (!params || !source) return null
-        return (
-          <SourceControl
-            key={id}
-            name={source.name}
-            alpha={params.alpha ?? 0}
-            enabled={params.enabled ?? false}
-            setAlpha={(alpha) => updateParams(id, 'editors', { alpha })}
-            setEnabled={(enabled) => updateParams(id, 'editors', { enabled })}
-            blendMode={params.blendMode ?? 'source-over'}
-            setBlendMode={(blendMode) => updateParams(id, 'editors', { blendMode })}
-            {...makeDragHandlers('editors', index)}
-          />
-        )
-      })}
-      <span className="font-bold my-1 text-sm">GRAPHICS</span>
-      {graphicsOrder.map((id, index) => {
-        const params = graphics[id]
-        const source = getInstance(id)
-        if (!params || !source) return null
-        return (
-          <SourceControl
-            key={id}
-            name={source.name}
-            alpha={params.alpha ?? 0}
-            enabled={params.enabled ?? false}
-            setAlpha={(alpha) => updateParams(id, 'graphics', { alpha })}
-            setEnabled={(enabled) => updateParams(id, 'graphics', { enabled })}
-            blendMode={params.blendMode ?? 'source-over'}
-            setBlendMode={(blendMode) => updateParams(id, 'graphics', { blendMode })}
-            {...makeDragHandlers('graphics', index)}
-          />
-        )
-      })}
+      <span className="font-bold my-1 text-sm">LAYERS</span>
+      {layers.map((id) => (
+        <LayerGroup
+          key={id}
+          id={id}
+          name={getInstance(id)!.name}
+          focused={id === focused}
+          graphics={graphics[id]}
+          editor={editors[id]}
+          updateParams={updateParams}
+          drag={{
+            onDragStart: () => {
+              dragged.current = id
+            },
+            onDrop: () => {
+              if (dragged.current && dragged.current !== id) moveLayer(dragged.current, id)
+              dragged.current = null
+            }
+          }}
+        />
+      ))}
+      {editorOnly.length > 0 && <div className="h-px bg-stone-700 my-1" aria-hidden="true" />}
+      {editorOnly.map((id) => (
+        <LayerGroup
+          key={id}
+          id={id}
+          name={getInstance(id)!.name}
+          focused={id === focused}
+          editor={editors[id]}
+          updateParams={updateParams}
+        />
+      ))}
     </>
   )
 }

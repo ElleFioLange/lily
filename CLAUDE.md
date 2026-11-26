@@ -188,9 +188,11 @@ the right of the Mixer header or **Cmd+Alt+P** (Window menu → `preview:toggle`
 - **Stage** (`components/PreviewStage.tsx`) - Replaces the Workspace body while active. Lays out
   at the performance window's size (1920×1080 when closed), CSS-scaled to fit; composites into a
   canvas at displayed resolution and overlays editors with `environment="preview"`.
-- **Mixer** (`components/Mixer.tsx`) - `MixerSections` renders editor/graphics controls from any
+- **Mixer** (`components/Mixer.tsx`) - `MixerSections` renders one group per layer from any
   store shaped like `GraphicsState`; the Mixer feeds it the live store or the preview store.
-  Each row has alpha, enable, drag-reorder, and a blend mode select. Blend modes
+  A group holds the layer's "visuals" (graphics) and "code" (editor overlay) channels, each with
+  alpha, enable and a blend mode select. Dragging a group by its grip moves the layer in both
+  `graphicsOrder` and `editorsOrder`. Editor-only layers (Poiesis) are listed last and don't move. Blend modes
   (`graphics/blendModes.ts`, `BLEND_MODES`) are stored as canvas `globalCompositeOperation` names;
   `cssBlendMode()` maps them to CSS `mix-blend-mode` for editor overlays (`source-over`→`normal`,
   `lighter`→`plus-lighter`).
