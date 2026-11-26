@@ -248,8 +248,10 @@ fits the panel.
 
 Every layer you add is Hydra (`addLayer`). Pinned sources (`manifest.pinned`, i.e. Poiesis) get one
 instance per session, created by `startSession` at startup along with "Layer 1", and can't be
-closed. Each `ActiveSource` has a `name` ("Layer N", counting up from the highest open one;
-renamable with `renameLayer`).
+closed or renamed. Their tab sits on its own in the editor header's right corner, and **Cmd+P**
+(`togglePoiesis`) switches to Poiesis and back to the last Hydra layer (`lastLayer`). Each
+`ActiveSource` has a `name` ("Layer N", counting up from the highest open one; renamable with
+`renameLayer`). The header's run button evaluates only the focused layer (`runFocused`).
 
 ### Sessions (`.lly`, `src/renderer/src/stores/useSessionStore.ts`)
 
@@ -268,6 +270,7 @@ interface SourcesState {
   registered: Record<string, SourceDefinition> // Available sources
   active: Record<string, ActiveSource> // Running instances (layers)
   focused: string | null // Currently focused instanceId
+  lastLayer: string | null // most recently focused Hydra layer
 
   registerSource: (source) => void
   loadSource: (sourceId) => string | null // returns the new instanceId
@@ -277,6 +280,7 @@ interface SourcesState {
   renameLayer: (instanceId, name) => void
   getInstance: (instanceId) => ActiveSource
   setFocused: (focused) => void
+  togglePoiesis: () => void // Cmd+P
 }
 ```
 

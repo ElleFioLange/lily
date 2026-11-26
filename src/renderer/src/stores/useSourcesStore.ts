@@ -7,6 +7,8 @@ interface SourcesState {
   registered: Record<string, SourceDefinition>
   active: Record<string, ActiveSource>
   focused: string | null
+  /** The Hydra layer focused most recently, to return to when leaving Poiesis */
+  lastLayer: string | null
 
   registerSource: (source: SourceDefinition) => void
   /** Creates an instance of a source and focuses it. Returns its instanceId. */
@@ -20,6 +22,8 @@ interface SourcesState {
   renameLayer: (instanceId: string, name: string) => void
   getInstance: (instanceId: string) => ActiveSource | undefined
   setFocused: (focused: string | null) => void
+  /** Switches to the Poiesis layer, or back to the last Hydra layer when Poiesis is showing. */
+  togglePoiesis: () => void
 }
 
 const LAYER_NAME = /^Layer (\d+)$/
@@ -38,6 +42,7 @@ export const useSourcesStore = create<SourcesState>((set, get) => ({
   registered: {},
   active: {},
   focused: null,
+  lastLayer: null,
 
   registerSource: (source) => {
     const { registered } = get()
@@ -73,7 +78,11 @@ export const useSourcesStore = create<SourcesState>((set, get) => ({
 
     const newActive = { ...active, [instanceId]: activeSource }
 
-    set({ active: newActive, focused: instanceId })
+    set({
+      active: newActive,
+      focused: instanceId,
+      ...(!source.manifest.pinned && { lastLayer: instanceId })
+    })
     return instanceId
   },
 
@@ -99,13 +108,16 @@ export const useSourcesStore = create<SourcesState>((set, get) => ({
     const newActive = { ...active }
     delete newActive[instanceId]
 
-    let newFocused = focused
-    if (focused === instanceId) {
-      const remaining = Object.keys(newActive)
-      newFocused = remaining.length > 0 ? remaining[remaining.length - 1] : null
-    }
-
-    set({ active: newActive, focused: newFocused })
+    // Fall back to the newest remaining Hydra layer, or Poiesis if none are left
+    const layers = Object.values(newActive).filter(({ manifest }) => !manifest.pinned)
+    const fallback =
+      layers.at(-1)?.instanceId ?? Object.values(newActive).at(-1)?.instanceId ?? null
+    const lastLayer = get().lastLayer
+    set({
+      active: newActive,
+      focused: focused === instanceId ? fallback : focused,
+      lastLayer: lastLayer === instanceId ? (layers.at(-1)?.instanceId ?? null) : lastLayer
+    })
   },
 
   renameLayer: (instanceId, name) => {
@@ -121,5 +133,19 @@ export const useSourcesStore = create<SourcesState>((set, get) => ({
     return active[instanceId]
   },
 
-  setFocused: (focused) => set({ focused })
+  setFocused: (focused) => {
+    const instance = focused ? get().active[focused] : undefined
+    set({ focused, ...(instance && !instance.manifest.pinned && { lastLayer: focused }) })
+  },
+
+  togglePoiesis: () => {
+    const { active, focused, lastLayer, setFocused } = get()
+    const poiesis = Object.values(active).find(({ manifest }) => manifest.id === 'poiesis')
+    if (!poiesis) return
+    if (focused !== poiesis.instanceId) return setFocused(poiesis.instanceId)
+    const back =
+      (lastLayer && active[lastLayer] ? lastLayer : undefined) ??
+      Object.values(active).find(({ manifest }) => !manifest.pinned)?.instanceId
+    if (back) setFocused(back)
+  }
 }))

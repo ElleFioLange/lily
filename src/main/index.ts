@@ -139,6 +139,13 @@ function createMenu(): void {
           }
         },
         {
+          label: 'Toggle Poiesis',
+          accelerator: 'CmdOrCtrl+P',
+          click: () => {
+            mainWindowRef?.webContents.send('poiesis:toggle')
+          }
+        },
+        {
           label: 'Toggle Preview',
           accelerator: 'CmdOrCtrl+Alt+P',
           click: () => {

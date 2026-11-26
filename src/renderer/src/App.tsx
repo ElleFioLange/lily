@@ -56,11 +56,17 @@ function App(): React.JSX.Element {
       usePreviewStore.getState().toggle()
     )
 
+    // Cmd+P: in and out of the Poiesis layer
+    const unsubTogglePoiesis = window.api.actions.onTogglePoiesis(() =>
+      useSourcesStore.getState().togglePoiesis()
+    )
+
     return () => {
       unsubPerformance()
       unsubActions()
       unsubSession()
       unsubTogglePreview()
+      unsubTogglePoiesis()
       unsubPreviewSync()
       setCompositorRef(null)
     }

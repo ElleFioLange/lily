@@ -125,6 +125,11 @@ const api = {
       ipcRenderer.on('actions:run', handler)
       return () => ipcRenderer.removeListener('actions:run', handler)
     },
+    onTogglePoiesis: (callback: () => void): (() => void) => {
+      const handler = (): void => callback()
+      ipcRenderer.on('poiesis:toggle', handler)
+      return () => ipcRenderer.removeListener('poiesis:toggle', handler)
+    },
     onTogglePreview: (callback: () => void): (() => void) => {
       const handler = (): void => callback()
       ipcRenderer.on('preview:toggle', handler)
