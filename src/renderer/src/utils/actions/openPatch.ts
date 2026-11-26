@@ -10,6 +10,15 @@ export function focusedHydra(): ActiveSource<HydraState> | undefined {
   return source?.manifest.id === 'hydra' ? (source as ActiveSource<HydraState>) : undefined
 }
 
+/** Renames a layer after its patch file: "tides" for .../tides.js */
+export function nameLayerAfterFile(instanceId: string, path: string): void {
+  const name = path
+    .split(/[\\/]/)
+    .at(-1)
+    ?.replace(/\.[^.]+$/, '')
+  if (name) useSourcesStore.getState().renameLayer(instanceId, name)
+}
+
 /** Reads a .js file into the focused Hydra layer. Returns whether it opened. */
 export async function openPatchFile(path: string): Promise<boolean> {
   const instance = focusedHydra()
@@ -17,6 +26,7 @@ export async function openPatchFile(path: string): Promise<boolean> {
   const { success, content, error } = await window.api.hydraFile.read(path)
   if (success && content !== undefined) {
     instance.useStore.getState().openShader(content, path)
+    nameLayerAfterFile(instance.instanceId, path)
     return true
   }
   console.error(error)
@@ -37,6 +47,7 @@ export async function openPatchFromAnywhere(): Promise<boolean> {
     return false
   }
   instance.useStore.getState().openShader(content, path)
+  nameLayerAfterFile(instance.instanceId, path)
   useWorkingDirectoryStore.getState().addExtraFile(path)
   return true
 }

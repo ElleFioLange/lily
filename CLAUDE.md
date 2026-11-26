@@ -267,7 +267,7 @@ instance per session, created by `startSession` at startup along with "Layer 1",
 closed or renamed. Their tab sits on its own in the editor header's right corner, and **Cmd+P**
 (`togglePoiesis`) switches to Poiesis and back to the last Hydra layer (`lastLayer`). Each
 `ActiveSource` has a `name` ("Layer N", counting up from the highest open one; renamable with
-`renameLayer`). The header's run button evaluates only the focused layer (`runFocused`).
+`renameLayer`). Opening or saving a patch file renames its layer after the file (`nameLayerAfterFile`). The header's run button evaluates only the focused layer (`runFocused`).
 
 ### Sessions (`.lly`, `src/renderer/src/stores/useSessionStore.ts`)
 

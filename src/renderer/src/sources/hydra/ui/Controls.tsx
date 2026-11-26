@@ -2,6 +2,7 @@ import { useSourcesStore } from '@renderer/stores/useSourcesStore'
 import { ActiveSource, UIProps } from '@renderer/sources/types'
 import { DEFAULT_PERFORMANCE_TEXT, HydraState, PerformanceText } from '../store'
 import { useWorkingDirectoryStore } from '@renderer/stores/useWorkingDirectoryStore'
+import { nameLayerAfterFile } from '@renderer/utils/actions/openPatch'
 
 const PERFORMANCE_TEXT_CONTROLS: {
   key: keyof PerformanceText
@@ -27,7 +28,8 @@ export default function Controls({ instanceId }: UIProps) {
       await handleSaveAs()
       return
     }
-    await window.api.hydraFile.save(currentShader, currentPath)
+    const result = await window.api.hydraFile.save(currentShader, currentPath)
+    if (result.success) nameLayerAfterFile(instanceId, currentPath)
     void refreshFiles()
   }
 
@@ -43,6 +45,7 @@ export default function Controls({ instanceId }: UIProps) {
           .at(-1)
           ?.replace(/\.[^.]+$/, '') ?? result.path
       )
+      nameLayerAfterFile(instanceId, result.path)
       void refreshFiles()
     }
   }
