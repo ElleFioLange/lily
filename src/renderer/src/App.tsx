@@ -9,7 +9,7 @@ import { Compositor } from './graphics/Compositor'
 import { useSourcesStore } from './stores/useSourcesStore'
 import { setupPreviewSync, usePreviewStore } from './stores/usePreviewStore'
 import { loadSources } from './sources'
-import run from './utils/actions/run'
+import run, { previewPatch, runFocused } from './utils/actions/run'
 import { useWorkingDirectoryStore } from './stores/useWorkingDirectoryStore'
 import { useSessionStore } from './stores/useSessionStore'
 
@@ -47,7 +47,10 @@ function App(): React.JSX.Element {
       togglePerformanceWindow()
     })
 
-    const unsubActions = window.api.actions.onRun(run)
+    // Cmd+Enter previews the focused patch, Cmd+Shift+Enter runs it, Cmd+Alt+Enter runs every layer
+    const unsubPreview = window.api.actions.onPreview(previewPatch)
+    const unsubActions = window.api.actions.onRun(runFocused)
+    const unsubRunAll = window.api.actions.onRunAll(run)
 
     // File menu: .lly sessions
     const unsubSession = window.api.session.onMenu((action) => {
@@ -81,6 +84,8 @@ function App(): React.JSX.Element {
     return () => {
       unsubPerformance()
       unsubActions()
+      unsubPreview()
+      unsubRunAll()
       unsubSession()
       unsubTogglePreview()
       unsubTogglePoiesis()

@@ -8,10 +8,17 @@ type CanvasMirrorProps = {
   source: HTMLCanvasElement | null
   title?: string
   onClick?: () => void
+  /** Sizing classes; a monitor tile by default */
+  className?: string
 }
 
 /** Copies a source canvas into a small tile every frame. */
-export default function CanvasMirror({ source, title, onClick }: CanvasMirrorProps) {
+export default function CanvasMirror({
+  source,
+  title,
+  onClick,
+  className = TILE_CLASS
+}: CanvasMirrorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -34,7 +41,7 @@ export default function CanvasMirror({ source, title, onClick }: CanvasMirrorPro
       height={HEIGHT}
       title={title}
       onClick={onClick}
-      className={`${TILE_CLASS} ${onClick ? 'cursor-pointer hover:outline hover:outline-stone-500' : ''}`}
+      className={`${className} ${onClick ? 'cursor-pointer hover:outline hover:outline-stone-500' : ''}`}
     />
   )
 }

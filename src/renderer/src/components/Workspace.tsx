@@ -6,6 +6,7 @@ import PreviewStage from './PreviewStage'
 import { runFocused } from '@renderer/utils/actions/run'
 import { useBrowserStore } from '@renderer/stores/useBrowserStore'
 import FileSystem from './FileSystem'
+import PreviewPip from '@renderer/sources/hydra/ui/PreviewPip'
 import { ActiveSource } from '@renderer/sources/types'
 import { HydraState } from '@renderer/sources/hydra/store'
 import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
@@ -62,7 +63,7 @@ function PlayButton() {
     <button
       className="h-5 px-2 py-0 flex items-center gap-1 text-xs border-stone-600 hover:bg-stone-700"
       onClick={runFocused}
-      title="Run this patch (⌘⇧Enter runs every layer)"
+      title="Run this patch (⌘⇧Enter). ⌘Enter previews it first"
       aria-label="Run this patch"
     >
       <svg width="8" height="9" viewBox="0 0 8 9" aria-hidden="true">
@@ -129,6 +130,8 @@ export default function Workspace() {
                   />
                 </div>
               ) : null}
+
+              {isHydra ? <PreviewPip instanceId={focusedSurface.instanceId} /> : null}
 
               {isHydra && browserOpen ? (
                 <FileSystem instance={focusedSurface as ActiveSource<HydraState>} />

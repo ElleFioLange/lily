@@ -1,6 +1,7 @@
 import Hydra from 'hydra-synth'
 import { createHydraStore } from './store'
 import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
+import { ensurePatchPreview } from './patchPreview'
 
 export default function init(instanceId: string) {
   const useHydraStore = createHydraStore(instanceId)
@@ -33,6 +34,9 @@ export default function init(instanceId: string) {
 
   addGraphicsSource({ id: instanceId, canvas })
   addEditorSource({ id: instanceId })
+
+  // The hidden instance Cmd+Enter previews patches in, shared by every layer
+  ensurePatchPreview()
 
   console.log('hydra initialized')
 

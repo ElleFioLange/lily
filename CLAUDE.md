@@ -32,6 +32,12 @@ on `main` for it.
   never added to the compositor; instead the Monitors panel shows four tiles, each
   drawn from one quadrant of the monitor canvas (column-major: o0 TL, o1 BL, o2 TR, o3 BR). Monitor
   state (`monitorHydra`, `monitorCanvas`) lives in `store.ts`.
+  Patch preview (`patchPreview.ts`): one more hidden `autoLoop: false` Hydra instance, created
+  with the first layer and shared by all of them, never in the compositor. Preview Patch
+  (Cmd/Ctrl+Enter) hushes it and evaluates the focused layer's edited text into it, on the layer's
+  clock (time and speed). While previewing, `ui/Renderer.tsx` draws the preview behind the editor
+  and `ui/PreviewPip.tsx` shows the layer's live output in the bottom-right corner (click it to
+  leave the preview), plus any evaluation error. Run Patch and Run All Layers end the preview.
   The shader text shown in the performance window is laid out by `performanceText`
   (`{ fontSize, x, y }` — px, and % of window for the top-left offset; `setPerformanceText`
   merges partial updates, `DEFAULT_PERFORMANCE_TEXT` resets). `ui/Controls.tsx` exposes sliders;
@@ -100,7 +106,8 @@ type SourceDefinition<StoreType> = {
 
 Lifecycle: `loadSources()` returns the definitions, `App.tsx` registers them with
 `useSourcesStore.registerSource()`, the `+` button calls `loadSource(id)` which creates an
-instance with a UUID `instanceId` and calls `init`, Run (Cmd/Ctrl+Shift+Enter) calls `process` on
+instance with a UUID `instanceId` and calls `init`, Run Patch (Cmd/Ctrl+Shift+Enter, or the header's
+run button) calls `process` on the focused instance, Run All Layers (Cmd/Ctrl+Alt+Enter) calls it on
 every active instance, and closing a layer calls `cleanup` and removes its compositor source.
 
 Graphics sources register their canvas in `init`:
@@ -276,7 +283,7 @@ instance per session, created by `startSession` at startup along with "Layer 1",
 closed or renamed. Their tab sits on its own in the editor header's right corner, and **Cmd+P**
 (`togglePoiesis`) switches to Poiesis and back to the last Hydra layer (`lastLayer`). Each
 `ActiveSource` has a `name` ("Layer N", counting up from the highest open one; renamable with
-`renameLayer`). Opening or saving a patch file renames its layer after the file (`nameLayerAfterFile`). The header's run button evaluates only the focused layer (`runFocused`).
+`renameLayer`). Opening or saving a patch file renames its layer after the file (`nameLayerAfterFile`). The header's run button evaluates only the focused layer (`runFocused`, same as Cmd+Shift+Enter).
 
 ### Sessions (`.lly`, `src/renderer/src/stores/useSessionStore.ts`)
 

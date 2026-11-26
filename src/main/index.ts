@@ -186,10 +186,24 @@ function createMenu(): void {
       label: 'Actions',
       submenu: [
         {
-          label: 'Run',
+          label: 'Preview Patch',
+          accelerator: 'CmdOrCtrl+Enter',
+          click: () => {
+            mainWindowRef?.webContents.send('actions:preview')
+          }
+        },
+        {
+          label: 'Run Patch',
           accelerator: 'CmdOrCtrl+Shift+Enter',
           click: () => {
             mainWindowRef?.webContents.send('actions:run')
+          }
+        },
+        {
+          label: 'Run All Layers',
+          accelerator: 'CmdOrCtrl+Alt+Enter',
+          click: () => {
+            mainWindowRef?.webContents.send('actions:run-all')
           }
         }
       ]

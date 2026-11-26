@@ -120,6 +120,16 @@ const api = {
   // Actions API
   // ============================================================================
   actions: {
+    onPreview: (callback: () => void): (() => void) => {
+      const handler = (): void => callback()
+      ipcRenderer.on('actions:preview', handler)
+      return () => ipcRenderer.removeListener('actions:preview', handler)
+    },
+    onRunAll: (callback: () => void): (() => void) => {
+      const handler = (): void => callback()
+      ipcRenderer.on('actions:run-all', handler)
+      return () => ipcRenderer.removeListener('actions:run-all', handler)
+    },
     onRun: (callback: () => void): (() => void) => {
       const handler = (): void => callback()
       ipcRenderer.on('actions:run', handler)
