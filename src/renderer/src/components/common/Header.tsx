@@ -1,5 +1,5 @@
 import { useSourcesStore } from '@renderer/stores/useSourcesStore'
-import { ReactNode, useCallback } from 'react'
+import { ReactNode, useCallback, useRef, useState } from 'react'
 
 export type HeaderProps = {
   title: string
@@ -10,7 +10,8 @@ export type HeaderProps = {
 // basic solution causes problems with overflow: visible for the indicator https://stackoverflow.com/questions/6421966/css-overflow-x-visible-and-overflow-y-hidden-causing-scrollbar-issue
 
 export default function Header({ title, children }: HeaderProps) {
-  const { active, focused, setFocused, unloadSource } = useSourcesStore()
+  const { active, focused, setFocused, unloadSource, renameLayer } = useSourcesStore()
+  const [editing, setEditing] = useState<string | null>(null)
 
   const handleClose = useCallback(
     (e: React.MouseEvent, instanceId: string) => {
@@ -24,14 +25,26 @@ export default function Header({ title, children }: HeaderProps) {
     <div className="w-full h-8 bg-stone-900 border-b border-stone-700 flex p-1 z-10">
       <span className="shrink-0 px-4 text-base">{title.toUpperCase()}</span>
       <div className="grow flex gap-3 overflow-y-visible no-scrollbar">
-        {Object.values(active).map(({ instanceId, manifest: { name, pinned } }) => (
+        {Object.values(active).map(({ instanceId, name, manifest: { pinned } }) => (
           <div className="relative group flex items-center gap-1" key={instanceId}>
-            <button
-              className={`text-xs border-none bg-transparent ${instanceId === focused ? 'cursor-default' : 'hover:underline'}`}
-              onClick={() => setFocused(instanceId)}
-            >
-              {name}
-            </button>
+            {editing === instanceId ? (
+              <RenameInput
+                name={name}
+                onDone={(newName) => {
+                  if (newName !== null) renameLayer(instanceId, newName)
+                  setEditing(null)
+                }}
+              />
+            ) : (
+              <button
+                className={`text-xs border-none bg-transparent ${instanceId === focused ? 'cursor-default' : 'hover:underline'}`}
+                onClick={() => setFocused(instanceId)}
+                onDoubleClick={() => setEditing(instanceId)}
+                title="Double-click to rename"
+              >
+                {name}
+              </button>
+            )}
             {!pinned && (
               <button
                 className="text-xs border-none bg-transparent opacity-0 group-hover:opacity-100 text-stone-400 hover:text-stone-100 leading-none px-0.5 -mt-px"
@@ -61,5 +74,31 @@ export default function Header({ title, children }: HeaderProps) {
         {children}
       </div>
     </div>
+  )
+}
+
+/** Inline name editor: Enter or blur saves, Escape cancels (onDone(null)). */
+function RenameInput({ name, onDone }: { name: string; onDone: (name: string | null) => void }) {
+  const [value, setValue] = useState(name)
+  const finished = useRef(false)
+  const finish = (result: string | null): void => {
+    if (finished.current) return
+    finished.current = true
+    onDone(result)
+  }
+  return (
+    <input
+      autoFocus
+      className="text-xs w-24 bg-stone-800 border border-stone-600 rounded-sm px-1 outline-none"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onFocus={(e) => e.target.select()}
+      onBlur={() => finish(value)}
+      onKeyDown={(e) => {
+        e.stopPropagation()
+        if (e.key === 'Enter') e.currentTarget.blur()
+        if (e.key === 'Escape') finish(null)
+      }}
+    />
   )
 }

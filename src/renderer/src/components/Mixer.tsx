@@ -133,7 +133,7 @@ export function MixerSections({
         return (
           <SourceControl
             key={id}
-            name={source.manifest.name}
+            name={source.name}
             alpha={params.alpha ?? 0}
             enabled={params.enabled ?? false}
             setAlpha={(alpha) => updateParams(id, 'editors', { alpha })}
@@ -152,7 +152,7 @@ export function MixerSections({
         return (
           <SourceControl
             key={id}
-            name={source.manifest.name}
+            name={source.name}
             alpha={params.alpha ?? 0}
             enabled={params.enabled ?? false}
             setAlpha={(alpha) => updateParams(id, 'graphics', { alpha })}

@@ -16,8 +16,22 @@ interface SourcesState {
   /** Creates the session's default layers (pinned sources, then one Hydra layer) if none exist. */
   startSession: () => void
   unloadSource: (instanceId: string) => void
+  /** Renames a layer. Blank names are ignored. */
+  renameLayer: (instanceId: string, name: string) => void
   getInstance: (instanceId: string) => ActiveSource | undefined
   setFocused: (focused: string | null) => void
+}
+
+const LAYER_NAME = /^Layer (\d+)$/
+
+/** Pinned sources keep their own name; layers count up from the highest "Layer N" still open. */
+function defaultName(source: SourceDefinition, active: Record<string, ActiveSource>): string {
+  if (source.manifest.pinned) return source.manifest.name
+  const highest = Object.values(active).reduce((max, { name }) => {
+    const match = LAYER_NAME.exec(name)
+    return match ? Math.max(max, Number(match[1])) : max
+  }, 0)
+  return `Layer ${highest + 1}`
 }
 
 export const useSourcesStore = create<SourcesState>((set, get) => ({
@@ -55,7 +69,7 @@ export const useSourcesStore = create<SourcesState>((set, get) => ({
     const instanceId = uuid()
     const useStore = source.init(instanceId)
 
-    const activeSource = { ...source, useStore, instanceId }
+    const activeSource = { ...source, useStore, instanceId, name: defaultName(source, active) }
 
     const newActive = { ...active, [instanceId]: activeSource }
 
@@ -92,6 +106,14 @@ export const useSourcesStore = create<SourcesState>((set, get) => ({
     }
 
     set({ active: newActive, focused: newFocused })
+  },
+
+  renameLayer: (instanceId, name) => {
+    const { active } = get()
+    const instance = active[instanceId]
+    const trimmed = name.trim()
+    if (!instance || trimmed === '' || trimmed === instance.name) return
+    set({ active: { ...active, [instanceId]: { ...instance, name: trimmed } } })
   },
 
   getInstance: (instanceId) => {

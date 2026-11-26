@@ -55,6 +55,8 @@ export type SourceDefinition<StoreType extends SourceState | void = void> = Stor
 export type ActiveSource<StoreType extends SourceState | void = void> = Omit<
   SourceDefinition,
   'createStore'
-> & { instanceId: string } & (StoreType extends void
-    ? object
-    : { useStore: UseStore<Exclude<StoreType, void>> })
+> & {
+  instanceId: string
+  /** The layer's display name: "Layer 1", "Layer 2"... for Hydra, renamable. */
+  name: string
+} & (StoreType extends void ? object : { useStore: UseStore<Exclude<StoreType, void>> })
