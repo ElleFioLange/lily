@@ -239,7 +239,12 @@ the right of the Mixer header or **Cmd+Alt+P** (Window menu → `preview:toggle`
 The right sidebar runs the full height. The monitors are two rows: the focused patch's o0–o3 on
 top and, under a plain divider, the other layers in a row that scrolls sideways (the mouse wheel
 scrolls it too). Tiles only carry small captions (o0–o3, a layer's name, "program"). Both rows
-share one tile size (`--tile-h`): half the panel's height, narrow enough that o0–o3 fit across.
+share one tile size (`--tile-h`): up to half the panel's height, narrow enough that o0–o3 fit
+across. The program monitor takes the width left over (at least 35%, at most its full height).
+
+The editor area is always 16:9 (letterboxed if the divider is dragged). `Layout.tsx` refits the
+editor/monitors split whenever the left side changes size, so the editor gets exactly a 16:9
+area and the monitors everything under it.
 
 ### Main Components
 

@@ -15,10 +15,11 @@ const DIVIDER = 1
 const SCROLLBAR = 6
 // The focused patch's o0, o1, o2, o3 always fit across
 const PATCH_TILES = 4
-// Vertical padding (py-2) around the program monitor
-const PROGRAM_PADDING_Y = 16
-// The program monitor never takes more than this share of the panel's width
-const PROGRAM_MAX_SHARE = 0.4
+// py-2 and px-4 around the rows and the program monitor
+const PADDING_Y = 16
+const PADDING_X = 32
+// The program monitor always gets at least this share of the panel's width
+const PROGRAM_MIN_SHARE = 0.35
 
 function LayerThumb({ instance }: { instance: ActiveSource<HydraState> }) {
   const canvas = instance.useStore((state) => state.canvas)
@@ -46,40 +47,38 @@ export default function Monitors() {
     (source) => source.manifest.id === 'hydra' && source.instanceId !== focused
   ) as ActiveSource<HydraState>[]
 
-  // Both rows use one tile size: half the panel's height each, and narrow enough that the
-  // patch's four outputs fit across. The program monitor takes the full panel height on the
-  // right, up to PROGRAM_MAX_SHARE of the width.
+  // Both rows use one tile size, as tall as half the panel allows. The patch's four outputs
+  // always fit across, and the program monitor on the right takes the width that's left, up to
+  // the full panel height (and never under PROGRAM_MIN_SHARE of the width).
   const panelRef = useRef<HTMLDivElement>(null)
-  const bodyRef = useRef<HTMLDivElement>(null)
   const [tileHeight, setTileHeight] = useState(0)
   const [programHeight, setProgramHeight] = useState(0)
   const measure = useCallback(() => {
     const panel = panelRef.current
-    const body = bodyRef.current
-    if (!panel || !body) return
-    const px = (value: string) => parseFloat(value) || 0
+    if (!panel) return
+    const { clientWidth: width, clientHeight: height } = panel
 
-    const programFit = Math.min(
-      panel.clientHeight - PROGRAM_PADDING_Y - TILE_CAPTION,
-      (panel.clientWidth * PROGRAM_MAX_SHARE * 9) / 16
+    const rowsHeight = height - PADDING_Y - 2 * GAP - DIVIDER - SCROLLBAR
+    const tileFit = rowsHeight / 2 - TILE_CAPTION
+    const rowsWidth = (tileFit * 16 * PATCH_TILES) / 9 + GAP * (PATCH_TILES - 1) + PADDING_X
+
+    const programFit = height - PADDING_Y - TILE_CAPTION
+    const programChrome = PADDING_X + 1 // padding and the left border
+    const programWidth = Math.min(
+      (programFit * 16) / 9 + programChrome,
+      Math.max(width * PROGRAM_MIN_SHARE, width - rowsWidth)
     )
-    const program = Math.max(24, Math.floor(programFit))
+    const program = Math.max(24, Math.floor(((programWidth - programChrome) * 9) / 16))
     setProgramHeight((prev) => (prev === program ? prev : program))
 
-    const style = getComputedStyle(body)
-    const width = body.clientWidth - px(style.paddingLeft) - px(style.paddingRight)
-    const height = body.clientHeight - px(style.paddingTop) - px(style.paddingBottom)
-    const rowsHeight = height - 2 * GAP - DIVIDER - SCROLLBAR
-    const fitHeight = rowsHeight / 2 - TILE_CAPTION
-    const fitWidth = (((width - GAP * (PATCH_TILES - 1)) / PATCH_TILES) * 9) / 16
-    const next = Math.max(24, Math.floor(Math.min(fitHeight, fitWidth)))
+    const tileWidth = (width - programWidth - PADDING_X - GAP * (PATCH_TILES - 1)) / PATCH_TILES
+    const next = Math.max(24, Math.floor(Math.min(tileFit, (tileWidth * 9) / 16)))
     setTileHeight((prev) => (prev === next ? prev : next))
   }, [])
   useEffect(() => {
-    if (!bodyRef.current || !panelRef.current) return
+    if (!panelRef.current) return
     const resize = new ResizeObserver(measure)
     resize.observe(panelRef.current)
-    resize.observe(bodyRef.current)
     return () => resize.disconnect()
   }, [measure])
 
@@ -95,7 +94,6 @@ export default function Monitors() {
       <Header title="MONITORS" />
       <div ref={panelRef} className="flex-1 min-h-0 flex">
         <div
-          ref={bodyRef}
           className="flex-1 min-w-0 flex flex-col gap-2 px-4 py-2 overflow-hidden"
           style={{ '--tile-h': `${tileHeight}px` } as React.CSSProperties}
         >

@@ -101,38 +101,41 @@ export default function Workspace() {
       >
         <AddLayer />
       </Header>
-      <div className="relative grow">
-        {previewActive ? (
-          <PreviewStage />
-        ) : focusedSurface === undefined ? (
-          <div className="grid place-items-center">No surface selected</div>
-        ) : (
-          <>
-            {focusedSurface.manifest.id === 'poiesis' ? <ProgramBackground /> : null}
+      {/* The editor area is always 16:9, letterboxed when the panel's shape doesn't match */}
+      <div className="grow min-h-0 flex items-center justify-center bg-stone-950 [container-type:size]">
+        <div className="relative w-[min(100cqw,calc(100cqh*16/9))] aspect-video">
+          {previewActive ? (
+            <PreviewStage />
+          ) : focusedSurface === undefined ? (
+            <div className="grid place-items-center">No surface selected</div>
+          ) : (
+            <>
+              {focusedSurface.manifest.id === 'poiesis' ? <ProgramBackground /> : null}
 
-            {/* Renderer layers (no interaction) */}
-            {focusedSurface && focused && focusedSurface.Renderer ? (
-              <div className="absolute size-full pointer-events-none">
-                <focusedSurface.Renderer instanceId={focused} />
-              </div>
-            ) : null}
+              {/* Renderer layers (no interaction) */}
+              {focusedSurface && focused && focusedSurface.Renderer ? (
+                <div className="absolute size-full pointer-events-none">
+                  <focusedSurface.Renderer instanceId={focused} />
+                </div>
+              ) : null}
 
-            {/* Source main layers (interactable) */}
-            {focusedSurface.Workspace ? (
-              <div className="absolute size-full overflow-hidden">
-                <focusedSurface.Workspace
-                  key={focusedSurface.instanceId}
-                  instanceId={focusedSurface.instanceId}
-                  environment="main"
-                />
-              </div>
-            ) : null}
+              {/* Source main layers (interactable) */}
+              {focusedSurface.Workspace ? (
+                <div className="absolute size-full overflow-hidden">
+                  <focusedSurface.Workspace
+                    key={focusedSurface.instanceId}
+                    instanceId={focusedSurface.instanceId}
+                    environment="main"
+                  />
+                </div>
+              ) : null}
 
-            {isHydra && browserOpen ? (
-              <FileSystem instance={focusedSurface as ActiveSource<HydraState>} />
-            ) : null}
-          </>
-        )}
+              {isHydra && browserOpen ? (
+                <FileSystem instance={focusedSurface as ActiveSource<HydraState>} />
+              ) : null}
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
