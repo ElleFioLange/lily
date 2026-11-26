@@ -15,7 +15,7 @@ const PERFORMANCE_TEXT_CONTROLS: {
   { key: 'y', label: 'y', min: 0, max: 95, unit: '%' }
 ]
 
-export default function Options({ instanceId }: UIProps) {
+export default function Controls({ instanceId }: UIProps) {
   const { getInstance } = useSourcesStore()
   const instance = getInstance(instanceId) as ActiveSource<HydraState>
   const { shaderPath, performanceText, setPerformanceText, speed, setSpeed } = instance.useStore()

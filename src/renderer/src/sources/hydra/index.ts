@@ -9,7 +9,7 @@ import { serialize, restore } from './session'
 
 import Workspace from './ui/Workspace'
 import Monitor from './ui/Monitor'
-import Options from './ui/Options'
+import Controls from './ui/Controls'
 import Renderer from './ui/Renderer'
 
 import { createHydraStore, HydraState } from './store'
@@ -23,7 +23,7 @@ const HydraSource: SourceDefinition<HydraState> = {
 
   Workspace,
   Monitor,
-  Options,
+  Controls,
   Renderer,
 
   serialize,

@@ -1,11 +1,11 @@
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import Workspace from './Workspace'
-import Options from './Options'
+import Controls from './Controls'
 import Monitors from './Monitors'
 import Mixer from './Mixer'
 
 // Left: the editor on top, monitors below. Right: a full-height sidebar with the
-// mixer on top and the focused layer's options below.
+// mixer on top and the focused layer's controls below.
 export default function Layout() {
   return (
     <PanelGroup direction="horizontal" className="w-full h-full">
@@ -34,7 +34,7 @@ export default function Layout() {
           <PanelResizeHandle className="h-px bg-stone-700 cursor-row-resize flex items-center justify-center" />
 
           <Panel defaultSize={40} collapsible>
-            <Options />
+            <Controls />
           </Panel>
         </PanelGroup>
       </Panel>

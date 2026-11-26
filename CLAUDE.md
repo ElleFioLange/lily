@@ -34,7 +34,7 @@ on `main` for it.
   state (`monitorHydra`, `monitorCanvas`) lives in `store.ts`.
   The shader text shown in the performance window is laid out by `performanceText`
   (`{ fontSize, x, y }` — px, and % of window for the top-left offset; `setPerformanceText`
-  merges partial updates, `DEFAULT_PERFORMANCE_TEXT` resets). `ui/Options.tsx` exposes sliders;
+  merges partial updates, `DEFAULT_PERFORMANCE_TEXT` resets). `ui/Controls.tsx` exposes sliders;
   `ui/Workspace.tsx` applies them only when `environment === 'performance'` (font size via a
   CodeMirror `Compartment`, position via absolute `left`/`top`). The main editor stays at 14px.
   Scroll sync: the main editor writes `scrollPos` (doc position of its first visible character,
@@ -43,7 +43,7 @@ on `main` for it.
   different font size and wrapping. Line numbers are hidden in performance/preview.
   Speed: `speed`/`setSpeed` in the store sets `hydra.synth.speed` (hydra-synth advances `time`
   by `dt * speed`, so frame rate is unchanged). `process.ts` re-applies it after each eval, so the
-  Options slider (0–2×) overrides any `speed = ...` in a patch.
+  Controls slider (0–2×) overrides any `speed = ...` in a patch.
 - **poiesis** (`sources/poiesis/`, optional) - The poetic text layer: typed text whose
   config keywords (YAML) trigger audio-reactive shader effects on the text. Includes its config
   editor, `AudioManager` (multichannel capture via audify in the main process), and the Mallet MIDI
@@ -91,7 +91,7 @@ type SourceDefinition<StoreType> = {
   createStore: (instanceId: string) => UseStore<StoreType>
   // UI Components (all optional)
   Workspace?: FunctionComponent<WorkspaceProps>
-  Options?: FunctionComponent<UIProps>
+  Controls?: FunctionComponent<UIProps>
   Monitor?: FunctionComponent<UIProps>
   Renderer?: FunctionComponent<RendererProps>
   Background?: FunctionComponent // mounted once at app level while registered
@@ -229,8 +229,8 @@ the right of the Mixer header or **Cmd+Alt+P** (Window menu → `preview:toggle`
 │  - file browser overlay (Cmd+O)  │                  │
 ├──────────────────────────────────┤                  │
 │  Monitors                        ├──────────────────┤
-│  focused o0–o3 │ other layers │  │  Options         │
-│                     │ program    │  - open, save    │
+│  focused o0–o3 │ other layers │  │  Controls        │
+│                     │ program    │  - save          │
 │                                  │  - speed, text   │
 └──────────────────────────────────┴──────────────────┘
 ```
@@ -246,7 +246,7 @@ fits the panel.
 - **Monitors.tsx** - Focused layer's Monitor (Hydra: o0–o3), thumbnails of the other Hydra layers
   (click to focus), and `ProgramMonitor` (the live compositor through `Stage`, as the performance
   window shows it)
-- **Options.tsx** - Focused layer's Options (Hydra: Save/Save as, speed, performance text)
+- **Controls.tsx** - Focused layer's controls (Hydra: Save/Save as, speed, performance text)
 - **Stage.tsx** - Scaled replica of the performance window for a compositor + editor overlays;
   used by `PreviewStage` and `ProgramMonitor`
 - **FileSystem.tsx** - File browser overlaid on the focused Hydra patch with a transparent

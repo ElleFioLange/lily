@@ -39,7 +39,7 @@ type SourceBase = {
   cleanup: (instanceId: string) => void
 
   Workspace?: FunctionComponent<WorkspaceProps>
-  Options?: FunctionComponent<UIProps>
+  Controls?: FunctionComponent<UIProps>
   Monitor?: FunctionComponent<UIProps>
   Renderer?: FunctionComponent<RendererProps>
   /** Rendered once at app level while the source is registered (e.g. input device hooks). */

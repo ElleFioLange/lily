@@ -6,7 +6,7 @@ import init from './init'
 import process from './process'
 
 import Workspace from './ui/Workspace'
-import Options from './ui/Options'
+import Controls from './ui/Controls'
 
 import { createPoiesisStore, PoiesisState } from './store'
 import cleanup from './cleanup'
@@ -21,7 +21,7 @@ const PoiesisSource: SourceDefinition<PoiesisState> = {
   cleanup,
 
   Workspace,
-  Options,
+  Controls,
   Background: MalletKeyboard,
 
   serialize,

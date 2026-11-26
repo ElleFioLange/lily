@@ -2,7 +2,7 @@ import { useSourcesStore } from '@renderer/stores/useSourcesStore'
 import { ActiveSource, UIProps } from '@renderer/sources/types'
 import { PoiesisState } from '../store'
 
-export default function Options({ instanceId }: UIProps) {
+export default function Controls({ instanceId }: UIProps) {
   const { getInstance } = useSourcesStore()
   const instance = getInstance(instanceId) as ActiveSource<PoiesisState>
   const { openSurface, setOpenSurface } = instance.useStore()
