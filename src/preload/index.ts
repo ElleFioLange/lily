@@ -130,6 +130,11 @@ const api = {
       ipcRenderer.on('performance:full-preview', handler)
       return () => ipcRenderer.removeListener('performance:full-preview', handler)
     },
+    onToggleBrowser: (callback: () => void): (() => void) => {
+      const handler = (): void => callback()
+      ipcRenderer.on('browser:toggle', handler)
+      return () => ipcRenderer.removeListener('browser:toggle', handler)
+    },
     onTogglePoiesis: (callback: () => void): (() => void) => {
       const handler = (): void => callback()
       ipcRenderer.on('poiesis:toggle', handler)

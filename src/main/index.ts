@@ -51,8 +51,14 @@ function createMenu(): void {
       label: 'File',
       submenu: [
         {
-          label: 'Open Session...',
+          label: 'Toggle File Browser',
           accelerator: 'CmdOrCtrl+O',
+          click: () => mainWindowRef?.webContents.send('browser:toggle')
+        },
+        { type: 'separator' as const },
+        {
+          label: 'Open Session...',
+          accelerator: 'CmdOrCtrl+Alt+O',
           click: () => mainWindowRef?.webContents.send('session:menu', 'open')
         },
         { type: 'separator' as const },

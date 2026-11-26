@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from './components/Layout'
 import FullPreview from './components/FullPreview'
+import { useBrowserStore } from './stores/useBrowserStore'
 import { PerformanceWindow } from './windows/performance/PerformanceWindow'
 import { usePerformanceStore } from './stores/usePerformanceStore'
 import { useGraphicsStore } from './stores/useGraphicsStore'
@@ -62,6 +63,11 @@ function App(): React.JSX.Element {
       usePerformanceStore.getState().toggleFullPreview()
     )
 
+    // Cmd+O: show or hide the file browser over the patch
+    const unsubToggleBrowser = window.api.actions.onToggleBrowser(() =>
+      useBrowserStore.getState().toggle()
+    )
+
     // Cmd+P: in and out of the Poiesis layer
     const unsubTogglePoiesis = window.api.actions.onTogglePoiesis(() =>
       useSourcesStore.getState().togglePoiesis()
@@ -74,6 +80,7 @@ function App(): React.JSX.Element {
       unsubTogglePreview()
       unsubTogglePoiesis()
       unsubFullPreview()
+      unsubToggleBrowser()
       unsubPreviewSync()
       setCompositorRef(null)
     }

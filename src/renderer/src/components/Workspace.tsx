@@ -4,6 +4,10 @@ import { useMemo } from 'react'
 import { usePreviewStore } from '@renderer/stores/usePreviewStore'
 import PreviewStage from './PreviewStage'
 import { runFocused } from '@renderer/utils/actions/run'
+import { useBrowserStore } from '@renderer/stores/useBrowserStore'
+import FileSystem from './FileSystem'
+import { ActiveSource } from '@renderer/sources/types'
+import { HydraState } from '@renderer/sources/hydra/store'
 
 function AddLayer() {
   const addLayer = useSourcesStore((state) => state.addLayer)
@@ -14,6 +18,20 @@ function AddLayer() {
       title="Add a Hydra layer"
     >
       +
+    </button>
+  )
+}
+
+function BrowserButton() {
+  const { open, toggle } = useBrowserStore()
+  return (
+    <button
+      className={`h-5 px-2 py-0 text-xs border-stone-600 ${open ? 'bg-stone-600 text-stone-50' : 'hover:bg-stone-700'}`}
+      onClick={toggle}
+      title={`${open ? 'Hide' : 'Show'} the file browser (Cmd+O)`}
+      aria-pressed={open}
+    >
+      files
     </button>
   )
 }
@@ -37,18 +55,28 @@ function PlayButton() {
 export default function Workspace() {
   const { active, focused } = useSourcesStore()
   const previewActive = usePreviewStore((state) => state.active)
+  const browserOpen = useBrowserStore((state) => state.open)
 
   const focusedSurface = useMemo(
     () => Object.values(active).find(({ instanceId }) => instanceId === focused),
     [active, focused]
   )
 
+  const isHydra = focusedSurface?.manifest.id === 'hydra'
+
   return (
     <div className="size-full flex flex-col">
       <Header
         title="LILY"
         showTabs
-        actions={focusedSurface && !previewActive ? <PlayButton /> : null}
+        actions={
+          focusedSurface && !previewActive ? (
+            <>
+              {isHydra && <BrowserButton />}
+              <PlayButton />
+            </>
+          ) : null
+        }
       >
         <AddLayer />
       </Header>
@@ -75,6 +103,10 @@ export default function Workspace() {
                   environment="main"
                 />
               </div>
+            ) : null}
+
+            {isHydra && browserOpen ? (
+              <FileSystem instance={focusedSurface as ActiveSource<HydraState>} />
             ) : null}
           </>
         )}

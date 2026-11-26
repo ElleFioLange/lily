@@ -222,14 +222,15 @@ the right of the Mixer header or **Cmd+Alt+P** (Window menu → `preview:toggle`
 
 ```
 ┌──────────────────────────────────┬──────────────────┐
-│  Workspace (LILY + layer tabs, +)│  Mixer           │
-│  - focused layer's Workspace     │  - presets       │
-│  - focused layer's Renderer      │  - editors       │
-│                                  │  - graphics      │
+│  Workspace (tabs, +, files, run, │  Mixer           │
+│  Poiesis tab)                    │  - presets       │
+│  - focused layer's Workspace     │  - one group per │
+│  - focused layer's Renderer      │    layer         │
+│  - file browser overlay (Cmd+O)  │                  │
 ├──────────────────────────────────┤                  │
 │  Monitors                        ├──────────────────┤
 │  focused o0–o3 │ other layers │  │  Options         │
-│  program (live mix)              │  - file browser  │
+│                     │ program    │  - open, save    │
 │                                  │  - speed, text   │
 └──────────────────────────────────┴──────────────────┘
 ```
@@ -245,12 +246,15 @@ fits the panel.
 - **Monitors.tsx** - Focused layer's Monitor (Hydra: o0–o3), thumbnails of the other Hydra layers
   (click to focus), and `ProgramMonitor` (the live compositor through `Stage`, as the performance
   window shows it)
-- **Options.tsx** - Focused layer's Options (Hydra: `FileSystem` browser, speed, performance text)
+- **Options.tsx** - Focused layer's Options (Hydra: Open/Save/Save as, speed, performance text)
 - **Stage.tsx** - Scaled replica of the performance window for a compositor + editor overlays;
   used by `PreviewStage` and `ProgramMonitor`
-- **FileSystem.tsx** - Lists every `.js` file in the working directory
-  (`useWorkingDirectoryStore`; main-process `workdir:*` IPC, saved in settings as
-  `workingDirectory`). Skips hidden folders and `node_modules`; refreshes on window focus.
+- **FileSystem.tsx** - File browser overlaid on the focused Hydra patch with a transparent
+  background (`useBrowserStore.open`; toggled by the header's **files** button or **Cmd+O**). Lists
+  every `.js` file in the working directory (`useWorkingDirectoryStore`; main-process `workdir:*`
+  IPC, saved in settings as `workingDirectory`). Skips hidden folders and `node_modules`; refreshes
+  on window focus. Picking a file opens it in the focused layer (`utils/actions/openPatch.ts`) and
+  hides the browser.
 
 ### Layers
 
@@ -263,7 +267,7 @@ closed or renamed. Their tab sits on its own in the editor header's right corner
 
 ### Sessions (`.lly`, `src/renderer/src/stores/useSessionStore.ts`)
 
-File menu: Open Session (Cmd+O), Save Session (Cmd+S), Save Session As (Cmd+Shift+S). A `.lly` file
+File menu: Toggle File Browser (Cmd+O), Open Session (Cmd+Alt+O), Save Session (Cmd+S), Save Session As (Cmd+Shift+S). A `.lly` file
 is JSON (`format: "lily-session"`, `version: 1`) holding the working directory, every layer (source,
 name, and the source's own `serialize` data, e.g. Hydra's patch text as it stands, path, speed,
 performance text), the mixer and presets keyed by file-local layer ids (`layer-1`...), and the fade
