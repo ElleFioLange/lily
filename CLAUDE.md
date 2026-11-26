@@ -40,6 +40,9 @@ on `main` for it.
   leave the preview), plus any evaluation error. Run Patch and Run All Layers end the preview.
   The Hydra editor binds these three shortcuts itself, ahead of CodeMirror's defaults (Mod-Enter
   would insert a blank line); `run.ts` skips the menu's second call for the same key press.
+  Editor keys (`editorKeys.ts`): Ctrl+I/J/K/L move up/left/down/right (with Shift to select),
+  Ctrl+Shift+Cmd+I/K move lines (macOS), and multiple cursors (Alt+click, Alt+Shift+drag for a
+  column, Cmd+Alt+Up/Down, Cmd+D for the next match, Escape for one cursor).
   The shader text shown in the performance window is laid out by `performanceText`
   (`{ fontSize, x, y }` — px, and % of window for the top-left offset; `setPerformanceText`
   merges partial updates, `DEFAULT_PERFORMANCE_TEXT` resets). `ui/Controls.tsx` exposes sliders;
