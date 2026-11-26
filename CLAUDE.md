@@ -283,13 +283,14 @@ area and the monitors everything under it.
 Every layer you add is Hydra (`addLayer`). Pinned sources (`manifest.pinned`, i.e. Poiesis) get one
 instance per session, created by `startSession` at startup along with "Layer 1", and can't be
 closed or renamed. Their tab sits on its own in the editor header's right corner, and **Cmd+P**
-(`togglePoiesis`) switches to Poiesis and back to the last Hydra layer (`lastLayer`). Each
+(`togglePoiesis`) switches to Poiesis and back to the last Hydra layer (`lastLayer`). Ctrl+Tab and
+Ctrl+Shift+Tab (Window menu, `cycleLayer`) step through the Hydra layers in tab order, skipping Poiesis. Each
 `ActiveSource` has a `name` ("Layer N", counting up from the highest open one; renamable with
 `renameLayer`). Opening or saving a patch file renames its layer after the file (`nameLayerAfterFile`). The header's run button evaluates only the focused layer (`runFocused`, same as Cmd+Shift+Enter).
 
 ### Sessions (`.lly`, `src/renderer/src/stores/useSessionStore.ts`)
 
-File menu: New Layer (Cmd+N, same as the + tab), Toggle File Browser (Cmd+O), Open Session (Cmd+Alt+O), Save Session (Cmd+S), Save Session As (Cmd+Shift+S). A `.lly` file
+File menu: New Layer (Cmd+N, same as the + tab), Close Layer (Cmd+W, `closeFocused`; Poiesis stays), Toggle File Browser (Cmd+O), Open Session (Cmd+Alt+O), Save Session (Cmd+S), Save Session As (Cmd+Shift+S). A `.lly` file
 is JSON (`format: "lily-session"`, `version: 1`) holding the working directory, every layer (source,
 name, and the source's own `serialize` data, e.g. Hydra's patch text as it stands, path, speed,
 performance text), the mixer and presets keyed by file-local layer ids (`layer-1`...), and the fade

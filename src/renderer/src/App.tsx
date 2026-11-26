@@ -71,6 +71,14 @@ function App(): React.JSX.Element {
       useSourcesStore.getState().addLayer()
     })
 
+    // Cmd+W closes the focused layer; Ctrl+Tab and Ctrl+Shift+Tab cycle through the Hydra layers
+    const unsubCloseLayer = window.api.actions.onCloseLayer(() =>
+      useSourcesStore.getState().closeFocused()
+    )
+    const unsubCycleLayer = window.api.actions.onCycleLayer((step) =>
+      useSourcesStore.getState().cycleLayer(step)
+    )
+
     // Cmd+O: show or hide the file browser over the patch
     const unsubToggleBrowser = window.api.actions.onToggleBrowser(() =>
       useBrowserStore.getState().toggle()
@@ -92,6 +100,8 @@ function App(): React.JSX.Element {
       unsubFullPreview()
       unsubToggleBrowser()
       unsubNewLayer()
+      unsubCloseLayer()
+      unsubCycleLayer()
       unsubPreviewSync()
       setCompositorRef(null)
     }

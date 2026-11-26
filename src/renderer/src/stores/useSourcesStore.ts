@@ -23,6 +23,10 @@ interface SourcesState {
   renameLayer: (instanceId: string, name: string) => void
   getInstance: (instanceId: string) => ActiveSource | undefined
   setFocused: (focused: string | null) => void
+  /** Closes the focused layer. Pinned layers (Poiesis) stay. */
+  closeFocused: () => void
+  /** Focuses the next (1) or previous (-1) Hydra layer in tab order, wrapping around. */
+  cycleLayer: (step: number) => void
   /** Switches to the Poiesis layer, or back to the last Hydra layer when Poiesis is showing. */
   togglePoiesis: () => void
 }
@@ -141,6 +145,26 @@ export const useSourcesStore = create<SourcesState>((set, get) => ({
   setFocused: (focused) => {
     const instance = focused ? get().active[focused] : undefined
     set({ focused, ...(instance && !instance.manifest.pinned && { lastLayer: focused }) })
+  },
+
+  closeFocused: () => {
+    const { focused, unloadSource } = get()
+    if (focused) unloadSource(focused)
+  },
+
+  cycleLayer: (step) => {
+    const { active, focused, lastLayer, setFocused } = get()
+    const layers = Object.values(active).filter(({ manifest }) => !manifest.pinned)
+    if (layers.length === 0) return
+    const current = layers.findIndex(({ instanceId }) => instanceId === focused)
+    if (current === -1) {
+      // From Poiesis: back to the layer you came from, or the first one
+      const last = layers.find(({ instanceId }) => instanceId === lastLayer) ?? layers[0]
+      setFocused(last.instanceId)
+      return
+    }
+    const next = (current + step + layers.length) % layers.length
+    setFocused(layers[next].instanceId)
   },
 
   togglePoiesis: () => {

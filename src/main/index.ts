@@ -56,6 +56,11 @@ function createMenu(): void {
           click: () => mainWindowRef?.webContents.send('layer:new')
         },
         {
+          label: 'Close Layer',
+          accelerator: 'CmdOrCtrl+W',
+          click: () => mainWindowRef?.webContents.send('layer:close')
+        },
+        {
           label: 'Toggle File Browser',
           accelerator: 'CmdOrCtrl+O',
           click: () => mainWindowRef?.webContents.send('browser:toggle')
@@ -157,6 +162,16 @@ function createMenu(): void {
           }
         },
         {
+          label: 'Next Layer',
+          accelerator: 'Control+Tab',
+          click: () => mainWindowRef?.webContents.send('layer:cycle', 1)
+        },
+        {
+          label: 'Previous Layer',
+          accelerator: 'Control+Shift+Tab',
+          click: () => mainWindowRef?.webContents.send('layer:cycle', -1)
+        },
+        {
           label: 'Toggle Poiesis',
           accelerator: 'CmdOrCtrl+P',
           click: () => {
@@ -177,7 +192,7 @@ function createMenu(): void {
               { type: 'separator' as const },
               { role: 'window' as const }
             ]
-          : [{ role: 'close' as const }])
+          : [])
       ]
     },
 

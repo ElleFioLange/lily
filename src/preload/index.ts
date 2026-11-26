@@ -140,6 +140,16 @@ const api = {
       ipcRenderer.on('performance:full-preview', handler)
       return () => ipcRenderer.removeListener('performance:full-preview', handler)
     },
+    onCloseLayer: (callback: () => void): (() => void) => {
+      const handler = (): void => callback()
+      ipcRenderer.on('layer:close', handler)
+      return () => ipcRenderer.removeListener('layer:close', handler)
+    },
+    onCycleLayer: (callback: (step: number) => void): (() => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, step: number): void => callback(step)
+      ipcRenderer.on('layer:cycle', handler)
+      return () => ipcRenderer.removeListener('layer:cycle', handler)
+    },
     onNewLayer: (callback: () => void): (() => void) => {
       const handler = (): void => callback()
       ipcRenderer.on('layer:new', handler)
