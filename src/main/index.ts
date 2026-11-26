@@ -51,6 +51,11 @@ function createMenu(): void {
       label: 'File',
       submenu: [
         {
+          label: 'New Layer',
+          accelerator: 'CmdOrCtrl+N',
+          click: () => mainWindowRef?.webContents.send('layer:new')
+        },
+        {
           label: 'Toggle File Browser',
           accelerator: 'CmdOrCtrl+O',
           click: () => mainWindowRef?.webContents.send('browser:toggle')

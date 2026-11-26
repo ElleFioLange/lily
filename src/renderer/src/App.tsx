@@ -63,6 +63,11 @@ function App(): React.JSX.Element {
       usePerformanceStore.getState().toggleFullPreview()
     )
 
+    // Cmd+N: a new Hydra layer, same as the + tab
+    const unsubNewLayer = window.api.actions.onNewLayer(() => {
+      useSourcesStore.getState().addLayer()
+    })
+
     // Cmd+O: show or hide the file browser over the patch
     const unsubToggleBrowser = window.api.actions.onToggleBrowser(() =>
       useBrowserStore.getState().toggle()
@@ -81,6 +86,7 @@ function App(): React.JSX.Element {
       unsubTogglePoiesis()
       unsubFullPreview()
       unsubToggleBrowser()
+      unsubNewLayer()
       unsubPreviewSync()
       setCompositorRef(null)
     }

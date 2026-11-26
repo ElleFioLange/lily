@@ -271,7 +271,7 @@ closed or renamed. Their tab sits on its own in the editor header's right corner
 
 ### Sessions (`.lly`, `src/renderer/src/stores/useSessionStore.ts`)
 
-File menu: Toggle File Browser (Cmd+O), Open Session (Cmd+Alt+O), Save Session (Cmd+S), Save Session As (Cmd+Shift+S). A `.lly` file
+File menu: New Layer (Cmd+N, same as the + tab), Toggle File Browser (Cmd+O), Open Session (Cmd+Alt+O), Save Session (Cmd+S), Save Session As (Cmd+Shift+S). A `.lly` file
 is JSON (`format: "lily-session"`, `version: 1`) holding the working directory, every layer (source,
 name, and the source's own `serialize` data, e.g. Hydra's patch text as it stands, path, speed,
 performance text), the mixer and presets keyed by file-local layer ids (`layer-1`...), and the fade

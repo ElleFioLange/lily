@@ -130,6 +130,11 @@ const api = {
       ipcRenderer.on('performance:full-preview', handler)
       return () => ipcRenderer.removeListener('performance:full-preview', handler)
     },
+    onNewLayer: (callback: () => void): (() => void) => {
+      const handler = (): void => callback()
+      ipcRenderer.on('layer:new', handler)
+      return () => ipcRenderer.removeListener('layer:new', handler)
+    },
     onToggleBrowser: (callback: () => void): (() => void) => {
       const handler = (): void => callback()
       ipcRenderer.on('browser:toggle', handler)
