@@ -6,7 +6,6 @@ import init from './init'
 import process from './process'
 
 import Workspace from './ui/Workspace'
-import Monitor from './ui/Monitor'
 import Options from './ui/Options'
 
 import { createPoiesisStore, PoiesisState } from './store'
@@ -21,7 +20,6 @@ const PoiesisSource: SourceDefinition<PoiesisState> = {
   cleanup,
 
   Workspace,
-  Monitor,
   Options,
   Background: MalletKeyboard,
 

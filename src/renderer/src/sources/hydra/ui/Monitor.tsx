@@ -4,6 +4,7 @@ import { ActiveSource, UIProps } from '@renderer/sources/types'
 import { HydraState } from '../store'
 import { evalPatch } from '../process'
 import { useEffect, useRef } from 'react'
+import MonitorSection, { TILE_CLASS, Tile } from '@renderer/components/common/MonitorSection'
 
 const MONITOR_WIDTH = 1920
 const MONITOR_HEIGHT = 1080
@@ -101,35 +102,36 @@ export default function Monitor({ instanceId, ...props }: UIProps) {
   }, [monitorActive, useStore])
 
   return (
-    <div className="size-full flex flex-col" {...props}>
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-stone-800">
-        <label className="text-xs text-stone-400 flex items-center gap-2 cursor-pointer select-none">
+    <MonitorSection
+      title={
+        <>
           <div
-            className={`w-8 h-4 rounded-full relative transition-colors ${monitorActive ? 'bg-stone-400' : 'bg-stone-700'}`}
+            className={`w-6 h-3 rounded-full relative transition-colors cursor-pointer ${monitorActive ? 'bg-stone-400' : 'bg-stone-700'}`}
             onClick={toggleMonitor}
+            title="Toggle the o0–o3 monitor (Cmd+Shift+M)"
           >
             <div
-              className={`absolute top-0.5 w-3 h-3 rounded-full bg-stone-100 transition-transform ${monitorActive ? 'translate-x-4' : 'translate-x-0.5'}`}
+              className={`absolute top-0.5 w-2 h-2 rounded-full bg-stone-100 transition-transform ${monitorActive ? 'translate-x-3.5' : 'translate-x-0.5'}`}
             />
           </div>
-          monitor (o0–o3) · ⌘⇧M
-        </label>
-      </div>
-      {monitorActive && (
-        <div className="flex-1 flex gap-4 p-8 overflow-auto">
-          {QUADRANTS.map((_, i) => (
+          <span>{instance.name} · o0–o3</span>
+        </>
+      }
+    >
+      {monitorActive &&
+        QUADRANTS.map((_, i) => (
+          <Tile key={i} caption={`o${i}`}>
             <canvas
-              key={i}
               ref={(el) => {
                 canvasRefs.current[i] = el
               }}
-              width={MONITOR_WIDTH / 2}
-              height={MONITOR_HEIGHT / 2}
-              className="flex-1 min-w-0 self-start aspect-video bg-black"
+              width={MONITOR_WIDTH / 4}
+              height={MONITOR_HEIGHT / 4}
+              className={TILE_CLASS}
+              {...props}
             />
-          ))}
-        </div>
-      )}
-    </div>
+          </Tile>
+        ))}
+    </MonitorSection>
   )
 }

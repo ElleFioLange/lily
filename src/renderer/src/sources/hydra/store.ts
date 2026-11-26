@@ -71,7 +71,7 @@ export const createHydraStore = (instanceId: string) => {
     shaderName: 'new-shader',
     isValid: true,
     error: null,
-    monitorActive: false,
+    monitorActive: true,
     monitorHydra: null,
     monitorCanvas: null,
     performanceText: DEFAULT_PERFORMANCE_TEXT,

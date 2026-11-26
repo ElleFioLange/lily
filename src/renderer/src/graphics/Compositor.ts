@@ -68,36 +68,29 @@ export class Compositor {
   }
 
   /**
-   * Render a single frame - composites all enabled sources
+   * Render a single frame of one output - composites all enabled sources.
+   * Each output's loop renders only that output, so several outputs (performance
+   * window, program monitor) can run at once without drawing each other twice.
    */
-  private render(): void {
-    if (this.outputs.size === 0) return
-
+  private render({ canvas, ctx }: CompositorOutput): void {
     // Sort sources by z-index (lower = drawn first = behind)
     const sortedSources = Array.from(this.sources.values())
       .filter((s) => s.enabled && s.alpha > 0)
       .sort((a, b) => a.zIndex - b.zIndex)
 
-    const outputsArray = Array.from(this.outputs.values())
-    for (const { canvas, ctx } of outputsArray) {
-      // Clear output
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    for (const source of sortedSources) {
       ctx.save()
-      // Composite each source
-      for (const source of sortedSources) {
-        ctx.globalAlpha = source.alpha
-        ctx.globalCompositeOperation = source.blendMode as GlobalCompositeOperation // Casting because typeof source.blendMode is Omit<GlobalCompositeOperation, 'copy'>
-
-        try {
-          // Draw the source canvas scaled to fill the output
-          ctx.drawImage(source.canvas, 0, 0, canvas.width, canvas.height)
-        } catch (e) {
-          // Canvas might not be ready or could be tainted
-          console.warn(`Compositor: Failed to draw source ${source.id}:`, e)
-        }
-
-        ctx.restore()
+      ctx.globalAlpha = source.alpha
+      ctx.globalCompositeOperation = source.blendMode as GlobalCompositeOperation // Casting because typeof source.blendMode is Omit<GlobalCompositeOperation, 'copy'>
+      try {
+        // Draw the source canvas scaled to fill the output
+        ctx.drawImage(source.canvas, 0, 0, canvas.width, canvas.height)
+      } catch (e) {
+        // Canvas might not be ready or could be tainted
+        console.warn(`Compositor: Failed to draw source ${source.id}:`, e)
       }
+      ctx.restore()
     }
   }
 
@@ -114,7 +107,7 @@ export class Compositor {
     const loop = (): void => {
       if (!this.runningTracker.get(outputId) || !output?.window) return
 
-      this.render()
+      this.render(output)
 
       // Use target window's RAF for proper timing
       output.animationFrameId = output.window.requestAnimationFrame(loop)

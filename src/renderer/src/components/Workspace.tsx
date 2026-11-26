@@ -28,7 +28,7 @@ export default function Workspace() {
 
   return (
     <div className="size-full flex flex-col">
-      <Header title="LILY">
+      <Header title="LILY" showTabs>
         <AddLayer />
       </Header>
       <div className="relative grow">
