@@ -21,16 +21,6 @@ export default function Options({ instanceId }: UIProps) {
   const { shaderPath, performanceText, setPerformanceText, speed, setSpeed } = instance.useStore()
   const refreshFiles = useWorkingDirectoryStore((state) => state.refresh)
 
-  const handleOpen = async () => {
-    const { success, content, path, error } = await window.api.hydraFile.open()
-    if (success && content && path) {
-      const { openShader } = instance.useStore.getState()
-      openShader(content, path)
-    } else {
-      console.error(error)
-    }
-  }
-
   const handleSave = async () => {
     const { shader: currentShader, shaderPath: currentPath } = instance.useStore.getState()
     if (!currentPath) {
@@ -60,7 +50,6 @@ export default function Options({ instanceId }: UIProps) {
   return (
     <div>
       <div className="flex gap-2 p-4 pb-2">
-        <button onClick={handleOpen}>Open</button>
         <button onClick={handleSave} title={shaderPath ?? 'Not saved yet'}>
           Save
         </button>

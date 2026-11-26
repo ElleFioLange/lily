@@ -24,6 +24,8 @@ type LlyFile = {
   format: typeof FORMAT
   version: number
   workingDirectory: string | null
+  /** Files opened from outside the working directory, listed in the browser */
+  extraFiles: string[]
   focused: string | null
   layers: LlyLayer[]
   mixer: LlyMix
@@ -98,6 +100,7 @@ export function serializeSession(): LlyFile {
     format: FORMAT,
     version: VERSION,
     workingDirectory: useWorkingDirectoryStore.getState().directory,
+    extraFiles: useWorkingDirectoryStore.getState().extraFiles,
     focused: focused ? (toFile(focused) ?? null) : null,
     layers,
     mixer: remapMix(live, toFile),
@@ -178,6 +181,10 @@ export async function restoreSession(content: string): Promise<void> {
 
   const workingDirectory = str(file.workingDirectory)
   if (workingDirectory) await useWorkingDirectoryStore.getState().setDirectory(workingDirectory)
+  const extraFiles = Array.isArray(file.extraFiles) ? file.extraFiles : []
+  useWorkingDirectoryStore
+    .getState()
+    .setExtraFiles(extraFiles.filter((path): path is string => typeof path === 'string'))
 
   const focused = str(file.focused)
   const focusedId = focused ? toInstance(focused) : undefined

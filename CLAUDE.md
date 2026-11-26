@@ -246,7 +246,7 @@ fits the panel.
 - **Monitors.tsx** - Focused layer's Monitor (Hydra: o0–o3), thumbnails of the other Hydra layers
   (click to focus), and `ProgramMonitor` (the live compositor through `Stage`, as the performance
   window shows it)
-- **Options.tsx** - Focused layer's Options (Hydra: Open/Save/Save as, speed, performance text)
+- **Options.tsx** - Focused layer's Options (Hydra: Save/Save as, speed, performance text)
 - **Stage.tsx** - Scaled replica of the performance window for a compositor + editor overlays;
   used by `PreviewStage` and `ProgramMonitor`
 - **FileSystem.tsx** - File browser overlaid on the focused Hydra patch with a transparent
@@ -255,7 +255,10 @@ fits the panel.
   IPC, saved in settings as `workingDirectory`). Skips hidden folders and `node_modules`; refreshes
   on window focus. Picking a file opens it in the focused layer (`utils/actions/openPatch.ts`) and
   hides the browser. Every new empty layer (`addLayer`, so also Layer 1 at launch) opens the
-  browser; opening a `.lly` session hides it so the restored patches show.
+  browser; opening a `.lly` session hides it so the restored patches show. Its **Open file** button
+  opens a `.js` from any folder (`openPatchFromAnywhere`); a file from outside the working
+  directory joins `extraFiles` ("from other folders") without changing the directory, and is saved
+  in the session file. **Open folder** and **Open session** sit beside it.
 
 ### Layers
 
