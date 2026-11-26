@@ -21,6 +21,8 @@ export interface MalletKeyboardSettings {
 export interface Settings {
   audio: AudioSettings
   malletKeyboard: MalletKeyboardSettings
+  /** Folder the file browser lists .js patches from; null until one is opened */
+  workingDirectory: string | null
 }
 
 /**
@@ -33,5 +35,6 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   malletKeyboard: {
     enabled: false
-  }
+  },
+  workingDirectory: null
 }

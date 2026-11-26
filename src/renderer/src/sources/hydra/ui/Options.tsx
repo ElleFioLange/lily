@@ -1,7 +1,8 @@
 import { useSourcesStore } from '@renderer/stores/useSourcesStore'
 import { ActiveSource, UIProps } from '@renderer/sources/types'
 import { DEFAULT_PERFORMANCE_TEXT, HydraState, PerformanceText } from '../store'
-import FileSystem, { FileData } from '@renderer/components/FileSystem'
+import FileSystem from '@renderer/components/FileSystem'
+import { useWorkingDirectoryStore } from '@renderer/stores/useWorkingDirectoryStore'
 
 const PERFORMANCE_TEXT_CONTROLS: {
   key: keyof PerformanceText
@@ -18,19 +19,18 @@ const PERFORMANCE_TEXT_CONTROLS: {
 export default function Options({ instanceId }: UIProps) {
   const { getInstance } = useSourcesStore()
   const instance = getInstance(instanceId) as ActiveSource<HydraState>
-  const { shader, shaderPath, shaderName, performanceText, setPerformanceText, speed, setSpeed } =
-    instance.useStore()
+  const { shaderPath, performanceText, setPerformanceText, speed, setSpeed } = instance.useStore()
+  const refreshFiles = useWorkingDirectoryStore((state) => state.refresh)
 
-  const files: Record<string, FileData> = shaderPath
-    ? {
-        [shaderPath]: {
-          name: shaderName ?? 'untitled',
-          path: shaderPath,
-          content: shader,
-          extension: 'js'
-        }
-      }
-    : {}
+  const handleSelect = async (path: string) => {
+    const { success, content, error } = await window.api.hydraFile.read(path)
+    if (success && content !== undefined) {
+      instance.useStore.getState().openShader(content, path)
+    } else {
+      console.error(error)
+      void refreshFiles()
+    }
+  }
 
   const handleOpen = async () => {
     const { success, content, path, error } = await window.api.hydraFile.open()
@@ -49,6 +49,7 @@ export default function Options({ instanceId }: UIProps) {
       return
     }
     await window.api.hydraFile.save(currentShader, currentPath)
+    void refreshFiles()
   }
 
   const handleSaveAs = async () => {
@@ -63,6 +64,7 @@ export default function Options({ instanceId }: UIProps) {
           .at(-1)
           ?.replace(/\.[^.]+$/, '') ?? result.path
       )
+      void refreshFiles()
     }
   }
 
@@ -70,10 +72,11 @@ export default function Options({ instanceId }: UIProps) {
     <div>
       <FileSystem
         className="border-none p-4"
+        currentPath={shaderPath}
+        handleSelect={handleSelect}
         handleOpen={handleOpen}
         handleSave={handleSave}
         handleSaveAs={handleSaveAs}
-        files={files}
       />
       <div className="px-4 pb-4 text-xs flex flex-col gap-1 font-neon">
         <div className="flex justify-between items-center my-1">

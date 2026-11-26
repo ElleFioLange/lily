@@ -1,5 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, Menu, dialog, FileFilter } from 'electron'
-import { join } from 'path'
+import { join, relative, sep } from 'path'
+import { homedir } from 'os'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { promises as fs } from 'fs'
@@ -412,6 +413,37 @@ function setupIPCHandlers(): void {
     }
   )
   // ============================================================================
+  // Working Directory (file browser)
+  // ============================================================================
+  ipcMain.handle('workdir:get', async (): Promise<string | null> => {
+    const saved = settingsManager.get().workingDirectory
+    if (saved && (await isDirectory(saved))) return saved
+    // Launched from a terminal (e.g. pnpm dev): use where it was launched from. A packaged
+    // app starts in / or the home folder, which are too big to list, so wait for a pick.
+    const cwd = process.cwd()
+    return cwd === '/' || cwd === homedir() ? null : cwd
+  })
+
+  ipcMain.handle('workdir:open', async (): Promise<string | null> => {
+    const result = await dialog.showOpenDialog(mainWindowRef!, {
+      title: 'Open Working Directory',
+      properties: ['openDirectory', 'createDirectory']
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    const directory = result.filePaths[0]
+    await saveWorkingDirectory(directory)
+    return directory
+  })
+
+  ipcMain.handle('workdir:set', async (_, directory: string): Promise<string | null> => {
+    if (!(await isDirectory(directory))) return null
+    await saveWorkingDirectory(directory)
+    return directory
+  })
+
+  ipcMain.handle('workdir:list', async (_, directory: string) => listJsFiles(directory))
+
+  // ============================================================================
   // Hydra File Handlers
   // ============================================================================
   ipcMain.handle('hydra:save', async (_, content: string, path: string) => {
@@ -426,10 +458,23 @@ function setupIPCHandlers(): void {
     }
   })
 
+  ipcMain.handle('hydra:read', async (_, path: string) => {
+    try {
+      const content = await fs.readFile(path, 'utf-8')
+      return { success: true, content, path }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to read file'
+      }
+    }
+  })
+
   ipcMain.handle('hydra:open', async () => {
     try {
       const result = await dialog.showOpenDialog(mainWindowRef!, {
         title: 'Open Hydra Shader File',
+        defaultPath: settingsManager.get().workingDirectory ?? undefined,
         filters: [
           { name: 'JavaScript Files', extensions: ['js'] },
           { name: 'All Files', extensions: ['*'] }
@@ -456,7 +501,7 @@ function setupIPCHandlers(): void {
     try {
       const result = await dialog.showSaveDialog(mainWindowRef!, {
         title: 'Save Hydra Shader File',
-        defaultPath: 'new-shader.js',
+        defaultPath: join(settingsManager.get().workingDirectory ?? '', 'new-shader.js'),
         filters: [
           { name: 'JavaScript Files', extensions: ['js'] },
           { name: 'All Files', extensions: ['*'] }
@@ -583,4 +628,65 @@ function setupIPCHandlers(): void {
   ipcMain.handle('settings:save', async (_, settings: Settings): Promise<void> => {
     await settingsManager.set(settings)
   })
+}
+
+// ============================================================================
+// Working directory helpers
+// ============================================================================
+const WORKDIR_SKIP = new Set(['node_modules'])
+const WORKDIR_MAX_DEPTH = 6
+const WORKDIR_MAX_FILES = 1000
+
+async function isDirectory(path: string): Promise<boolean> {
+  try {
+    return (await fs.stat(path)).isDirectory()
+  } catch {
+    return false
+  }
+}
+
+async function saveWorkingDirectory(directory: string): Promise<void> {
+  await settingsManager.set({ ...settingsManager.get(), workingDirectory: directory })
+}
+
+/**
+ * Every .js file under a directory, skipping hidden folders and node_modules.
+ * Capped in depth and count so opening a huge folder can't hang the app.
+ */
+async function listJsFiles(
+  root: string
+): Promise<{ files: { name: string; path: string; relativePath: string }[]; truncated: boolean }> {
+  const files: { name: string; path: string; relativePath: string }[] = []
+  let truncated = false
+
+  const walk = async (directory: string, depth: number): Promise<void> => {
+    if (truncated) return
+    let entries: import('fs').Dirent[]
+    try {
+      entries = await fs.readdir(directory, { withFileTypes: true })
+    } catch {
+      return
+    }
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue
+      const path = join(directory, entry.name)
+      if (entry.isDirectory()) {
+        if (!WORKDIR_SKIP.has(entry.name) && depth < WORKDIR_MAX_DEPTH) await walk(path, depth + 1)
+      } else if (entry.isFile() && entry.name.endsWith('.js')) {
+        if (files.length >= WORKDIR_MAX_FILES) {
+          truncated = true
+          return
+        }
+        files.push({
+          name: entry.name,
+          path,
+          relativePath: relative(root, path).split(sep).join('/')
+        })
+      }
+    }
+  }
+
+  await walk(root, 0)
+  files.sort((a, b) => a.relativePath.localeCompare(b.relativePath))
+  return { files, truncated }
 }

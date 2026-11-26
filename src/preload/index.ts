@@ -50,7 +50,30 @@ const api = {
     saveAs: (content: string): Promise<{ success: boolean; path?: string; error?: string }> =>
       ipcRenderer.invoke('hydra:saveAs', content),
     open: (): Promise<{ success: boolean; content?: string; path?: string; error?: string }> =>
-      ipcRenderer.invoke('hydra:open')
+      ipcRenderer.invoke('hydra:open'),
+    read: (
+      path: string
+    ): Promise<{ success: boolean; content?: string; path?: string; error?: string }> =>
+      ipcRenderer.invoke('hydra:read', path)
+  },
+
+  // ============================================================================
+  // Working Directory API (file browser)
+  // ============================================================================
+  workingDirectory: {
+    /** The saved working directory, or where Lily was launched from, or null */
+    get: (): Promise<string | null> => ipcRenderer.invoke('workdir:get'),
+    /** Pick a folder; returns it, or null if cancelled */
+    open: (): Promise<string | null> => ipcRenderer.invoke('workdir:open'),
+    /** Switch to a known folder; returns it, or null if it no longer exists */
+    set: (directory: string): Promise<string | null> =>
+      ipcRenderer.invoke('workdir:set', directory),
+    list: (
+      directory: string
+    ): Promise<{
+      files: { name: string; path: string; relativePath: string }[]
+      truncated: boolean
+    }> => ipcRenderer.invoke('workdir:list', directory)
   },
 
   // ============================================================================

@@ -8,6 +8,7 @@ import { useSourcesStore } from './stores/useSourcesStore'
 import { setupPreviewSync, usePreviewStore } from './stores/usePreviewStore'
 import { loadSources } from './sources'
 import run from './utils/actions/run'
+import { useWorkingDirectoryStore } from './stores/useWorkingDirectoryStore'
 
 function App(): React.JSX.Element {
   const togglePerformanceWindow = usePerformanceStore((state) => state.toggleWindow)
@@ -22,6 +23,9 @@ function App(): React.JSX.Element {
 
     // Mirror live sources into the preview mix (preview mode, Cmd+Alt+P)
     const unsubPreviewSync = setupPreviewSync()
+
+    // List the working directory's .js files for the file browser
+    void useWorkingDirectoryStore.getState().load()
 
     // Register the mixer's sources (Hydra, plus Poiesis when enabled)
     loadSources()

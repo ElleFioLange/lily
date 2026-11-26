@@ -68,6 +68,7 @@ export default function SettingsWindow() {
     if (!settings) return
 
     const newSettings: Settings = {
+      ...settings,
       audio: {
         deviceId: autoDetect ? null : selectedDeviceId,
         autoDetect

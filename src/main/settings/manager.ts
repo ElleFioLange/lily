@@ -35,7 +35,9 @@ export class SettingsManager {
         malletKeyboard: {
           ...DEFAULT_SETTINGS.malletKeyboard,
           ...parsed.malletKeyboard
-        }
+        },
+        workingDirectory:
+          typeof parsed.workingDirectory === 'string' ? parsed.workingDirectory : null
       }
 
       console.log('Settings loaded:', this.settings)
