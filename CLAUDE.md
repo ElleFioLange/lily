@@ -229,14 +229,17 @@ the right of the Mixer header or **Cmd+Alt+P** (Window menu → `preview:toggle`
 │  - file browser overlay (Cmd+O)  │                  │
 ├──────────────────────────────────┤                  │
 │  Monitors                        ├──────────────────┤
-│  focused o0–o3 │ other layers │  │  Controls        │
-│                     │ program    │  - save          │
+│  o0 o1 o2 o3      │ program      │  Controls        │
+│  ──────────────── │              │  - save          │
+│  other layers ⇢   │              │                  │
 │                                  │  - speed, text   │
 └──────────────────────────────────┴──────────────────┘
 ```
 
-The right sidebar runs the full height. Monitor tiles size themselves (`--tile-h`) so every tile
-fits the panel.
+The right sidebar runs the full height. The monitors are two rows: the focused patch's o0–o3 on
+top and, under a plain divider, the other layers in a row that scrolls sideways (the mouse wheel
+scrolls it too). Tiles only carry small captions (o0–o3, a layer's name, "program"). Both rows
+share one tile size (`--tile-h`): half the panel's height, narrow enough that o0–o3 fit across.
 
 ### Main Components
 
@@ -244,8 +247,8 @@ fits the panel.
   `+` to add a Hydra layer. Only this header shows layer tabs. Behind the Poiesis editor it shows
   the program's graphics without text overlays (a `Stage` with output `poiesis-background`).
 - **Mixer.tsx** - Alpha/enabled/blend controls for editors and graphics, presets, preview toggle
-- **Monitors.tsx** - Focused layer's Monitor (Hydra: o0–o3), thumbnails of the other Hydra layers
-  (click to focus), and `ProgramMonitor` (the live compositor through `Stage`, as the performance
+- **Monitors.tsx** - Focused layer's Monitor (Hydra: o0–o3) over a scrolling row of the other Hydra
+  layers (click to focus), and `ProgramMonitor` (the live compositor through `Stage`, as the performance
   window shows it)
 - **Controls.tsx** - Focused layer's controls (Hydra: Save/Save as, speed, performance text)
 - **Stage.tsx** - Scaled replica of the performance window for a compositor + editor overlays;

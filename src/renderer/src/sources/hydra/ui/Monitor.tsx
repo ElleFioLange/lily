@@ -4,7 +4,7 @@ import { ActiveSource, UIProps } from '@renderer/sources/types'
 import { HydraState } from '../store'
 import { evalPatch } from '../process'
 import { useEffect, useRef } from 'react'
-import MonitorSection, { TILE_CLASS, Tile } from '@renderer/components/common/MonitorSection'
+import { MonitorRow, TILE_CLASS, Tile } from '@renderer/components/common/MonitorTile'
 
 const MONITOR_WIDTH = 1920
 const MONITOR_HEIGHT = 1080
@@ -99,7 +99,7 @@ export default function Monitor({ instanceId, ...props }: UIProps) {
   }, [useStore])
 
   return (
-    <MonitorSection title={`${instance.name} · o0–o3`} current>
+    <MonitorRow>
       {QUADRANTS.map((_, i) => (
         <Tile key={i} caption={`o${i}`}>
           <canvas
@@ -113,6 +113,6 @@ export default function Monitor({ instanceId, ...props }: UIProps) {
           />
         </Tile>
       ))}
-    </MonitorSection>
+    </MonitorRow>
   )
 }

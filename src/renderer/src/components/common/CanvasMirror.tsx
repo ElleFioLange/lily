@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { TILE_CLASS } from './MonitorSection'
+import { TILE_CLASS } from './MonitorTile'
 
 const WIDTH = 480
 const HEIGHT = 270
