@@ -5,6 +5,7 @@ import { HydraState } from '../store'
 import { evalPatch } from '../process'
 import { useEffect, useRef } from 'react'
 import { MonitorRow, TILE_CLASS, Tile } from '@renderer/components/common/MonitorTile'
+import { isContextLost } from '@renderer/utils/webgl'
 
 const MONITOR_WIDTH = 1920
 const MONITOR_HEIGHT = 1080
@@ -31,43 +32,51 @@ export default function Monitor({ instanceId, ...props }: UIProps) {
   // `render()` appended (a 4-up split of o0..o3), time-synced to the main signal.
   // It is intentionally never added to the compositor, so it stays out of the
   // mixer and the performance output. Each frame we copy the four quadrants of
-  // its canvas into the four monitor canvases below.
+  // its canvas into the four monitor canvases below. The instance is made the first
+  // time the layer is shown here and kept in the layer's store, so switching layers
+  // doesn't make a new WebGL context each time (see utils/webgl). Runs keep it in sync
+  // while it's hidden; cleanup releases it when the layer closes.
   useEffect(() => {
     const { hydra: mainHydra, shader, setMonitorHydra, setMonitorCanvas } = useStore.getState()
     if (!mainHydra) return
 
-    const canvas = document.createElement('canvas')
-    canvas.width = MONITOR_WIDTH
-    canvas.height = MONITOR_HEIGHT
-    canvas.getContext('webgl', { preserveDrawingBuffer: true })
+    let { monitorHydra, monitorCanvas: canvas } = useStore.getState()
+    if (!monitorHydra || !canvas || isContextLost(canvas)) {
+      canvas = document.createElement('canvas')
+      canvas.width = MONITOR_WIDTH
+      canvas.height = MONITOR_HEIGHT
+      canvas.getContext('webgl', { preserveDrawingBuffer: true })
 
-    // This is required for hydra's audio detection to work
-    const parent = document.createElement('div')
-    parent.appendChild(canvas)
+      // This is required for hydra's audio detection to work
+      const parent = document.createElement('div')
+      parent.appendChild(canvas)
 
-    const monitorHydra = new Hydra({
-      detectAudio: true,
-      canvas,
-      makeGlobal: false,
-      precision: 'highp',
-      autoLoop: false
-    })
+      monitorHydra = new Hydra({
+        detectAudio: true,
+        canvas,
+        makeGlobal: false,
+        precision: 'highp',
+        autoLoop: false
+      })
 
-    setMonitorHydra(monitorHydra)
-    setMonitorCanvas(canvas)
+      setMonitorHydra(monitorHydra)
+      setMonitorCanvas(canvas)
 
-    // Show the current patch immediately, without waiting for the next Run.
-    evalPatch(monitorHydra.synth, `${shader}\nrender()`).catch((e) =>
-      console.error('Monitor patch evaluation failed:', e)
-    )
+      // Show the current patch immediately, without waiting for the next Run.
+      evalPatch(monitorHydra.synth, `${shader}\nrender()`).catch((e) =>
+        console.error('Monitor patch evaluation failed:', e)
+      )
+    }
+    const monitor = monitorHydra
+    const source = canvas
 
     // Drive the monitor ourselves (autoLoop is off) so its time tracks the main
     // signal exactly: copy the main's time in, then tick with dt=0 so the value
     // we set is the value rendered.
     let rafId = 0
     const loop = () => {
-      monitorHydra.synth.time = mainHydra.synth.time
-      monitorHydra.tick(0)
+      monitor.synth.time = mainHydra.synth.time
+      monitor.tick(0)
 
       QUADRANTS.forEach(({ sx, sy }, i) => {
         const out = canvasRefs.current[i]
@@ -75,7 +84,7 @@ export default function Monitor({ instanceId, ...props }: UIProps) {
         if (!out || !ctx) return
         ctx.clearRect(0, 0, out.width, out.height)
         ctx.drawImage(
-          canvas,
+          source,
           sx * MONITOR_WIDTH,
           sy * MONITOR_HEIGHT,
           MONITOR_WIDTH / 2,
@@ -91,11 +100,7 @@ export default function Monitor({ instanceId, ...props }: UIProps) {
     }
     loop()
 
-    return () => {
-      cancelAnimationFrame(rafId)
-      setMonitorHydra(null)
-      setMonitorCanvas(null)
-    }
+    return () => cancelAnimationFrame(rafId)
   }, [useStore])
 
   return (

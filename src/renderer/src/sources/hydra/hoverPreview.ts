@@ -1,6 +1,7 @@
 import Hydra from 'hydra-synth'
 import { HydraState } from './store'
 import { evalPatch } from './process'
+import { isContextLost } from '@renderer/utils/webgl'
 
 const WIDTH = 640
 const HEIGHT = 360
@@ -15,9 +16,10 @@ let last = 0
 let token = 0
 
 /**
- * A small hidden Hydra instance for the file browser's hover previews, created on the first
- * hover and kept (like the other instances) so its audio input isn't set up again each time.
- * It's never added to the compositor and only renders while a preview is showing.
+ * A small hidden Hydra instance for the file browser's hover previews, created when the browser
+ * first opens and kept (like the other instances) so its audio input isn't set up again each
+ * time. It's never added to the compositor and only renders while a preview is showing. If its
+ * WebGL context was lost (see utils/webgl), it's made again on the next hover.
  */
 /** Sets up the instance ahead of the first hover (the file browser calls this when it opens). */
 export function prepareHoverPreview(): void {
@@ -25,7 +27,7 @@ export function prepareHoverPreview(): void {
 }
 
 function ensureHydra(): { hydra: HydraInstance; canvas: HTMLCanvasElement } {
-  if (hydra && canvas) return { hydra, canvas }
+  if (hydra && canvas && !isContextLost(canvas)) return { hydra, canvas }
   canvas = document.createElement('canvas')
   canvas.width = WIDTH
   canvas.height = HEIGHT

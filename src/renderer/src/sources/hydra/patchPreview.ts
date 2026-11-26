@@ -4,6 +4,7 @@ import { useSourcesStore } from '@renderer/stores/useSourcesStore'
 import { ActiveSource } from '@renderer/sources/types'
 import { HydraState } from './store'
 import { evalPatch } from './process'
+import { isContextLost } from '@renderer/utils/webgl'
 
 const WIDTH = 1920
 const HEIGHT = 1080
@@ -37,14 +38,17 @@ function hydraLayer(instanceId: string | null): ActiveSource<HydraState> | undef
   return source?.manifest.id === 'hydra' ? (source as ActiveSource<HydraState>) : undefined
 }
 
+let looping = false
+
 /**
- * Creates the hidden preview instance once. It is never added to the compositor, so it stays
- * out of the mixer, the monitors and the performance output. While a layer is being
- * previewed, a rAF loop drives it on the layer's own clock (time and speed), so the preview
- * lines up with what the layer is playing.
+ * Creates the hidden preview instance once, or again if its WebGL context was lost (see
+ * utils/webgl). It is never added to the compositor, so it stays out of the mixer, the monitors
+ * and the performance output. While a layer is being previewed, a rAF loop drives it on the
+ * layer's own clock (time and speed), so the preview lines up with what the layer is playing.
  */
 export function ensurePatchPreview(): void {
-  if (usePatchPreviewStore.getState().hydra) return
+  const current = usePatchPreviewStore.getState()
+  if (current.hydra && !isContextLost(current.canvas)) return
 
   const canvas = document.createElement('canvas')
   canvas.width = WIDTH
@@ -64,9 +68,11 @@ export function ensurePatchPreview(): void {
   })
   usePatchPreviewStore.setState({ hydra, canvas })
 
+  if (looping) return
+  looping = true
   const loop = () => {
-    const { instanceId, setPreviewing } = usePatchPreviewStore.getState()
-    if (instanceId) {
+    const { hydra, instanceId, setPreviewing } = usePatchPreviewStore.getState()
+    if (hydra && instanceId) {
       const layer = hydraLayer(instanceId)
       const layerHydra = layer?.useStore.getState().hydra
       if (!layer || !layerHydra) {
