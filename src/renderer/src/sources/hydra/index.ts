@@ -5,6 +5,7 @@ import manifest from './manifest.json'
 import init from './init'
 import process from './process'
 import cleanup from './cleanup'
+import { serialize, restore } from './session'
 
 import Workspace from './ui/Workspace'
 import Monitor from './ui/Monitor'
@@ -24,6 +25,9 @@ const HydraSource: SourceDefinition<HydraState> = {
   Monitor,
   Options,
   Renderer,
+
+  serialize,
+  restore,
 
   createStore: createHydraStore
 }

@@ -9,6 +9,7 @@ import { setupPreviewSync, usePreviewStore } from './stores/usePreviewStore'
 import { loadSources } from './sources'
 import run from './utils/actions/run'
 import { useWorkingDirectoryStore } from './stores/useWorkingDirectoryStore'
+import { useSessionStore } from './stores/useSessionStore'
 
 function App(): React.JSX.Element {
   const togglePerformanceWindow = usePerformanceStore((state) => state.toggleWindow)
@@ -46,6 +47,11 @@ function App(): React.JSX.Element {
 
     const unsubActions = window.api.actions.onRun(run)
 
+    // File menu: .lly sessions
+    const unsubSession = window.api.session.onMenu((action) => {
+      void useSessionStore.getState()[action]()
+    })
+
     // Toggle the focused hydra instance's monitor (Cmd+Shift+M). No-op when the
     // focused surface isn't a hydra instance.
     const unsubToggleMonitor = window.api.actions.onToggleMonitor(() => {
@@ -66,6 +72,7 @@ function App(): React.JSX.Element {
     return () => {
       unsubPerformance()
       unsubActions()
+      unsubSession()
       unsubToggleMonitor()
       unsubTogglePreview()
       unsubPreviewSync()

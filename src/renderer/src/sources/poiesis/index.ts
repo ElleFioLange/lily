@@ -10,6 +10,7 @@ import Options from './ui/Options'
 
 import { createPoiesisStore, PoiesisState } from './store'
 import cleanup from './cleanup'
+import { serialize, restore } from './session'
 import MalletKeyboard from './mallet/MalletKeyboard'
 
 const PoiesisSource: SourceDefinition<PoiesisState> = {
@@ -22,6 +23,9 @@ const PoiesisSource: SourceDefinition<PoiesisState> = {
   Workspace,
   Options,
   Background: MalletKeyboard,
+
+  serialize,
+  restore,
 
   createStore: createPoiesisStore
 }

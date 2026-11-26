@@ -46,6 +46,29 @@ function createMenu(): void {
         ]
       : []),
 
+    // File menu: .lly session files
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Open Session...',
+          accelerator: 'CmdOrCtrl+O',
+          click: () => mainWindowRef?.webContents.send('session:menu', 'open')
+        },
+        { type: 'separator' as const },
+        {
+          label: 'Save Session',
+          accelerator: 'CmdOrCtrl+S',
+          click: () => mainWindowRef?.webContents.send('session:menu', 'save')
+        },
+        {
+          label: 'Save Session As...',
+          accelerator: 'CmdOrCtrl+Shift+S',
+          click: () => mainWindowRef?.webContents.send('session:menu', 'saveAs')
+        }
+      ]
+    },
+
     // Edit menu
     {
       label: 'Edit',
@@ -412,6 +435,65 @@ function setupIPCHandlers(): void {
       }
     }
   )
+  // ============================================================================
+  // Session Files (.lly)
+  // ============================================================================
+  ipcMain.handle('session:write', async (_, content: string, path: string) => {
+    try {
+      await fs.writeFile(path, content, 'utf-8')
+      return { success: true, path }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to save session'
+      }
+    }
+  })
+
+  ipcMain.handle('session:saveAs', async (_, content: string, suggestedName?: string) => {
+    try {
+      const result = await dialog.showSaveDialog(mainWindowRef!, {
+        title: 'Save Lily Session',
+        defaultPath: join(
+          settingsManager.get().workingDirectory ?? '',
+          suggestedName ?? 'session.lly'
+        ),
+        filters: [{ name: 'Lily Session', extensions: ['lly'] }]
+      })
+      if (result.canceled || !result.filePath) return { success: false, error: 'No file selected' }
+      const path = result.filePath.endsWith('.lly') ? result.filePath : `${result.filePath}.lly`
+      await fs.writeFile(path, content, 'utf-8')
+      return { success: true, path }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to save session'
+      }
+    }
+  })
+
+  ipcMain.handle('session:open', async () => {
+    try {
+      const result = await dialog.showOpenDialog(mainWindowRef!, {
+        title: 'Open Lily Session',
+        defaultPath: settingsManager.get().workingDirectory ?? undefined,
+        filters: [{ name: 'Lily Session', extensions: ['lly'] }],
+        properties: ['openFile']
+      })
+      if (result.canceled || result.filePaths.length === 0) {
+        return { success: false, error: 'No file selected' }
+      }
+      const path = result.filePaths[0]
+      const content = await fs.readFile(path, 'utf-8')
+      return { success: true, content, path }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to open session'
+      }
+    }
+  })
+
   // ============================================================================
   // Working Directory (file browser)
   // ============================================================================

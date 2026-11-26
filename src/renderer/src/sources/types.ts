@@ -44,6 +44,11 @@ type SourceBase = {
   Renderer?: FunctionComponent<RendererProps>
   /** Rendered once at app level while the source is registered (e.g. input device hooks). */
   Background?: FunctionComponent
+
+  /** What a .lly session file keeps for one layer of this source (must be JSON-safe). */
+  serialize?: (instanceId: string) => unknown
+  /** Applies data from a .lly session file; ignore anything that isn't valid. */
+  restore?: (instanceId: string, data: unknown) => void
 }
 
 export type SourceDefinition<StoreType extends SourceState | void = void> = StoreType extends void

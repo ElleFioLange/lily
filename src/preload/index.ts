@@ -58,6 +58,30 @@ const api = {
   },
 
   // ============================================================================
+  // Session File API (.lly)
+  // ============================================================================
+  session: {
+    /** File menu: Open Session (Cmd+O), Save Session (Cmd+S), Save Session As (Cmd+Shift+S) */
+    onMenu: (callback: (action: 'open' | 'save' | 'saveAs') => void): (() => void) => {
+      const handler = (_: unknown, action: 'open' | 'save' | 'saveAs'): void => callback(action)
+      ipcRenderer.on('session:menu', handler)
+      return () => ipcRenderer.removeListener('session:menu', handler)
+    },
+    write: (
+      content: string,
+      path: string
+    ): Promise<{ success: boolean; path?: string; error?: string }> =>
+      ipcRenderer.invoke('session:write', content, path),
+    saveAs: (
+      content: string,
+      suggestedName?: string
+    ): Promise<{ success: boolean; path?: string; error?: string }> =>
+      ipcRenderer.invoke('session:saveAs', content, suggestedName),
+    open: (): Promise<{ success: boolean; content?: string; path?: string; error?: string }> =>
+      ipcRenderer.invoke('session:open')
+  },
+
+  // ============================================================================
   // Working Directory API (file browser)
   // ============================================================================
   workingDirectory: {

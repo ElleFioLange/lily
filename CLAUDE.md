@@ -26,10 +26,10 @@ on `main` for it.
 - **hydra** (`sources/hydra/`) - Hydra graphics synthesis, one canvas per layer; any number of
   instances. Patches are evaluated into a synth via
   `evalPatch` (`process.ts`) inside a `with (synth)` block so live properties like `time` stay
-  live. **Cmd+Shift+M** toggles a synced monitor: a second `autoLoop: false` Hydra instance
+  live. The o0–o3 monitor is on by default; **Cmd+Shift+M** toggles it. It is a synced monitor: a second `autoLoop: false` Hydra instance
   (owned by `ui/Monitor.tsx`) that renders the same patch with `render()` appended (4-up split of
   o0–o3), driven by a rAF loop that copies the main signal's `time` each frame. The monitor is
-  never added to the compositor; instead the Monitors panel shows four horizontal canvases, each
+  never added to the compositor; instead the Monitors panel shows four tiles, each
   drawn from one quadrant of the monitor canvas (column-major: o0 TL, o1 BL, o2 TR, o3 BR). Monitor
   state (`monitorActive`, `monitorHydra`, `monitorCanvas`, `toggleMonitor`) lives in `store.ts`.
   The shader text shown in the performance window is laid out by `performanceText`
@@ -211,24 +211,53 @@ the right of the Mixer header or **Cmd+Alt+P** (Window menu → `preview:toggle`
 ### Layout Structure (`src/renderer/src/components/Layout.tsx`)
 
 ```
-┌─────────────────────────────────────────────────┐
-│  Workspace (66%)        │  Options (34%)       │
-│  - Source Workspace     │  - Source Options    │
-│  - Source Renderer      │                       │
-├─────────────────────────┴───────────────────────┤
-│  Mixer (25%)            │  Monitors (75%)       │
-│  - Preset buttons       │  - Source Monitors    │
-│  - Editor controls      │                       │
-│  - Graphics controls    │                       │
-└─────────────────────────────────────────────────┘
+┌──────────────────────────────────┬──────────────────┐
+│  Workspace (LILY + layer tabs, +)│  Mixer           │
+│  - focused layer's Workspace     │  - presets       │
+│  - focused layer's Renderer      │  - editors       │
+│                                  │  - graphics      │
+├──────────────────────────────────┤                  │
+│  Monitors                        ├──────────────────┤
+│  focused o0–o3 │ other layers │  │  Options         │
+│  program (live mix)              │  - file browser  │
+│                                  │  - speed, text   │
+└──────────────────────────────────┴──────────────────┘
 ```
+
+The right sidebar runs the full height. Monitor tiles size themselves (`--tile-h`) so every tile
+fits the panel.
 
 ### Main Components
 
-- **Workspace.tsx** - Displays focused source's Workspace + Renderer, `+` dropdown to add a layer
-- **Mixer.tsx** - Alpha/enabled controls for editors and graphics sources
-- **Monitors.tsx** - Renders the focused source's Monitor components in tabs
-- **Options.tsx** - Renders the focused source's Options components in tabs
+- **Workspace.tsx** - Focused layer's Workspace + Renderer; layer tabs (double-click to rename) and
+  `+` to add a Hydra layer. Only this header shows layer tabs.
+- **Mixer.tsx** - Alpha/enabled/blend controls for editors and graphics, presets, preview toggle
+- **Monitors.tsx** - Focused layer's Monitor (Hydra: o0–o3), thumbnails of the other Hydra layers
+  (click to focus), and `ProgramMonitor` (the live compositor through `Stage`, as the performance
+  window shows it)
+- **Options.tsx** - Focused layer's Options (Hydra: `FileSystem` browser, speed, performance text)
+- **Stage.tsx** - Scaled replica of the performance window for a compositor + editor overlays;
+  used by `PreviewStage` and `ProgramMonitor`
+- **FileSystem.tsx** - Lists every `.js` file in the working directory
+  (`useWorkingDirectoryStore`; main-process `workdir:*` IPC, saved in settings as
+  `workingDirectory`). Skips hidden folders and `node_modules`; refreshes on window focus.
+
+### Layers
+
+Every layer you add is Hydra (`addLayer`). Pinned sources (`manifest.pinned`, i.e. Poiesis) get one
+instance per session, created by `startSession` at startup along with "Layer 1", and can't be
+closed. Each `ActiveSource` has a `name` ("Layer N", counting up from the highest open one;
+renamable with `renameLayer`).
+
+### Sessions (`.lly`, `src/renderer/src/stores/useSessionStore.ts`)
+
+File menu: Open Session (Cmd+O), Save Session (Cmd+S), Save Session As (Cmd+Shift+S). A `.lly` file
+is JSON (`format: "lily-session"`, `version: 1`) holding the working directory, every layer (source,
+name, and the source's own `serialize` data, e.g. Hydra's patch text as it stands, path, speed,
+performance text), the mixer and presets keyed by file-local layer ids (`layer-1`...), and the fade
+time. Opening one closes all unpinned layers, rebuilds them, reuses the pinned Poiesis layer,
+remaps the mixer onto the new instance ids and runs every patch. Sources opt in with
+`serialize`/`restore` on their definition; `restore` must ignore malformed data.
 
 ### Sources Store (`src/renderer/src/stores/useSourcesStore.ts`)
 
@@ -239,8 +268,11 @@ interface SourcesState {
   focused: string | null // Currently focused instanceId
 
   registerSource: (source) => void
-  loadSource: (sourceId) => void
-  unloadSource: (instanceId) => void
+  loadSource: (sourceId) => string | null // returns the new instanceId
+  addLayer: () => string | null // a new Hydra layer
+  startSession: () => void // pinned sources + Layer 1, once
+  unloadSource: (instanceId) => void // no-op for pinned layers
+  renameLayer: (instanceId, name) => void
   getInstance: (instanceId) => ActiveSource
   setFocused: (focused) => void
 }
