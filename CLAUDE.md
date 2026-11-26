@@ -276,7 +276,10 @@ area and the monitors everything under it.
   browser; opening a `.lly` session hides it so the restored patches show. Its **Open file** button
   opens a `.js` from any folder (`openPatchFromAnywhere`); a file from outside the working
   directory joins `extraFiles` ("from other folders") without changing the directory, and is saved
-  in the session file. **Open folder** and **Open session** sit beside it.
+  in the session file. **Open folder** and **Open session** sit beside it. Hovering a file runs it
+  from scratch in a small hidden Hydra instance (`sources/hydra/hoverPreview.ts`, created when the
+  browser first opens, never in the compositor, rendering only while a card shows) and shows it in
+  a card beside the list.
 
 ### Layers
 
