@@ -241,7 +241,8 @@ fits the panel.
 ### Main Components
 
 - **Workspace.tsx** - Focused layer's Workspace + Renderer; layer tabs (double-click to rename) and
-  `+` to add a Hydra layer. Only this header shows layer tabs.
+  `+` to add a Hydra layer. Only this header shows layer tabs. Behind the Poiesis editor it shows
+  the program's graphics without text overlays (a `Stage` with output `poiesis-background`).
 - **Mixer.tsx** - Alpha/enabled/blend controls for editors and graphics, presets, preview toggle
 - **Monitors.tsx** - Focused layer's Monitor (Hydra: o0–o3), thumbnails of the other Hydra layers
   (click to focus), and `ProgramMonitor` (the live compositor through `Stage`, as the performance

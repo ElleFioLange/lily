@@ -8,6 +8,27 @@ import { useBrowserStore } from '@renderer/stores/useBrowserStore'
 import FileSystem from './FileSystem'
 import { ActiveSource } from '@renderer/sources/types'
 import { HydraState } from '@renderer/sources/hydra/store'
+import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
+import Stage from './Stage'
+
+const NO_EDITORS = {}
+const NO_EDITORS_ORDER: string[] = []
+
+/** The program's graphics, without text overlays, behind the Poiesis editor */
+function ProgramBackground() {
+  const compositor = useGraphicsStore((state) => state.compositorRef)
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      <Stage
+        compositor={compositor}
+        outputId="poiesis-background"
+        editors={NO_EDITORS}
+        editorsOrder={NO_EDITORS_ORDER}
+        environment="preview"
+      />
+    </div>
+  )
+}
 
 function AddLayer() {
   const addLayer = useSourcesStore((state) => state.addLayer)
@@ -87,6 +108,8 @@ export default function Workspace() {
           <div className="grid place-items-center">No surface selected</div>
         ) : (
           <>
+            {focusedSurface.manifest.id === 'poiesis' ? <ProgramBackground /> : null}
+
             {/* Renderer layers (no interaction) */}
             {focusedSurface && focused && focusedSurface.Renderer ? (
               <div className="absolute size-full pointer-events-none">
