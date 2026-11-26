@@ -172,6 +172,14 @@ The Performance Window (`src/renderer/src/windows/performance/PerformanceWindow.
   `editorsOrder`; shared with the preview stage)
 - Shares Zustand stores with main window (same renderer process)
 
+## Full Performance Preview
+
+**Cmd+Shift+O** (Window menu → `performance:full-preview` IPC → `usePerformanceStore.toggleFullPreview`)
+covers the whole control center with the live mix as the performance window shows it
+(`components/FullPreview.tsx`, a `Stage` on output `program-full`). The panels stay mounted
+underneath so every layer keeps running. Esc or the hover button exits. This is separate from
+Preview Mode below, which edits a second mix.
+
 ## Preview Mode
 
 App-level preview of the performance window with its own mix, toggled by the **preview** button on

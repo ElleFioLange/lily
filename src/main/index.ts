@@ -139,6 +139,13 @@ function createMenu(): void {
           }
         },
         {
+          label: 'Toggle Full Performance Preview',
+          accelerator: 'CmdOrCtrl+Shift+O',
+          click: () => {
+            mainWindowRef?.webContents.send('performance:full-preview')
+          }
+        },
+        {
           label: 'Toggle Poiesis',
           accelerator: 'CmdOrCtrl+P',
           click: () => {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Layout from './components/Layout'
+import FullPreview from './components/FullPreview'
 import { PerformanceWindow } from './windows/performance/PerformanceWindow'
 import { usePerformanceStore } from './stores/usePerformanceStore'
 import { useGraphicsStore } from './stores/useGraphicsStore'
@@ -56,6 +57,11 @@ function App(): React.JSX.Element {
       usePreviewStore.getState().toggle()
     )
 
+    // Cmd+Shift+O: the whole window shows the performance output
+    const unsubFullPreview = window.api.actions.onToggleFullPreview(() =>
+      usePerformanceStore.getState().toggleFullPreview()
+    )
+
     // Cmd+P: in and out of the Poiesis layer
     const unsubTogglePoiesis = window.api.actions.onTogglePoiesis(() =>
       useSourcesStore.getState().togglePoiesis()
@@ -67,6 +73,7 @@ function App(): React.JSX.Element {
       unsubSession()
       unsubTogglePreview()
       unsubTogglePoiesis()
+      unsubFullPreview()
       unsubPreviewSync()
       setCompositorRef(null)
     }
@@ -84,6 +91,7 @@ function App(): React.JSX.Element {
   return (
     <>
       <Layout />
+      <FullPreview />
       <PerformanceWindow />
       {Object.values(registered).map(({ manifest, Background }) =>
         Background ? <Background key={manifest.id} /> : null
