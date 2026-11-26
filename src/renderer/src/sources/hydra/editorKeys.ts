@@ -6,36 +6,18 @@ import {
   drawSelection,
   rectangularSelection
 } from '@codemirror/view'
-import {
-  addCursorAbove,
-  addCursorBelow,
-  cursorCharLeft,
-  cursorCharRight,
-  cursorLineDown,
-  cursorLineUp,
-  moveLineDown,
-  moveLineUp,
-  selectCharLeft,
-  selectCharRight,
-  selectLineDown,
-  selectLineUp
-} from '@codemirror/commands'
+import { addCursorAbove, addCursorBelow } from '@codemirror/commands'
+import { vscodeKeymap } from './vscodeKeys'
+export { vscodeOptionKeys } from './vscodeKeys'
 
 /**
- * Elle's VS Code cursor keys. Placed ahead of CodeMirror's defaults, so on a Mac they replace
- * its Emacs-style Ctrl-k (delete to line end) and Ctrl-l (select line).
- *   Ctrl+I/J/K/L            up, left, down, right
- *   Ctrl+Shift+I/J/K/L      the same, extending the selection
- *   Ctrl+Shift+Cmd+I/K      move the line (or selected lines) up or down
+ * The editor's VS Code keys: everything keybindings.json maps (cursor movement, selection,
+ * lines, multiple cursors; see vscodeKeys.ts), then VS Code's default add-cursor keys. Placed
+ * ahead of CodeMirror's defaults, so on a Mac they replace its Emacs-style Ctrl keys they reuse.
+ * Cmd+D (add the next match) comes from keybindings.json too.
  */
 export const cursorKeymap: KeyBinding[] = [
-  { key: 'Ctrl-i', run: cursorLineUp, shift: selectLineUp, preventDefault: true },
-  { key: 'Ctrl-j', run: cursorCharLeft, shift: selectCharLeft, preventDefault: true },
-  { key: 'Ctrl-k', run: cursorLineDown, shift: selectLineDown, preventDefault: true },
-  { key: 'Ctrl-l', run: cursorCharRight, shift: selectCharRight, preventDefault: true },
-  { mac: 'Ctrl-Shift-Cmd-i', run: moveLineUp, preventDefault: true },
-  { mac: 'Ctrl-Shift-Cmd-k', run: moveLineDown, preventDefault: true },
-  // VS Code's add-cursor keys (Cmd+D for the next match comes with the search keymap)
+  ...vscodeKeymap,
   { key: 'Mod-Alt-ArrowUp', run: addCursorAbove, preventDefault: true },
   { key: 'Mod-Alt-ArrowDown', run: addCursorBelow, preventDefault: true }
 ]

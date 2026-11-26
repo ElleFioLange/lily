@@ -12,7 +12,7 @@ import { ActiveSource } from '@renderer/sources/types'
 import { HydraState } from '../store'
 import { WorkspaceProps } from '@renderer/sources/types'
 import run, { previewPatch, runFocused } from '@renderer/utils/actions/run'
-import { cursorKeymap, multipleCursors } from '../editorKeys'
+import { cursorKeymap, multipleCursors, vscodeOptionKeys } from '../editorKeys'
 
 // Ahead of CodeMirror's defaults, which bind Mod-Enter to "insert blank line"
 const runKeymap = [
@@ -128,6 +128,7 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
           EditorView.lineWrapping,
           history(),
           multipleCursors,
+          vscodeOptionKeys,
           keymap.of([
             ...runKeymap,
             ...cursorKeymap,

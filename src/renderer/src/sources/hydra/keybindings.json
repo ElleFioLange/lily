@@ -1,0 +1,62 @@
+// VS Code keybindings for the Hydra editor. Paste a whole VS Code keybindings.json here if you
+// like: vscodeKeys.ts reads the cursor, selection, line and multiple-cursor commands it knows
+// and ignores everything else (workbench, git, terminal...). Comments and trailing commas are fine.
+[
+  // Snippet $CURSOR_NUMBER: number each cursor 1, 2, 3...
+  {
+    "key": "alt+shift+i",
+    "command": "editor.action.insertSnippet",
+    "args": { "snippet": "$CURSOR_NUMBER" }
+  },
+
+  // Moving
+  { "key": "ctrl+i", "command": "cursorUp" },
+  { "key": "ctrl+j", "command": "cursorLeft" },
+  { "key": "ctrl+k", "command": "cursorDown" },
+  { "key": "ctrl+l", "command": "cursorRight" },
+  { "key": "ctrl+u", "command": "cursorWordLeft" },
+  { "key": "ctrl+o", "command": "cursorWordRight" },
+  { "key": "ctrl+cmd+i", "command": "cursorTop" },
+  { "key": "ctrl+cmd+k", "command": "cursorBottom" },
+  { "key": "ctrl+cmd+j", "command": "cursorHome" },
+  { "key": "ctrl+cmd+l", "command": "cursorEnd" },
+  { "key": "shift+cmd+0", "command": "cursorEnd" },
+  { "key": "ctrl+cmd+p", "command": "cursorPageUp" },
+  { "key": "ctrl+cmd+m", "command": "cursorPageDown" },
+
+  // Selecting
+  { "key": "ctrl+shift+i", "command": "cursorUpSelect" },
+  { "key": "ctrl+shift+j", "command": "cursorLeftSelect" },
+  { "key": "ctrl+shift+k", "command": "cursorDownSelect" },
+  { "key": "ctrl+shift+l", "command": "cursorRightSelect" },
+  { "key": "ctrl+shift+u", "command": "cursorWordLeftSelect" },
+  { "key": "ctrl+shift+o", "command": "cursorWordRightSelect" },
+  { "key": "ctrl+shift+cmd+j", "command": "cursorHomeSelect" },
+  { "key": "ctrl+shift+cmd+l", "command": "cursorEndSelect" },
+  { "key": "ctrl+shift+cmd+p", "command": "cursorPageUpSelect" },
+  { "key": "ctrl+shift+cmd+m", "command": "cursorPageDownSelect" },
+  { "key": "ctrl+shift+cmd+o", "command": "editor.action.smartSelect.expand" },
+  { "key": "ctrl+shift+cmd+u", "command": "editor.action.smartSelect.shrink" },
+
+  // Lines
+  { "key": "ctrl+shift+cmd+i", "command": "editor.action.moveLinesUpAction" },
+  { "key": "ctrl+shift+cmd+k", "command": "editor.action.moveLinesDownAction" },
+  { "key": "ctrl+shift+cmd+alt+i", "command": "editor.action.copyLinesUpAction" },
+  { "key": "ctrl+shift+cmd+alt+k", "command": "editor.action.copyLinesDownAction" },
+
+  // Multiple cursors
+  { "key": "ctrl+alt+cmd+i", "command": "editor.action.insertCursorAbove" },
+  { "key": "ctrl+alt+cmd+k", "command": "editor.action.insertCursorBelow" },
+  { "key": "cmd+d", "command": "editor.action.addSelectionToNextFindMatch" },
+
+  // Case
+  { "key": "alt+cmd+u up", "command": "editor.action.transformToUppercase" },
+  { "key": "alt+cmd+u down", "command": "editor.action.transformToLowercase" },
+
+  // VS Code's Emacs-style defaults you turned off
+  { "key": "ctrl+e", "command": "-cursorLineEnd" },
+  { "key": "ctrl+b", "command": "-cursorLeft" },
+  { "key": "ctrl+f", "command": "-cursorRight" },
+  { "key": "ctrl+p", "command": "-cursorUp" },
+  { "key": "ctrl+n", "command": "-cursorDown" }
+]
