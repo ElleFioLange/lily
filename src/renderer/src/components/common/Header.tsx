@@ -6,12 +6,14 @@ export type HeaderProps = {
   /** Show the layer tabs (only the editor's header does, to keep the side panels uncluttered) */
   showTabs?: boolean
   children?: ReactNode
+  /** Controls pinned to the right end of the header */
+  actions?: ReactNode
 }
 
 // TODO need to figure out how to add horizontal scrolling
 // basic solution causes problems with overflow: visible for the indicator https://stackoverflow.com/questions/6421966/css-overflow-x-visible-and-overflow-y-hidden-causing-scrollbar-issue
 
-export default function Header({ title, showTabs = false, children }: HeaderProps) {
+export default function Header({ title, showTabs = false, children, actions }: HeaderProps) {
   const { active, focused, setFocused, unloadSource, renameLayer } = useSourcesStore()
   const [editing, setEditing] = useState<string | null>(null)
 
@@ -76,6 +78,7 @@ export default function Header({ title, showTabs = false, children }: HeaderProp
           ))}
         {children}
       </div>
+      {actions && <div className="shrink-0 flex items-center gap-2 pl-2">{actions}</div>}
     </div>
   )
 }

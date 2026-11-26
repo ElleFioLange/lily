@@ -3,6 +3,7 @@ import { useSourcesStore } from '@renderer/stores/useSourcesStore'
 import { useMemo } from 'react'
 import { usePreviewStore } from '@renderer/stores/usePreviewStore'
 import PreviewStage from './PreviewStage'
+import { runFocused } from '@renderer/utils/actions/run'
 
 function AddLayer() {
   const addLayer = useSourcesStore((state) => state.addLayer)
@@ -13,6 +14,22 @@ function AddLayer() {
       title="Add a Hydra layer"
     >
       +
+    </button>
+  )
+}
+
+function PlayButton() {
+  return (
+    <button
+      className="h-5 px-2 py-0 flex items-center gap-1 text-xs border-stone-600 hover:bg-stone-700"
+      onClick={runFocused}
+      title="Run this patch (⌘⇧Enter runs every layer)"
+      aria-label="Run this patch"
+    >
+      <svg width="8" height="9" viewBox="0 0 8 9" aria-hidden="true">
+        <path d="M0 0L8 4.5L0 9Z" fill="currentColor" />
+      </svg>
+      run
     </button>
   )
 }
@@ -28,7 +45,11 @@ export default function Workspace() {
 
   return (
     <div className="size-full flex flex-col">
-      <Header title="LILY" showTabs>
+      <Header
+        title="LILY"
+        showTabs
+        actions={focusedSurface && !previewActive ? <PlayButton /> : null}
+      >
         <AddLayer />
       </Header>
       <div className="relative grow">
