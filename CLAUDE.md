@@ -38,6 +38,8 @@ on `main` for it.
   clock (time and speed). While previewing, `ui/Renderer.tsx` draws the preview behind the editor
   and `ui/PreviewPip.tsx` shows the layer's live output in the bottom-right corner (click it to
   leave the preview), plus any evaluation error. Run Patch and Run All Layers end the preview.
+  The Hydra editor binds these three shortcuts itself, ahead of CodeMirror's defaults (Mod-Enter
+  would insert a blank line); `run.ts` skips the menu's second call for the same key press.
   The shader text shown in the performance window is laid out by `performanceText`
   (`{ fontSize, x, y }` — px, and % of window for the top-left offset; `setPerformanceText`
   merges partial updates, `DEFAULT_PERFORMANCE_TEXT` resets). `ui/Controls.tsx` exposes sliders;

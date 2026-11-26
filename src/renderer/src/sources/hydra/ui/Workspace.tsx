@@ -11,6 +11,32 @@ import { useSourcesStore } from '@renderer/stores/useSourcesStore'
 import { ActiveSource } from '@renderer/sources/types'
 import { HydraState } from '../store'
 import { WorkspaceProps } from '@renderer/sources/types'
+import run, { previewPatch, runFocused } from '@renderer/utils/actions/run'
+
+// Ahead of CodeMirror's defaults, which bind Mod-Enter to "insert blank line"
+const runKeymap = [
+  {
+    key: 'Mod-Enter',
+    run: () => {
+      previewPatch()
+      return true
+    }
+  },
+  {
+    key: 'Mod-Shift-Enter',
+    run: () => {
+      runFocused()
+      return true
+    }
+  },
+  {
+    key: 'Mod-Alt-Enter',
+    run: () => {
+      run()
+      return true
+    }
+  }
+]
 
 // TODO history cmd+z still not working right
 // TODO needs cursor navigation shortcuts, formatting, and search (? maybe search?)
@@ -100,7 +126,7 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
           syntaxHighlighting(highlightStyle),
           EditorView.lineWrapping,
           history(),
-          keymap.of([...defaultKeymap, ...searchKeymap, indentWithTab]),
+          keymap.of([...runKeymap, ...defaultKeymap, ...searchKeymap, indentWithTab]),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
               const newValue = update.state.doc.toString()
