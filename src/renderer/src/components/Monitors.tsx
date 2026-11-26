@@ -12,6 +12,10 @@ const TILE_CHROME = 36
 // Matches gap-6 between sections and gap-2 between tiles
 const SECTION_GAP = 24
 const TILE_GAP = 8
+// Vertical padding (py-2) around the program monitor
+const PROGRAM_PADDING_Y = 16
+// The program monitor never takes more than this share of the panel's width
+const PROGRAM_MAX_SHARE = 0.4
 
 function LayerThumb({ instance }: { instance: ActiveSource<HydraState> }) {
   const canvas = instance.useStore((state) => state.canvas)
@@ -28,8 +32,9 @@ function LayerThumb({ instance }: { instance: ActiveSource<HydraState> }) {
 }
 
 /**
- * Bottom panel, left to right: the focused patch's outputs (o0–o3), the other Hydra
- * layers (click one to switch to it), and the program output sent to the performance window.
+ * Bottom panel: the focused patch's outputs (o0–o3) and the other Hydra layers (click one to
+ * switch to it) on the left, and a larger program monitor of what the performance window shows
+ * set off on the right.
  */
 export default function Monitors() {
   const { focused, active } = useSourcesStore()
@@ -38,14 +43,26 @@ export default function Monitors() {
     (source) => source.manifest.id === 'hydra' && source.instanceId !== focused
   ) as ActiveSource<HydraState>[]
 
-  // Size tiles so every monitor fits the panel: as tall as the panel allows, but narrow
-  // enough that all tiles fit across its width
+  // The program monitor takes the full panel height on the right (up to PROGRAM_MAX_SHARE of
+  // the width). The patch and layer tiles share what's left: as tall as the panel allows, but
+  // narrow enough that all of them fit across.
+  const panelRef = useRef<HTMLDivElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
   const [tileHeight, setTileHeight] = useState(0)
+  const [programHeight, setProgramHeight] = useState(0)
   const measure = useCallback(() => {
+    const panel = panelRef.current
     const body = bodyRef.current
-    if (!body) return
+    if (!panel || !body) return
     const px = (value: string) => parseFloat(value) || 0
+
+    const programFit = Math.min(
+      panel.clientHeight - PROGRAM_PADDING_Y - TILE_CHROME,
+      (panel.clientWidth * PROGRAM_MAX_SHARE * 9) / 16
+    )
+    const program = Math.max(24, Math.floor(programFit))
+    setProgramHeight((prev) => (prev === program ? prev : program))
+
     const children = Array.from(body.children) as HTMLElement[]
     let tiles = 0
     let sections = 0
@@ -89,8 +106,9 @@ export default function Monitors() {
     setTileHeight((prev) => (prev === next ? prev : next))
   }, [])
   useEffect(() => {
-    if (!bodyRef.current) return
+    if (!bodyRef.current || !panelRef.current) return
     const resize = new ResizeObserver(measure)
+    resize.observe(panelRef.current)
     resize.observe(bodyRef.current)
     // Re-measure when tiles come and go (layers added or closed)
     const mutation = new MutationObserver(measure)
@@ -104,25 +122,32 @@ export default function Monitors() {
   return (
     <div className="flex flex-col h-full">
       <Header title="MONITORS" />
-      <div
-        ref={bodyRef}
-        className="flex-1 min-h-0 flex items-start gap-6 px-4 py-2 overflow-x-auto overflow-y-hidden no-scrollbar"
-        style={{ '--tile-h': `${tileHeight}px` } as React.CSSProperties}
-      >
-        {instance?.Monitor ? <instance.Monitor instanceId={instance.instanceId} /> : null}
-        {instance?.Monitor && otherLayers.length > 0 && (
-          <div className="w-px self-stretch shrink-0 bg-stone-700" aria-hidden="true" />
-        )}
-        {otherLayers.length > 0 && (
-          <MonitorSection title="other layers">
-            {otherLayers.map((layer) => (
-              <LayerThumb key={layer.instanceId} instance={layer} />
-            ))}
+      <div ref={panelRef} className="flex-1 min-h-0 flex">
+        <div
+          ref={bodyRef}
+          className="flex-1 min-w-0 flex items-start gap-6 px-4 py-2 overflow-x-auto overflow-y-hidden no-scrollbar"
+          style={{ '--tile-h': `${tileHeight}px` } as React.CSSProperties}
+        >
+          {instance?.Monitor ? <instance.Monitor instanceId={instance.instanceId} /> : null}
+          {instance?.Monitor && otherLayers.length > 0 && (
+            <div className="w-px self-stretch shrink-0 bg-stone-700" aria-hidden="true" />
+          )}
+          {otherLayers.length > 0 && (
+            <MonitorSection title="other layers">
+              {otherLayers.map((layer) => (
+                <LayerThumb key={layer.instanceId} instance={layer} />
+              ))}
+            </MonitorSection>
+          )}
+        </div>
+        <div
+          className="shrink-0 border-l border-stone-700 bg-stone-900/60 px-4 py-2"
+          style={{ '--tile-h': `${programHeight}px` } as React.CSSProperties}
+        >
+          <MonitorSection title="program">
+            <ProgramMonitor />
           </MonitorSection>
-        )}
-        <MonitorSection title="program">
-          <ProgramMonitor />
-        </MonitorSection>
+        </div>
       </div>
     </div>
   )
