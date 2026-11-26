@@ -24,7 +24,6 @@ export default function Monitor({ instanceId, ...props }: UIProps) {
   const { getInstance } = useSourcesStore()
   const instance = getInstance(instanceId) as ActiveSource<HydraState>
   const useStore = instance.useStore
-  const { monitorActive, toggleMonitor } = useStore()
 
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
 
@@ -34,8 +33,6 @@ export default function Monitor({ instanceId, ...props }: UIProps) {
   // mixer and the performance output. Each frame we copy the four quadrants of
   // its canvas into the four monitor canvases below.
   useEffect(() => {
-    if (!monitorActive) return
-
     const { hydra: mainHydra, shader, setMonitorHydra, setMonitorCanvas } = useStore.getState()
     if (!mainHydra) return
 
@@ -99,39 +96,23 @@ export default function Monitor({ instanceId, ...props }: UIProps) {
       setMonitorHydra(null)
       setMonitorCanvas(null)
     }
-  }, [monitorActive, useStore])
+  }, [useStore])
 
   return (
-    <MonitorSection
-      title={
-        <>
-          <div
-            className={`w-6 h-3 rounded-full relative transition-colors cursor-pointer ${monitorActive ? 'bg-stone-400' : 'bg-stone-700'}`}
-            onClick={toggleMonitor}
-            title="Toggle the o0–o3 monitor (Cmd+Shift+M)"
-          >
-            <div
-              className={`absolute top-0.5 w-2 h-2 rounded-full bg-stone-100 transition-transform ${monitorActive ? 'translate-x-3.5' : 'translate-x-0.5'}`}
-            />
-          </div>
-          <span>{instance.name} · o0–o3</span>
-        </>
-      }
-    >
-      {monitorActive &&
-        QUADRANTS.map((_, i) => (
-          <Tile key={i} caption={`o${i}`}>
-            <canvas
-              ref={(el) => {
-                canvasRefs.current[i] = el
-              }}
-              width={MONITOR_WIDTH / 4}
-              height={MONITOR_HEIGHT / 4}
-              className={TILE_CLASS}
-              {...props}
-            />
-          </Tile>
-        ))}
+    <MonitorSection title={`${instance.name} · o0–o3`} current>
+      {QUADRANTS.map((_, i) => (
+        <Tile key={i} caption={`o${i}`}>
+          <canvas
+            ref={(el) => {
+              canvasRefs.current[i] = el
+            }}
+            width={MONITOR_WIDTH / 4}
+            height={MONITOR_HEIGHT / 4}
+            className={TILE_CLASS}
+            {...props}
+          />
+        </Tile>
+      ))}
     </MonitorSection>
   )
 }

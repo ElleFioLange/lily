@@ -26,12 +26,12 @@ on `main` for it.
 - **hydra** (`sources/hydra/`) - Hydra graphics synthesis, one canvas per layer; any number of
   instances. Patches are evaluated into a synth via
   `evalPatch` (`process.ts`) inside a `with (synth)` block so live properties like `time` stay
-  live. The o0–o3 monitor is on by default; **Cmd+Shift+M** toggles it. It is a synced monitor: a second `autoLoop: false` Hydra instance
+  live. The focused layer's o0–o3 monitor is always on. It is a synced monitor: a second `autoLoop: false` Hydra instance
   (owned by `ui/Monitor.tsx`) that renders the same patch with `render()` appended (4-up split of
   o0–o3), driven by a rAF loop that copies the main signal's `time` each frame. The monitor is
   never added to the compositor; instead the Monitors panel shows four tiles, each
   drawn from one quadrant of the monitor canvas (column-major: o0 TL, o1 BL, o2 TR, o3 BR). Monitor
-  state (`monitorActive`, `monitorHydra`, `monitorCanvas`, `toggleMonitor`) lives in `store.ts`.
+  state (`monitorHydra`, `monitorCanvas`) lives in `store.ts`.
   The shader text shown in the performance window is laid out by `performanceText`
   (`{ fontSize, x, y }` — px, and % of window for the top-left offset; `setPerformanceText`
   merges partial updates, `DEFAULT_PERFORMANCE_TEXT` resets). `ui/Options.tsx` exposes sliders;

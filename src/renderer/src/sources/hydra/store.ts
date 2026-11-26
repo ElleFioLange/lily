@@ -31,8 +31,7 @@ export interface HydraState extends SourceState {
   isValid: boolean
   error: string | null
 
-  // Monitor (synced second hydra instance shown in the workspace)
-  monitorActive: boolean
+  // Monitor (synced second hydra instance shown in the bottom panel while focused)
   monitorHydra: HydraInstance | null
   monitorCanvas: HTMLCanvasElement | null
 
@@ -53,7 +52,6 @@ export interface HydraState extends SourceState {
   setError: (error: string | null) => void
   setMonitorHydra: (hydra: HydraInstance | null) => void
   setMonitorCanvas: (canvas: HTMLCanvasElement | null) => void
-  toggleMonitor: () => void
   setPerformanceText: (updates: Partial<PerformanceText>) => void
   setSpeed: (speed: number) => void
   newShader: () => void
@@ -71,7 +69,6 @@ export const createHydraStore = (instanceId: string) => {
     shaderName: 'new-shader',
     isValid: true,
     error: null,
-    monitorActive: true,
     monitorHydra: null,
     monitorCanvas: null,
     performanceText: DEFAULT_PERFORMANCE_TEXT,
@@ -115,8 +112,6 @@ export const createHydraStore = (instanceId: string) => {
     setMonitorHydra: (monitorHydra) => set({ monitorHydra }),
 
     setMonitorCanvas: (monitorCanvas) => set({ monitorCanvas }),
-
-    toggleMonitor: () => set((state) => ({ monitorActive: !state.monitorActive })),
 
     setPerformanceText: (updates) =>
       set((state) => ({ performanceText: { ...state.performanceText, ...updates } })),

@@ -125,11 +125,6 @@ const api = {
       ipcRenderer.on('actions:run', handler)
       return () => ipcRenderer.removeListener('actions:run', handler)
     },
-    onToggleMonitor: (callback: () => void): (() => void) => {
-      const handler = (): void => callback()
-      ipcRenderer.on('hydra:toggle-monitor', handler)
-      return () => ipcRenderer.removeListener('hydra:toggle-monitor', handler)
-    },
     onTogglePreview: (callback: () => void): (() => void) => {
       const handler = (): void => callback()
       ipcRenderer.on('preview:toggle', handler)

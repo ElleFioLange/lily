@@ -52,19 +52,6 @@ function App(): React.JSX.Element {
       void useSessionStore.getState()[action]()
     })
 
-    // Toggle the focused hydra instance's monitor (Cmd+Shift+M). No-op when the
-    // focused surface isn't a hydra instance.
-    const unsubToggleMonitor = window.api.actions.onToggleMonitor(() => {
-      const { active, focused } = useSourcesStore.getState()
-      if (!focused) return
-      const source = active[focused]
-      if (!source || source.manifest.id !== 'hydra') return
-      const { useStore } = source as unknown as {
-        useStore?: { getState: () => { toggleMonitor: () => void } }
-      }
-      useStore?.getState().toggleMonitor()
-    })
-
     const unsubTogglePreview = window.api.actions.onTogglePreview(() =>
       usePreviewStore.getState().toggle()
     )
@@ -73,7 +60,6 @@ function App(): React.JSX.Element {
       unsubPerformance()
       unsubActions()
       unsubSession()
-      unsubToggleMonitor()
       unsubTogglePreview()
       unsubPreviewSync()
       setCompositorRef(null)

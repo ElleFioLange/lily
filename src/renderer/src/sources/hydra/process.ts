@@ -25,7 +25,7 @@ export async function evalPatch(
 export default async function process(instanceId: string) {
   const { getInstance } = useSourcesStore.getState()
   const instance = getInstance(instanceId) as ActiveSource<HydraState>
-  const { shader, hydra, monitorActive, monitorHydra, speed } = instance.useStore.getState()
+  const { shader, hydra, monitorHydra, speed } = instance.useStore.getState()
 
   await evalPatch(hydra.synth, shader)
   // The speed control wins over any `speed = ...` in the patch
@@ -33,7 +33,7 @@ export default async function process(instanceId: string) {
   console.log('Shader evaluated successfully')
 
   // Keep the monitor's 4-up view in sync with the live patch.
-  if (monitorActive && monitorHydra) {
+  if (monitorHydra) {
     await evalPatch(monitorHydra.synth, `${shader}\nrender()`)
   }
 

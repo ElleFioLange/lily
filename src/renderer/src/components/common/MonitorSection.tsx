@@ -2,14 +2,23 @@ import { ReactNode } from 'react'
 
 type MonitorSectionProps = {
   title: ReactNode
+  /** The focused patch's own outputs: set apart from the other layers on a lighter panel */
+  current?: boolean
   children?: ReactNode
 }
 
 /** A labeled row of monitor tiles in the bottom panel. */
-export default function MonitorSection({ title, children }: MonitorSectionProps) {
+export default function MonitorSection({ title, current = false, children }: MonitorSectionProps) {
   return (
-    <div data-monitor-section className="shrink-0 flex flex-col gap-1">
-      <div className="h-4 text-xs text-stone-400 flex items-center gap-2 select-none">{title}</div>
+    <div
+      data-monitor-section
+      className={`shrink-0 flex flex-col gap-1 ${current ? 'bg-stone-800/70 border border-stone-600 rounded-sm px-2 py-1' : ''}`}
+    >
+      <div
+        className={`h-4 text-xs flex items-center gap-2 select-none ${current ? 'text-stone-200' : 'text-stone-400'}`}
+      >
+        {title}
+      </div>
       <div className="flex gap-2">{children}</div>
     </div>
   )

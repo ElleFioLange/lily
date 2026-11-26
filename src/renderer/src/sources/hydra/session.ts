@@ -11,8 +11,8 @@ const getStore = (instanceId: string) =>
 export function serialize(instanceId: string) {
   const state = getStore(instanceId)?.getState()
   if (!state) return undefined
-  const { shader, shaderPath, speed, performanceText, monitorActive } = state
-  return { shader, shaderPath, speed, performanceText, monitorActive }
+  const { shader, shaderPath, speed, performanceText } = state
+  return { shader, shaderPath, speed, performanceText }
 }
 
 export function restore(instanceId: string, data: unknown): void {
@@ -28,8 +28,6 @@ export function restore(instanceId: string, data: unknown): void {
     isValid: true,
     error: null
   })
-  if (typeof data.monitorActive === 'boolean')
-    useStore.setState({ monitorActive: data.monitorActive })
 
   const speed = num(data.speed)
   if (speed !== undefined) setSpeed(speed)
