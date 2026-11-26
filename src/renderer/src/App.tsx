@@ -27,6 +27,7 @@ function App(): React.JSX.Element {
     loadSources()
       .then((sources) => {
         sources.forEach(registerSource)
+        useSourcesStore.getState().startSession()
         setSourcesLoaded(true)
       })
       .catch((error) => {

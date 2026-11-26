@@ -1,46 +1,19 @@
 import Header from './common/Header'
 import { useSourcesStore } from '@renderer/stores/useSourcesStore'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { usePreviewStore } from '@renderer/stores/usePreviewStore'
 import PreviewStage from './PreviewStage'
 
-function AddSource() {
-  const [open, setOpen] = useState(false)
-  const { registered, active, loadSource } = useSourcesStore()
-
-  const availableSources = useMemo(() => {
-    const activeSourceIds = new Set(Object.values(active).map((p) => p.manifest.id))
-    return Object.values(registered).filter(
-      (source) => source.manifest.allowMultiple || !activeSourceIds.has(source.manifest.id)
-    )
-  }, [registered, active])
-
+function AddLayer() {
+  const addLayer = useSourcesStore((state) => state.addLayer)
   return (
-    <div className="relative mt-1">
-      {open ? (
-        <ul className="w-40 absolute text-xs">
-          {availableSources.map((source) => (
-            <li
-              className="top-0 left-0 w-full text-left block"
-              key={source.manifest.id}
-              onClick={() => {
-                loadSource(source.manifest.id)
-                setOpen(false)
-              }}
-            >
-              {source.manifest.name}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <button
-          className="size-4.5 p-0 flex justify-center items-center place-self-center my-auto"
-          onClick={() => setOpen(true)}
-        >
-          +
-        </button>
-      )}
-    </div>
+    <button
+      className="size-4.5 p-0 mt-1 flex justify-center items-center place-self-center my-auto"
+      onClick={addLayer}
+      title="Add a Hydra layer"
+    >
+      +
+    </button>
   )
 }
 
@@ -56,7 +29,7 @@ export default function Workspace() {
   return (
     <div className="size-full flex flex-col">
       <Header title="LILY">
-        <AddSource />
+        <AddLayer />
       </Header>
       <div className="relative grow">
         {previewActive ? (

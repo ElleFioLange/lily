@@ -9,7 +9,12 @@ interface SourcesState {
   focused: string | null
 
   registerSource: (source: SourceDefinition) => void
-  loadSource: (sourceId: string) => void
+  /** Creates an instance of a source and focuses it. Returns its instanceId. */
+  loadSource: (sourceId: string) => string | null
+  /** Adds a new Hydra layer. Every layer you add is Hydra. */
+  addLayer: () => string | null
+  /** Creates the session's default layers (pinned sources, then one Hydra layer) if none exist. */
+  startSession: () => void
   unloadSource: (instanceId: string) => void
   getInstance: (instanceId: string) => ActiveSource | undefined
   setFocused: (focused: string | null) => void
@@ -43,7 +48,7 @@ export const useSourcesStore = create<SourcesState>((set, get) => ({
       const alreadyActive = Object.values(active).some((p) => p.manifest.id === sourceId)
       if (alreadyActive) {
         console.warn(`[SourcesStore] Source "${sourceId}" does not allow multiple instances`)
-        return
+        return null
       }
     }
 
@@ -55,17 +60,26 @@ export const useSourcesStore = create<SourcesState>((set, get) => ({
     const newActive = { ...active, [instanceId]: activeSource }
 
     set({ active: newActive, focused: instanceId })
+    return instanceId
+  },
 
-    // TODO Try to consolidate render processing of multiple instances of the same source maybe?
-    // Check for other instances of the same source
-    // const currentInstances = Object.keys(registered).filter(
-    //   (key) => key.slice(0, sourceId.length) === sourceId
-    // )
+  addLayer: () => get().loadSource('hydra'),
+
+  startSession: () => {
+    const { registered, active, loadSource, setFocused } = get()
+    // Idempotent so React StrictMode's double effect doesn't create duplicate layers
+    if (Object.keys(active).length > 0) return
+    Object.values(registered)
+      .filter((source) => source.manifest.pinned)
+      .forEach((source) => loadSource(source.manifest.id))
+    const firstLayer = loadSource('hydra')
+    if (firstLayer) setFocused(firstLayer)
   },
 
   unloadSource: (instanceId) => {
     const { active, focused } = get()
     const instance = active[instanceId]
+    if (!instance || instance.manifest.pinned) return
     instance.cleanup(instanceId)
     useGraphicsStore.getState().removeSource(instanceId)
     const newActive = { ...active }

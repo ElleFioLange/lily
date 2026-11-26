@@ -24,7 +24,7 @@ export default function Header({ title, children }: HeaderProps) {
     <div className="w-full h-8 bg-stone-900 border-b border-stone-700 flex p-1 z-10">
       <span className="shrink-0 px-4 text-base">{title.toUpperCase()}</span>
       <div className="grow flex gap-3 overflow-y-visible no-scrollbar">
-        {Object.values(active).map(({ instanceId, manifest: { name } }) => (
+        {Object.values(active).map(({ instanceId, manifest: { name, pinned } }) => (
           <div className="relative group flex items-center gap-1" key={instanceId}>
             <button
               className={`text-xs border-none bg-transparent ${instanceId === focused ? 'cursor-default' : 'hover:underline'}`}
@@ -32,13 +32,15 @@ export default function Header({ title, children }: HeaderProps) {
             >
               {name}
             </button>
-            <button
-              className="text-xs border-none bg-transparent opacity-0 group-hover:opacity-100 text-stone-400 hover:text-stone-100 leading-none px-0.5 -mt-px"
-              onClick={(e) => handleClose(e, instanceId)}
-              title="Close source"
-            >
-              ×
-            </button>
+            {!pinned && (
+              <button
+                className="text-xs border-none bg-transparent opacity-0 group-hover:opacity-100 text-stone-400 hover:text-stone-100 leading-none px-0.5 -mt-px"
+                onClick={(e) => handleClose(e, instanceId)}
+                title="Close layer"
+              >
+                ×
+              </button>
+            )}
             {instanceId === focused && (
               <svg
                 preserveAspectRatio="none"

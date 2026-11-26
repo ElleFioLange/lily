@@ -18,6 +18,8 @@ export type SourceManifest = {
   name: string
   outputTypes: ('graphics' | 'editor')[]
   allowMultiple: boolean
+  /** A pinned source gets one instance per session, created at startup, and can't be closed. */
+  pinned?: boolean
 }
 
 export type UIProps = {
