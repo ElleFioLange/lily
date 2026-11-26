@@ -2,6 +2,7 @@ import { SourceDefinition, ActiveSource } from '@renderer/sources/types'
 import { create } from 'zustand'
 import { v4 as uuid } from 'uuid'
 import { useGraphicsStore } from './useGraphicsStore'
+import { useBrowserStore } from './useBrowserStore'
 
 interface SourcesState {
   registered: Record<string, SourceDefinition>
@@ -13,7 +14,7 @@ interface SourcesState {
   registerSource: (source: SourceDefinition) => void
   /** Creates an instance of a source and focuses it. Returns its instanceId. */
   loadSource: (sourceId: string) => string | null
-  /** Adds a new Hydra layer. Every layer you add is Hydra. */
+  /** Adds a new, empty Hydra layer and shows the file browser to pick its patch. */
   addLayer: () => string | null
   /** Creates the session's default layers (pinned sources, then one Hydra layer) if none exist. */
   startSession: () => void
@@ -86,7 +87,11 @@ export const useSourcesStore = create<SourcesState>((set, get) => ({
     return instanceId
   },
 
-  addLayer: () => get().loadSource('hydra'),
+  addLayer: () => {
+    const instanceId = get().loadSource('hydra')
+    if (instanceId) useBrowserStore.getState().setOpen(true)
+    return instanceId
+  },
 
   startSession: () => {
     const { registered, active, loadSource, setFocused } = get()
@@ -95,7 +100,7 @@ export const useSourcesStore = create<SourcesState>((set, get) => ({
     Object.values(registered)
       .filter((source) => source.manifest.pinned)
       .forEach((source) => loadSource(source.manifest.id))
-    const firstLayer = loadSource('hydra')
+    const firstLayer = get().addLayer()
     if (firstLayer) setFocused(firstLayer)
   },
 

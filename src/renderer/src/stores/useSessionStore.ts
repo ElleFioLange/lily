@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { useSourcesStore } from './useSourcesStore'
+import { useBrowserStore } from './useBrowserStore'
 import { MixerParams, useGraphicsStore } from './useGraphicsStore'
 import { MixSnapshot, MixerPreset, mergeOrder, useMixerPresetsStore } from './useMixerPresetsStore'
 import { useWorkingDirectoryStore } from './useWorkingDirectoryStore'
@@ -142,7 +143,8 @@ export async function restoreSession(content: string): Promise<void> {
     definition.restore?.(instanceId, layer.data)
   }
 
-  // Always leave at least one Hydra layer to work in
+  // Show the restored patches. If none came back, add an empty layer, which opens the browser.
+  useBrowserStore.getState().setOpen(false)
   if (!Object.values(useSourcesStore.getState().active).some((s) => s.manifest.id === 'hydra')) {
     useSourcesStore.getState().addLayer()
   }

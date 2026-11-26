@@ -254,7 +254,8 @@ fits the panel.
   every `.js` file in the working directory (`useWorkingDirectoryStore`; main-process `workdir:*`
   IPC, saved in settings as `workingDirectory`). Skips hidden folders and `node_modules`; refreshes
   on window focus. Picking a file opens it in the focused layer (`utils/actions/openPatch.ts`) and
-  hides the browser.
+  hides the browser. Every new empty layer (`addLayer`, so also Layer 1 at launch) opens the
+  browser; opening a `.lly` session hides it so the restored patches show.
 
 ### Layers
 

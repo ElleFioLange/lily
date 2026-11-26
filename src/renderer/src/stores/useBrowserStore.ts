@@ -8,7 +8,8 @@ interface BrowserState {
 }
 
 export const useBrowserStore = create<BrowserState>((set) => ({
-  open: true,
+  // Opened by every new empty layer (useSourcesStore.addLayer), including Layer 1 at launch
+  open: false,
   setOpen: (open) => set({ open }),
   toggle: () => set((state) => ({ open: !state.open }))
 }))
