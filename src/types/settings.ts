@@ -9,7 +9,7 @@ export interface AudioSettings {
 }
 
 /**
- * Mallet keyboard settings — maps MIDI channel 9 note-ons to typing
+ * Mallet keyboard settings (Poiesis only) — maps MIDI channel 9 note-ons to typing
  */
 export interface MalletKeyboardSettings {
   enabled: boolean
@@ -21,6 +21,8 @@ export interface MalletKeyboardSettings {
 export interface Settings {
   audio: AudioSettings
   malletKeyboard: MalletKeyboardSettings
+  /** Folder the file browser lists .js patches from; null until one is opened */
+  workingDirectory: string | null
 }
 
 /**
@@ -33,5 +35,6 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   malletKeyboard: {
     enabled: false
-  }
+  },
+  workingDirectory: null
 }

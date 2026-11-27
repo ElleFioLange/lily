@@ -1,43 +1,61 @@
-import { ActivePlugin } from '@plugins/utils'
-import { usePluginsStore } from '@renderer/stores/usePluginsStore'
-import { PoiesisState } from '@renderer/surfaces/poiesis/store'
+import { useSourcesStore } from '@renderer/stores/useSourcesStore'
+import { ActiveSource } from '@renderer/sources/types'
+import { endPreview, previewFocused } from '@renderer/sources/hydra/patchPreview'
+import { formatFocused, formatLayer } from '@renderer/sources/hydra/format'
+import { flagIfInvalid } from '@renderer/sources/hydra/validate'
 
-export default function run() {
-  console.log('running')
-  const { active, focused } = usePluginsStore.getState()
-  if (focused === null) return
+// The editor handles these shortcuts itself (so CodeMirror doesn't also act on them, e.g.
+// Cmd+Enter inserting a blank line), and the app menu may fire for the same key press.
+// Whichever comes second within this window is skipped.
+const SAME_PRESS_MS = 150
+const lastCall: Record<string, number> = {}
+function once(action: string): boolean {
+  const now = performance.now()
+  if (now - (lastCall[action] ?? -Infinity) < SAME_PRESS_MS) return false
+  lastCall[action] = now
+  return true
+}
 
-  const plugin = active[focused]
-  if (!plugin) throw new Error('Unable to find plugin with instance id: ' + focused)
-
-  const poiesisPlugins: ActivePlugin<PoiesisState>[] = []
-  const otherPlugins: ActivePlugin[] = []
-  Object.values(active).forEach((plugin) => {
-    const id = plugin.manifest.id
-    if (id === 'poiesis') poiesisPlugins.push(plugin as ActivePlugin<PoiesisState>)
-    else otherPlugins.push(plugin)
-  })
-
-  if (poiesisPlugins.length) {
-    const { poiesis, parsedConfig, configFlags } = poiesisPlugins[0].useStore.getState()
-    for (const plugin of otherPlugins) {
-      console.log('running process of ' + plugin.manifest.name)
-      plugin.process(plugin.instanceId, [{ poiesis, config: parsedConfig, flags: configFlags }])
-    }
-  } else {
-    for (const plugin of otherPlugins) {
-      plugin.process(plugin.instanceId, [])
-    }
+// Hydra patches are formatted on evaluation, then run as formatted
+async function evaluate(source: ActiveSource) {
+  try {
+    await formatLayer(source.instanceId)
+    await flagIfInvalid(source.instanceId)
+    await source.process(source.instanceId)
+  } catch (error) {
+    console.error(`[run] ${source.name} failed:`, error)
   }
+}
 
-  // TODO Implement handling for multiple poiesis instances
-  // let atleastOneValidPoiesis = false
+/** Run All Layers (Cmd/Ctrl+Alt+Enter): re-evaluate every active source, e.g. each Hydra layer's patch. */
+export default function run() {
+  if (!once('runAll')) return
+  const { active } = useSourcesStore.getState()
+  for (const source of Object.values(active)) void evaluate(source)
+  endPreview()
+}
 
-  // for (const poiesisPlugin of poiesisPlugins) {
-  //   const { poiesis, lastRunValue, parsedConfig } = poiesisPlugin.useStore.getState()
-  //   // If the poiesis hasn't been updated since the last run then skip it
-  //   if (parsedConfig === null) continue
-  //   for (const plugin of otherPlugins) {
-  //   }
-  // }
+/** Run (Cmd/Ctrl+Shift+Enter and the play button): re-evaluate only the focused layer's patch. */
+export function runFocused() {
+  if (!once('runFocused')) return
+  const { active, focused } = useSourcesStore.getState()
+  const source = focused ? active[focused] : undefined
+  if (!source) return
+  void evaluate(source)
+  endPreview(source.instanceId)
+}
+
+/** Preview (Cmd/Ctrl+Enter): show the focused Hydra layer's edits without running them on the layer. */
+export function previewPatch() {
+  if (!once('preview')) return
+  const { focused } = useSourcesStore.getState()
+  void formatFocused()
+    .then(() => (focused ? flagIfInvalid(focused) : undefined))
+    .then(previewFocused)
+}
+
+/** Format Patch (Cmd/Ctrl+F): format the focused layer's patch without running it. */
+export function formatPatch() {
+  if (!once('format')) return
+  void formatFocused()
 }

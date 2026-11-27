@@ -1,7 +1,7 @@
 import { cssBlendMode } from '@renderer/graphics/blendModes'
 import { MixerParams } from '@renderer/stores/useGraphicsStore'
-import { usePluginsStore } from '@renderer/stores/usePluginsStore'
-import { UIProps } from 'src/types/plugins'
+import { useSourcesStore } from '@renderer/stores/useSourcesStore'
+import { UIProps } from '@renderer/sources/types'
 
 type EditorOverlaysProps = {
   editors: Record<string, MixerParams>
@@ -18,15 +18,15 @@ export default function EditorOverlays({
   editorsOrder,
   environment
 }: EditorOverlaysProps) {
-  const { getInstance } = usePluginsStore()
+  const { getInstance } = useSourcesStore()
 
   return (
     <>
       {editorsOrder.map((id) => {
         const params = editors[id]
         if (!params?.enabled) return null
-        const plugin = getInstance(id)
-        if (plugin === undefined || plugin.Workspace === undefined) return null
+        const source = getInstance(id)
+        if (source === undefined || source.Workspace === undefined) return null
         return (
           <div
             className="absolute size-full"
@@ -36,7 +36,7 @@ export default function EditorOverlays({
               mixBlendMode: cssBlendMode(params.blendMode)
             }}
           >
-            <plugin.Workspace instanceId={id} environment={environment} />
+            <source.Workspace instanceId={id} environment={environment} />
           </div>
         )
       })}

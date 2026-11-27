@@ -1,9 +1,0 @@
-{
-  "id": "llm-poiesis",
-  "name": "LLM-Poiesis",
-  "repo": "local",
-  "author": "sysfem.err",
-  "version": "1.0.0",
-  "outputTypes": ["editor"],
-  "allowMultiple": false
-}

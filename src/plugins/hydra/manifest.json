@@ -1,9 +1,0 @@
-{
-  "id": "hydra",
-  "name": "Hydra",
-  "repo": "repo goes here",
-  "author": "sysfem.err",
-  "version": "1.0.0",
-  "outputTypes": ["graphics"],
-  "allowMultiple": true
-}

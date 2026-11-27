@@ -2,7 +2,6 @@ import { create } from 'zustand'
 
 export type PanelId =
   | 'live-preview'
-  | 'ableton-monitor'
   | 'hydra-preview'
   | 'video-controls'
   | 'hydra-patches'

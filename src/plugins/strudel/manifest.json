@@ -1,9 +1,0 @@
-{
-  "id": "strudel",
-  "name": "Strudel",
-  "repo": "",
-  "author": "",
-  "version": "1.0.0",
-  "outputTypes": ["audio"],
-  "allowMultiple": false
-}

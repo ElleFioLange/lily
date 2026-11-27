@@ -1,65 +1,21 @@
 import { app, shell, BrowserWindow, ipcMain, Menu, dialog, FileFilter } from 'electron'
-import { join } from 'path'
+import { join, relative, sep } from 'path'
+import { homedir } from 'os'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { getOSCServer } from './osc/server'
-import { getOSCClient } from './osc/client'
-import {
-  exportMaxDevice,
-  quickInstallMaxDevice,
-  checkMaxDeviceExists
-} from '../plugins/ableton/maxdevice/export'
 import { promises as fs } from 'fs'
-import { getCameraWebSocketServer } from './camera/websocket-server'
-import { networkInterfaces } from 'os'
-import type { StartServerResult, StopServerResult } from '../types/camera'
 import { getSettingsManager } from './settings/manager'
 import type { Settings } from '../types/settings'
 import { getAudifyCapture } from './audio/audify-capture'
 import type { AudioDevice, AudioCaptureStatus } from '../types/audio'
-import 'dotenv/config'
-import { getClaudeClient } from './claude/client'
-import type { ClaudeSendMessageParams, ClaudeSendMessageResult } from '../types/claude'
-import { getSyphonManager } from './syphon/client'
-
-// Initialize OSC server and client
-const oscServer = getOSCServer({ port: 5460 })
-const oscClient = getOSCClient({ port: 5459 })
-
-// Initialize camera WebSocket server
-const cameraServer = getCameraWebSocketServer()
+import { fileServerUrl, importPaths, startFileServer } from './fileServer'
 
 // Initialize settings manager
 const settingsManager = getSettingsManager()
 
-// Initialize Claude API client
-const claudeClient = getClaudeClient()
-
-// Initialize Syphon manager (macOS only)
-const syphonManager = getSyphonManager()
-
 let mainWindowRef: BrowserWindow | null = null
 let settingsWindowRef: BrowserWindow | null = null
 let performanceWindowRef: BrowserWindow | null = null
-
-/**
- * Get local IP address for camera streaming
- */
-function getLocalIPAddress(): string {
-  const nets = networkInterfaces()
-  for (const name of Object.keys(nets)) {
-    const netGroup = nets[name]
-    if (!netGroup) continue
-
-    for (const net of netGroup) {
-      // Skip internal (loopback) and non-IPv4 addresses
-      if (net.family === 'IPv4' && !net.internal) {
-        return net.address
-      }
-    }
-  }
-  return 'localhost'
-}
 
 function createMenu(): void {
   const isMac = process.platform === 'darwin'
@@ -90,6 +46,49 @@ function createMenu(): void {
           }
         ]
       : []),
+
+    // File menu: .lly session files
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'New Layer',
+          accelerator: 'CmdOrCtrl+N',
+          click: () => mainWindowRef?.webContents.send('layer:new')
+        },
+        {
+          label: 'Close Layer',
+          accelerator: 'CmdOrCtrl+W',
+          click: () => mainWindowRef?.webContents.send('layer:close')
+        },
+        {
+          label: 'Toggle File Browser',
+          accelerator: 'CmdOrCtrl+O',
+          click: () => mainWindowRef?.webContents.send('browser:toggle')
+        },
+        {
+          label: 'Import...',
+          click: () => void importFromDialog()
+        },
+        { type: 'separator' as const },
+        {
+          label: 'Open Session...',
+          accelerator: 'CmdOrCtrl+Alt+O',
+          click: () => mainWindowRef?.webContents.send('session:menu', 'open')
+        },
+        { type: 'separator' as const },
+        {
+          label: 'Save Session',
+          accelerator: 'CmdOrCtrl+S',
+          click: () => mainWindowRef?.webContents.send('session:menu', 'save')
+        },
+        {
+          label: 'Save Session As...',
+          accelerator: 'CmdOrCtrl+Shift+S',
+          click: () => mainWindowRef?.webContents.send('session:menu', 'saveAs')
+        }
+      ]
+    },
 
     // Edit menu
     {
@@ -161,6 +160,30 @@ function createMenu(): void {
           }
         },
         {
+          label: 'Toggle Full Performance Preview',
+          accelerator: 'CmdOrCtrl+Shift+O',
+          click: () => {
+            mainWindowRef?.webContents.send('performance:full-preview')
+          }
+        },
+        {
+          label: 'Next Layer',
+          accelerator: 'Control+Tab',
+          click: () => mainWindowRef?.webContents.send('layer:cycle', 1)
+        },
+        {
+          label: 'Previous Layer',
+          accelerator: 'Control+Shift+Tab',
+          click: () => mainWindowRef?.webContents.send('layer:cycle', -1)
+        },
+        {
+          label: 'Toggle Poiesis',
+          accelerator: 'CmdOrCtrl+P',
+          click: () => {
+            mainWindowRef?.webContents.send('poiesis:toggle')
+          }
+        },
+        {
           label: 'Toggle Preview',
           accelerator: 'CmdOrCtrl+Alt+P',
           click: () => {
@@ -174,7 +197,7 @@ function createMenu(): void {
               { type: 'separator' as const },
               { role: 'window' as const }
             ]
-          : [{ role: 'close' as const }])
+          : [])
       ]
     },
 
@@ -183,17 +206,32 @@ function createMenu(): void {
       label: 'Actions',
       submenu: [
         {
-          label: 'Run',
+          label: 'Preview Patch',
+          accelerator: 'CmdOrCtrl+Enter',
+          click: () => {
+            mainWindowRef?.webContents.send('actions:preview')
+          }
+        },
+        {
+          label: 'Run Patch',
           accelerator: 'CmdOrCtrl+Shift+Enter',
           click: () => {
             mainWindowRef?.webContents.send('actions:run')
           }
         },
         {
-          label: 'Toggle Hydra Monitor',
-          accelerator: 'CmdOrCtrl+Shift+M',
+          label: 'Run All Layers',
+          accelerator: 'CmdOrCtrl+Alt+Enter',
           click: () => {
-            mainWindowRef?.webContents.send('hydra:toggle-monitor')
+            mainWindowRef?.webContents.send('actions:run-all')
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Format Patch',
+          accelerator: 'CmdOrCtrl+F',
+          click: () => {
+            mainWindowRef?.webContents.send('actions:format')
           }
         }
       ]
@@ -223,7 +261,7 @@ function createWindow(): void {
     mainWindow.show()
   })
 
-  // Store reference for OSC event forwarding
+  // Store reference for IPC event forwarding
   mainWindowRef = mainWindow
 
   // Create application menu
@@ -325,24 +363,14 @@ app.whenReady().then(async () => {
   // Load settings
   await settingsManager.load()
 
-  // Initialize Claude API client
-  claudeClient.init()
-
-  // Initialize Syphon (macOS only)
-  syphonManager.init()
-  initializeSyphonStreaming()
-
-  // Initialize OSC communication
-  initializeOSC()
-
-  // Initialize camera WebSocket forwarding
-  initializeCameraStreaming()
-
-  // Initialize audio capture streaming
+  // Initialize audio capture streaming (used by Poiesis audio-reactive keywords)
   initializeAudioStreaming()
 
   // Setup IPC handlers
   setupIPCHandlers()
+
+  // Serves imported and working-folder files to patches; the window asks for its address on load
+  await startFileServer(workingFolder)
 
   createWindow()
 
@@ -364,88 +392,9 @@ app.on('window-all-closed', () => {
 
 // Cleanup on quit
 app.on('before-quit', () => {
-  oscServer.stop()
-  oscClient.close()
-  cameraServer.stop()
   const audioCapture = getAudifyCapture()
   audioCapture.stop()
-  syphonManager.cleanup()
 })
-
-// Initialize OSC communication
-async function initializeOSC(): Promise<void> {
-  try {
-    // Start OSC server
-    await oscServer.start()
-
-    // Initialize OSC client
-    await oscClient.init()
-
-    console.log('OSC communication initialized')
-
-    // ============================================================================
-    // Forward OSC Messages to Renderer
-    // ============================================================================
-    // The server emits 'message' events for all incoming OSC messages.
-    // We forward these to the renderer process via IPC.
-    //
-    // To add pattern-specific forwarding, register additional listeners here:
-    // Example:
-    //   oscServer.on('/your/pattern', (message) => {
-    //     mainWindowRef?.webContents.send('osc:pattern:/your/pattern', message)
-    //   })
-
-    oscServer.on('message', (message) => {
-      mainWindowRef?.webContents.send('osc:message', message)
-    })
-
-    // "Show in Lily" from the Ableton extension: foreground the app so the
-    // monitor pane (which receives the same message via osc:message) is visible.
-    oscServer.on('/lily/select', () => {
-      if (!mainWindowRef) return
-      if (mainWindowRef.isMinimized()) mainWindowRef.restore()
-      mainWindowRef.show()
-      mainWindowRef.focus()
-      app.focus({ steal: true })
-    })
-
-    // Example: Forward specific patterns
-    // Uncomment and modify these examples for your use case:
-    /*
-    oscServer.on('/synth/*', (message) => {
-      mainWindowRef?.webContents.send('osc:pattern:/synth/*', message)
-    })
-
-    oscServer.on('/transport/play', (message) => {
-      mainWindowRef?.webContents.send('osc:pattern:/transport/play', message)
-    })
-    */
-  } catch (err) {
-    console.error('Failed to initialize OSC:', err)
-  }
-}
-
-/**
- * Initialize camera WebSocket streaming
- * Forwards camera frames from WebSocket clients to renderer process
- */
-function initializeCameraStreaming(): void {
-  // Forward camera frames to renderer
-  cameraServer.on('frame', (frameBuffer: Buffer) => {
-    mainWindowRef?.webContents.send('camera:frame', frameBuffer)
-  })
-
-  // Forward connection status updates
-  cameraServer.on('clientConnected', ({ clientCount }) => {
-    mainWindowRef?.webContents.send('camera:client-connected', clientCount)
-  })
-
-  cameraServer.on('clientDisconnected', ({ clientCount }) => {
-    mainWindowRef?.webContents.send('camera:client-disconnected', clientCount)
-  })
-
-  console.log('Camera streaming initialized')
-}
 
 /**
  * Initialize audio capture streaming
@@ -482,40 +431,9 @@ function initializeAudioStreaming(): void {
 }
 
 /**
- * Initialize Syphon frame streaming (macOS only)
- * Forwards Syphon frames and server list changes to renderer process
- */
-function initializeSyphonStreaming(): void {
-  syphonManager.on('frame', (payload) => {
-    mainWindowRef?.webContents.send('syphon:frame', payload)
-  })
-
-  syphonManager.on('servers-changed', (servers) => {
-    mainWindowRef?.webContents.send('syphon:servers-changed', servers)
-  })
-
-  console.log('Syphon streaming initialized')
-}
-
-/**
  * Setup IPC Handlers
  *
  * Registers IPC handlers for communication between renderer and main process.
- * This includes the generic OSC send handler and other application-specific handlers.
- *
- * OSC Handler Pattern:
- * The generic 'osc:send' handler is the only OSC-related handler you need.
- * All application-specific OSC functionality should be built in the renderer
- * using this generic handler.
- *
- * Example (adding a custom handler if really needed):
- * ```typescript
- * ipcMain.handle('my-custom-action', async (_, param1, param2) => {
- *   // Do something complex that can't be done in renderer
- *   oscClient.send('/custom/address', [param1, param2])
- *   return { success: true }
- * })
- * ```
  */
 function setupIPCHandlers(): void {
   // ============================================================================
@@ -581,35 +499,92 @@ function setupIPCHandlers(): void {
     }
   )
   // ============================================================================
-  // OSC Communication Handler
+  // Session Files (.lly)
   // ============================================================================
-  /**
-   * Generic OSC send handler
-   * Forwards OSC messages from renderer to the OSC client
-   */
-  ipcMain.handle('osc:send', async (_, address: string, args: unknown[]) => {
-    oscClient.send(address, args as Array<number | string | boolean>)
+  ipcMain.handle('session:write', async (_, content: string, path: string) => {
+    try {
+      await fs.writeFile(path, content, 'utf-8')
+      return { success: true, path }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to save session'
+      }
+    }
+  })
+
+  ipcMain.handle('session:saveAs', async (_, content: string, suggestedName?: string) => {
+    try {
+      const result = await dialog.showSaveDialog(mainWindowRef!, {
+        title: 'Save Lily Session',
+        defaultPath: join(
+          settingsManager.get().workingDirectory ?? '',
+          suggestedName ?? 'session.lly'
+        ),
+        filters: [{ name: 'Lily Session', extensions: ['lly'] }]
+      })
+      if (result.canceled || !result.filePath) return { success: false, error: 'No file selected' }
+      const path = result.filePath.endsWith('.lly') ? result.filePath : `${result.filePath}.lly`
+      await fs.writeFile(path, content, 'utf-8')
+      return { success: true, path }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to save session'
+      }
+    }
+  })
+
+  ipcMain.handle('session:open', async () => {
+    try {
+      const result = await dialog.showOpenDialog(mainWindowRef!, {
+        title: 'Open Lily Session',
+        defaultPath: settingsManager.get().workingDirectory ?? undefined,
+        filters: [{ name: 'Lily Session', extensions: ['lly'] }],
+        properties: ['openFile']
+      })
+      if (result.canceled || result.filePaths.length === 0) {
+        return { success: false, error: 'No file selected' }
+      }
+      const path = result.filePaths[0]
+      const content = await fs.readFile(path, 'utf-8')
+      return { success: true, content, path }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to open session'
+      }
+    }
   })
 
   // ============================================================================
-  // Max Device Export Handlers
-
+  // Working Directory (file browser)
   // ============================================================================
-  ipcMain.handle('max-device:export', async () => {
-    return await exportMaxDevice()
+  ipcMain.handle('workdir:get', workingFolder)
+
+  // File server: its address, and the files imported into it
+  ipcMain.on('fileServer:url', (event) => {
+    event.returnValue = fileServerUrl()
   })
 
-  ipcMain.handle('max-device:quick-install', async () => {
-    return await quickInstallMaxDevice()
+  ipcMain.handle('workdir:open', async (): Promise<string | null> => {
+    const result = await dialog.showOpenDialog(mainWindowRef!, {
+      title: 'Open Working Directory',
+      properties: ['openDirectory', 'createDirectory']
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    const directory = result.filePaths[0]
+    await saveWorkingDirectory(directory)
+    return directory
   })
 
-  ipcMain.handle('max-device:check-exists', async () => {
-    return await checkMaxDeviceExists()
+  ipcMain.handle('workdir:set', async (_, directory: string): Promise<string | null> => {
+    if (!(await isDirectory(directory))) return null
+    await saveWorkingDirectory(directory)
+    return directory
   })
 
-  // ============================================================================
-  // Configuration File Handlers
-  // ============================================================================
+  ipcMain.handle('workdir:list', async (_, directory: string) => listJsFiles(directory))
 
   // ============================================================================
   // Hydra File Handlers
@@ -626,10 +601,23 @@ function setupIPCHandlers(): void {
     }
   })
 
+  ipcMain.handle('hydra:read', async (_, path: string) => {
+    try {
+      const content = await fs.readFile(path, 'utf-8')
+      return { success: true, content, path }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to read file'
+      }
+    }
+  })
+
   ipcMain.handle('hydra:open', async () => {
     try {
       const result = await dialog.showOpenDialog(mainWindowRef!, {
         title: 'Open Hydra Shader File',
+        defaultPath: settingsManager.get().workingDirectory ?? undefined,
         filters: [
           { name: 'JavaScript Files', extensions: ['js'] },
           { name: 'All Files', extensions: ['*'] }
@@ -656,7 +644,7 @@ function setupIPCHandlers(): void {
     try {
       const result = await dialog.showSaveDialog(mainWindowRef!, {
         title: 'Save Hydra Shader File',
-        defaultPath: 'new-shader.js',
+        defaultPath: join(settingsManager.get().workingDirectory ?? '', 'new-shader.js'),
         filters: [
           { name: 'JavaScript Files', extensions: ['js'] },
           { name: 'All Files', extensions: ['*'] }
@@ -735,41 +723,6 @@ function setupIPCHandlers(): void {
   })
 
   // ============================================================================
-  // Camera WebSocket Streaming Handlers
-  // ============================================================================
-  ipcMain.handle('camera:start', async (_, wsPort: number = 8765): Promise<StartServerResult> => {
-    try {
-      const httpPort = wsPort + 1 // HTTP server on WS port + 1
-      await cameraServer.start(wsPort, httpPort)
-      const localIP = getLocalIPAddress()
-      return { success: true, ip: localIP, httpPort, wsPort }
-    } catch (error) {
-      return {
-        success: false,
-        ip: '',
-        httpPort: wsPort + 1,
-        wsPort,
-        error: error instanceof Error ? error.message : 'Failed to start camera server'
-      }
-    }
-  })
-
-  ipcMain.handle('camera:stop', async (): Promise<StopServerResult> => {
-    try {
-      cameraServer.stop()
-      return { success: true }
-    } catch (error) {
-      return { success: false }
-    }
-  })
-
-  ipcMain.handle('camera:get-status', async () => {
-    const status = cameraServer.getStatus()
-    status.ip = getLocalIPAddress()
-    return status
-  })
-
-  // ============================================================================
   // Audio Capture Handlers
   // ============================================================================
   ipcMain.handle('audio:list-devices', async (): Promise<AudioDevice[]> => {
@@ -809,23 +762,6 @@ function setupIPCHandlers(): void {
   })
 
   // ============================================================================
-  // Syphon Handlers (macOS only)
-  // ============================================================================
-  ipcMain.handle('syphon:list-servers', async () => {
-    return syphonManager.getServers()
-  })
-
-  ipcMain.handle('syphon:connect', async (_, instanceId: string, serverUUID: string) => {
-    const success = syphonManager.connect(instanceId, serverUUID)
-    return { success }
-  })
-
-  ipcMain.handle('syphon:disconnect', async (_, instanceId: string) => {
-    syphonManager.disconnect(instanceId)
-    return { success: true }
-  })
-
-  // ============================================================================
   // Settings Handlers
   // ============================================================================
   ipcMain.handle('settings:get', async (): Promise<Settings> => {
@@ -835,58 +771,87 @@ function setupIPCHandlers(): void {
   ipcMain.handle('settings:save', async (_, settings: Settings): Promise<void> => {
     await settingsManager.set(settings)
   })
+}
 
-  // ============================================================================
-  // Claude API Handlers
-  // ============================================================================
-  ipcMain.handle(
-    'claude:sendMessage',
-    async (_, params: ClaudeSendMessageParams): Promise<ClaudeSendMessageResult> => {
-      return await claudeClient.sendMessage(params)
+// ============================================================================
+// Working directory helpers
+// ============================================================================
+const WORKDIR_SKIP = new Set(['node_modules'])
+const WORKDIR_MAX_DEPTH = 6
+const WORKDIR_MAX_FILES = 1000
+
+/** The saved working directory, or where Lily was launched from, or null */
+async function workingFolder(): Promise<string | null> {
+  const saved = settingsManager.get().workingDirectory
+  if (saved && (await isDirectory(saved))) return saved
+  // Launched from a terminal (e.g. pnpm dev): use where it was launched from. A packaged
+  // app starts in / or the home folder, which are too big to list, so wait for a pick.
+  const cwd = process.cwd()
+  return cwd === '/' || cwd === homedir() ? null : cwd
+}
+
+/** File > Import: links files or folders for good, so patches load their files by name */
+async function importFromDialog(): Promise<void> {
+  if (!mainWindowRef) return
+  const result = await dialog.showOpenDialog(mainWindowRef, {
+    title: 'Import Files or Folders',
+    message: 'Patches can load these files by name from now on.',
+    buttonLabel: 'Import',
+    properties: ['openFile', 'openDirectory', 'multiSelections']
+  })
+  if (!result.canceled && result.filePaths.length > 0) await importPaths(result.filePaths)
+}
+
+async function isDirectory(path: string): Promise<boolean> {
+  try {
+    return (await fs.stat(path)).isDirectory()
+  } catch {
+    return false
+  }
+}
+
+async function saveWorkingDirectory(directory: string): Promise<void> {
+  await settingsManager.set({ ...settingsManager.get(), workingDirectory: directory })
+}
+
+/**
+ * Every .js file under a directory, skipping hidden folders and node_modules.
+ * Capped in depth and count so opening a huge folder can't hang the app.
+ */
+async function listJsFiles(
+  root: string
+): Promise<{ files: { name: string; path: string; relativePath: string }[]; truncated: boolean }> {
+  const files: { name: string; path: string; relativePath: string }[] = []
+  let truncated = false
+
+  const walk = async (directory: string, depth: number): Promise<void> => {
+    if (truncated) return
+    let entries: import('fs').Dirent[]
+    try {
+      entries = await fs.readdir(directory, { withFileTypes: true })
+    } catch {
+      return
     }
-  )
-
-  // Local LLM (LM Studio / OpenAI-compatible) Handler
-  // ============================================================================
-  ipcMain.handle(
-    'llm:sendLocal',
-    async (
-      _,
-      baseUrl: string,
-      messages: { role: string; content: string }[],
-      systemPrompt: string,
-      maxTokens: number
-    ): Promise<ClaudeSendMessageResult> => {
-      try {
-        const url = `${baseUrl}/chat/completions`
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'local-model',
-            max_tokens: maxTokens,
-            messages: [
-              ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-              ...messages
-            ]
-          })
-        })
-
-        if (!res.ok) {
-          return {
-            success: false,
-            error: `LM Studio returned ${res.status} ${res.statusText} from ${url}`
-          }
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue
+      const path = join(directory, entry.name)
+      if (entry.isDirectory()) {
+        if (!WORKDIR_SKIP.has(entry.name) && depth < WORKDIR_MAX_DEPTH) await walk(path, depth + 1)
+      } else if (entry.isFile() && entry.name.endsWith('.js')) {
+        if (files.length >= WORKDIR_MAX_FILES) {
+          truncated = true
+          return
         }
-
-        const data = await res.json()
-        const content = data.choices?.[0]?.message?.content
-        if (!content) return { success: false, error: 'No content in LM Studio response' }
-        return { success: true, content }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        return { success: false, error: `Failed to reach local model at ${baseUrl}: ${msg}` }
+        files.push({
+          name: entry.name,
+          path,
+          relativePath: relative(root, path).split(sep).join('/')
+        })
       }
     }
-  )
+  }
+
+  await walk(root, 0)
+  files.sort((a, b) => a.relativePath.localeCompare(b.relativePath))
+  return { files, truncated }
 }
