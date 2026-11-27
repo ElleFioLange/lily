@@ -13,6 +13,7 @@ import { WorkspaceProps } from '@renderer/sources/types'
 import run, { formatPatch, previewPatch, runFocused } from '@renderer/utils/actions/run'
 import { registerEditorView } from '../editorViews'
 import { scheduleValidation, validateLayer } from '../validate'
+import { hydraAutocomplete } from '../completions'
 import { cursorKeymap, multipleCursors, vscodeOptionKeys } from '../editorKeys'
 
 // Ahead of CodeMirror's defaults, which bind Mod-Enter to "insert blank line"
@@ -79,6 +80,34 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
           fontFamily: 'Monaspace Neon',
           padding: '0'
         },
+        // Autocomplete list, in the editor's colors
+        '.cm-tooltip': {
+          backgroundColor: '#1c1917f0', // stone-900
+          border: '1px solid #44403c', // stone-700
+          color: '#e7e5e4'
+        },
+        '.cm-tooltip-autocomplete > ul': {
+          fontFamily: 'Monaspace Neon',
+          fontSize: '12px',
+          maxHeight: '12em'
+        },
+        '.cm-tooltip-autocomplete > ul > li[aria-selected]': {
+          backgroundColor: '#57534e', // stone-600
+          color: '#fafaf9'
+        },
+        '.cm-completionDetail': {
+          color: '#a8a29e', // stone-400
+          fontStyle: 'normal',
+          marginLeft: '0.75em'
+        },
+        '.cm-completionMatchedText': {
+          textDecoration: 'none',
+          color: '#fbbf24' // amber-400
+        },
+        '.cm-completionInfo': {
+          fontSize: '11px',
+          color: '#a8a29e'
+        },
         // A strip above the first line in the main editor for the status indicator
         '.cm-scroller': {
           paddingTop: isPerformance ? '0' : '18px'
@@ -140,6 +169,7 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
           history(),
           multipleCursors,
           vscodeOptionKeys,
+          ...(isPerformance ? [] : [hydraAutocomplete]),
           keymap.of([...runKeymap, ...cursorKeymap, ...defaultKeymap, indentWithTab]),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
