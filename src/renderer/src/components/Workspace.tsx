@@ -7,6 +7,7 @@ import { runFocused } from '@renderer/utils/actions/run'
 import { useBrowserStore } from '@renderer/stores/useBrowserStore'
 import FileSystem from './FileSystem'
 import PreviewPip from '@renderer/sources/hydra/ui/PreviewPip'
+import ValidityIndicator from '@renderer/sources/hydra/ui/ValidityIndicator'
 import { ActiveSource } from '@renderer/sources/types'
 import { HydraState } from '@renderer/sources/hydra/store'
 import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
@@ -131,6 +132,7 @@ export default function Workspace() {
                 </div>
               ) : null}
 
+              {isHydra ? <ValidityIndicator instanceId={focusedSurface.instanceId} /> : null}
               {isHydra ? <PreviewPip instanceId={focusedSurface.instanceId} /> : null}
 
               {isHydra && browserOpen ? (

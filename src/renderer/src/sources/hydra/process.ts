@@ -14,12 +14,13 @@ import { ActiveSource } from '@renderer/sources/types'
  */
 export async function evalPatch(
   synth: HydraState['hydra']['synth'],
-  shader: string
+  shader: string,
+  load: (url: string) => Promise<unknown> = loadScript
 ): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
   const evalFunc = new AsyncFunction('synth', 'loadScript', `with (synth) {\n${shader}\n}`)
-  await evalFunc(synth, loadScript)
+  await evalFunc(synth, load)
 }
 
 export default async function process(instanceId: string) {

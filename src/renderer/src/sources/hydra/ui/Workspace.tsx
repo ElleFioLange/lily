@@ -12,6 +12,7 @@ import { HydraState } from '../store'
 import { WorkspaceProps } from '@renderer/sources/types'
 import run, { formatPatch, previewPatch, runFocused } from '@renderer/utils/actions/run'
 import { registerEditorView } from '../editorViews'
+import { scheduleValidation, validateLayer } from '../validate'
 import { cursorKeymap, multipleCursors, vscodeOptionKeys } from '../editorKeys'
 
 // Ahead of CodeMirror's defaults, which bind Mod-Enter to "insert blank line"
@@ -78,6 +79,10 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
           fontFamily: 'Monaspace Neon',
           padding: '0'
         },
+        // A strip above the first line in the main editor for the status indicator
+        '.cm-scroller': {
+          paddingTop: isPerformance ? '0' : '18px'
+        },
         '.cm-gutters': {
           backgroundColor: '#2925245a', // stone-800/35
           color: '#e7e5e4', // stone-400
@@ -140,6 +145,8 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
             if (update.docChanged) {
               const newValue = update.state.doc.toString()
               setShader(newValue)
+              // Re-check whether the code would run once typing pauses
+              if (!isPerformance) scheduleValidation(instanceId)
               // Keep the synced scroll anchor on the same text when editing above it
               if (!isPerformance) {
                 setScrollPos(update.changes.mapPos(instance.useStore.getState().scrollPos))
@@ -158,6 +165,7 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
 
       viewRef.current = view
       const unregister = isPerformance ? undefined : registerEditorView(instanceId, view)
+      if (!isPerformance) void validateLayer(instanceId)
 
       // Main editor publishes the first visible character so performance views can follow it.
       // Synced by doc position rather than percentage since font size and wrapping differ.

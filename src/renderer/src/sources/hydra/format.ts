@@ -1,4 +1,4 @@
-import { formatWithCursor } from 'prettier/standalone'
+import { formatWithCursor, format } from 'prettier/standalone'
 import type { Options } from 'prettier'
 import babel from 'prettier/plugins/babel'
 import estree from 'prettier/plugins/estree'
@@ -27,6 +27,17 @@ export async function formatCode(
     return await formatWithCursor(code, { ...OPTIONS, cursorOffset })
   } catch {
     return null
+  }
+}
+
+/** The parser's message for code that doesn't parse, with its line and column, or null. */
+export async function syntaxError(code: string): Promise<string | null> {
+  try {
+    await format(code, OPTIONS)
+    return null
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    return message.split('\n')[0]
   }
 }
 

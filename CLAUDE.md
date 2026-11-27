@@ -124,6 +124,11 @@ every active instance, and closing a layer calls `cleanup` and removes its compo
 Hydra patches are formatted with Prettier (`sources/hydra/format.ts`, the repo's style at 80
 columns) before every preview and run, and by Format Patch (Cmd/Ctrl+F, Actions menu). Code that
 doesn't parse is left as is. The Hydra editor has no find and replace.
+As you type, `sources/hydra/validate.ts` checks whether the patch would run (Prettier's parser, then
+an evaluation in a tiny hidden Hydra instance that never draws, opens no media and loads each
+script once) and records it on the layer (`isValid`, `error`). `ValidityIndicator` shows it in a
+strip above the first line, quietly, and loudly for a few seconds if you preview or run code that
+won't run (evaluation still goes ahead).
 
 Graphics sources register their canvas in `init`:
 

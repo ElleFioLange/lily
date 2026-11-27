@@ -2,6 +2,7 @@ import { useSourcesStore } from '@renderer/stores/useSourcesStore'
 import { ActiveSource } from '@renderer/sources/types'
 import { endPreview, previewFocused } from '@renderer/sources/hydra/patchPreview'
 import { formatFocused, formatLayer } from '@renderer/sources/hydra/format'
+import { flagIfInvalid } from '@renderer/sources/hydra/validate'
 
 // The editor handles these shortcuts itself (so CodeMirror doesn't also act on them, e.g.
 // Cmd+Enter inserting a blank line), and the app menu may fire for the same key press.
@@ -19,6 +20,7 @@ function once(action: string): boolean {
 async function evaluate(source: ActiveSource) {
   try {
     await formatLayer(source.instanceId)
+    await flagIfInvalid(source.instanceId)
     await source.process(source.instanceId)
   } catch (error) {
     console.error(`[run] ${source.name} failed:`, error)
@@ -46,7 +48,10 @@ export function runFocused() {
 /** Preview (Cmd/Ctrl+Enter): show the focused Hydra layer's edits without running them on the layer. */
 export function previewPatch() {
   if (!once('preview')) return
-  void formatFocused().then(previewFocused)
+  const { focused } = useSourcesStore.getState()
+  void formatFocused()
+    .then(() => (focused ? flagIfInvalid(focused) : undefined))
+    .then(previewFocused)
 }
 
 /** Format Patch (Cmd/Ctrl+F): format the focused layer's patch without running it. */
