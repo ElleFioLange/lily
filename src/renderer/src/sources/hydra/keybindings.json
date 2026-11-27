@@ -22,7 +22,7 @@
   { "key": "ctrl+cmd+l", "command": "cursorEnd" },
   { "key": "shift+cmd+0", "command": "cursorEnd" },
   { "key": "ctrl+cmd+p", "command": "cursorPageUp" },
-  { "key": "ctrl+cmd+m", "command": "cursorPageDown" },
+  { "key": "ctrl+cmd+n", "command": "cursorPageDown" },
 
   // Selecting
   { "key": "ctrl+shift+i", "command": "cursorUpSelect" },
@@ -34,7 +34,7 @@
   { "key": "ctrl+shift+cmd+j", "command": "cursorHomeSelect" },
   { "key": "ctrl+shift+cmd+l", "command": "cursorEndSelect" },
   { "key": "ctrl+shift+cmd+p", "command": "cursorPageUpSelect" },
-  { "key": "ctrl+shift+cmd+m", "command": "cursorPageDownSelect" },
+  { "key": "ctrl+shift+cmd+n", "command": "cursorPageDownSelect" },
   { "key": "ctrl+shift+cmd+o", "command": "editor.action.smartSelect.expand" },
   { "key": "ctrl+shift+cmd+u", "command": "editor.action.smartSelect.shrink" },
 
