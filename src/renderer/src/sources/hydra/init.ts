@@ -3,6 +3,7 @@ import { createHydraStore } from './store'
 import { useGraphicsStore } from '@renderer/stores/useGraphicsStore'
 import { ensurePatchPreview } from './patchPreview'
 import { resolveSourceUrls } from '@renderer/utils/fileUrl'
+import { guardUniforms } from './uniformGuard'
 
 export default function init(instanceId: string) {
   const useHydraStore = createHydraStore(instanceId)
@@ -27,6 +28,8 @@ export default function init(instanceId: string) {
   })
   // s0.initImage('reds.svg') and the like load from Lily's file server
   resolveSourceUrls(hydra as unknown as { s: object[] })
+  // A patch's missing values can't freeze the layer
+  guardUniforms(hydra as unknown as { o: object[] })
 
   const store = useHydraStore.getState()
 
