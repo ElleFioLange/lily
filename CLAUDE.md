@@ -292,7 +292,13 @@ area and the monitors everything under it.
 - **Monitors.tsx** - Focused layer's Monitor (Hydra: o0–o3) over a scrolling row of the other Hydra
   layers (click to focus), and `ProgramMonitor` (the live compositor through `Stage`, as the performance
   window shows it)
-- **Controls.tsx** - Focused layer's controls (Hydra: Save/Save as, speed, performance text)
+- **Controls.tsx** - Focused layer's controls (Hydra: Save/Save as, speed, performance text).
+  Hydra's panel starts with the open patches numbered 1, 2, 3 in tab order
+  (`sources/hydra/controlTargets.ts`): the focused one is always controlled, clicking another adds
+  or removes it, **all** selects every patch and **only this** clears the rest. The sliders show
+  the focused patch's values, and moving one (or a reset) sets that same value on every selected
+  patch; selecting a patch changes nothing on it. The selection outlasts switching layers and
+  drops closed patches.
 - **Stage.tsx** - Scaled replica of the performance window for a compositor + editor overlays;
   used by `PreviewStage` and `ProgramMonitor`
 - **FileSystem.tsx** - File browser overlaid on the focused Hydra patch with a transparent
