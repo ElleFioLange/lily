@@ -50,6 +50,10 @@ on `main` for it.
   WebGL contexts (`utils/webgl.ts`): Chromium keeps 16 and drops the oldest, so hidden Hydra
   instances are made once and kept (a layer's monitor instance lives in its store), closed
   layers are parked and their contexts released, and shared previews remake a lost instance.
+  A regl error mid-draw leaves a framebuffer bound and freezes that Hydra instance for good, so
+  `sources/hydra/uniformGuard.ts` turns missing uniform values (e.g. `osc([x, y])` with `x`
+  undefined) into 0, and the hover preview checks each frame and remakes its instance after a
+  failed draw, showing the error on the card.
   The shader text shown in the performance window is laid out by `performanceText`
   (`{ fontSize, x, y }` — px, and % of window for the top-left offset; `setPerformanceText`
   merges partial updates, `DEFAULT_PERFORMANCE_TEXT` resets). `ui/Controls.tsx` exposes sliders;

@@ -73,7 +73,10 @@ export default function FileSystem({ instance }: { instance: ActiveSource<HydraS
       const centered = rowRect.top - outer.top + rowRect.height / 2 - CARD_HEIGHT / 2
       const top = Math.max(16, Math.min(centered, outer.height - CARD_HEIGHT - 16))
       const right = outer.right - column.left + 8
-      const result = await showHoverPreview(path)
+      // A later frame that fails replaces the picture with the error
+      const failed = (error: string) =>
+        setCard((card) => (card?.path === path ? { ...card, canvas: null, error } : card))
+      const result = await showHoverPreview(path, failed)
       if (result.status === 'stale') return
       setCard({
         path,
