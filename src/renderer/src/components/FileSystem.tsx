@@ -5,6 +5,7 @@ import { ActiveSource } from '@renderer/sources/types'
 import { HydraState } from '@renderer/sources/hydra/store'
 import { openPatchFile, openPatchFromAnywhere } from '@renderer/utils/actions/openPatch'
 import { useSessionStore } from '@renderer/stores/useSessionStore'
+import { useImportedFilesStore } from '@renderer/stores/useImportedFilesStore'
 import {
   hideHoverPreview,
   prepareHoverPreview,
@@ -32,7 +33,8 @@ const STRIP = 'bg-stone-950/70 backdrop-blur-[1px]'
 /**
  * File browser over the focused Hydra patch (Cmd+O). Lists every .js file in the working
  * directory, then files opened from other folders this session; picking one opens it in the layer
- * and hides the browser. Open file, Open folder and Open session sit under the folder name. The background is
+ * and hides the browser. Open file, Open folder, Open session and Import sit under the folder name;
+ * imported files, which patches load by name, are listed under the patches. The background is
  * transparent so a running patch stays visible. The list refreshes when the window regains focus.
  * Hovering a file runs it in a small hidden Hydra instance and shows it in a card beside the list.
  */
@@ -40,6 +42,8 @@ export default function FileSystem({ instance }: { instance: ActiveSource<HydraS
   const { directory, files, truncated, extraFiles, choose, refresh } = useWorkingDirectoryStore()
   const setOpen = useBrowserStore((state) => state.setOpen)
   const currentPath = instance.useStore((state) => state.shaderPath)
+  const imported = useImportedFilesStore((state) => state.files)
+  const { importFiles, remove } = useImportedFilesStore.getState()
 
   useEffect(() => {
     const onFocus = () => void refresh()
@@ -179,6 +183,13 @@ export default function FileSystem({ instance }: { instance: ActiveSource<HydraS
           >
             Open session
           </button>
+          <button
+            className={STRIP}
+            onClick={() => void importFiles()}
+            title="Import files so patches can load them by name, like s0.initImage('reds.svg') (File > Import)"
+          >
+            Import
+          </button>
         </div>
 
         {directory === null ? (
@@ -201,6 +212,34 @@ export default function FileSystem({ instance }: { instance: ActiveSource<HydraS
               </li>
             )}
           </ul>
+        )}
+
+        {imported.length > 0 && (
+          <>
+            <span
+              className={`text-xs text-stone-400 px-2 py-0.5 w-fit ${STRIP}`}
+              title="Patches load these by name, like loadScript('hydra-text.js') or s0.initImage('reds.svg')"
+            >
+              imported, load by name
+            </span>
+            <ul className="border-none shrink-0 max-h-32 overflow-y-auto no-scrollbar text-xs flex flex-col items-start gap-px">
+              {imported.map(({ name, path }) => (
+                <li key={name} className={`max-w-full flex items-center ${STRIP}`}>
+                  <span className="truncate px-2 py-0.5 select-text" title={path}>
+                    {name}
+                  </span>
+                  <button
+                    className="shrink-0 border-none bg-transparent hover:bg-transparent text-stone-500 hover:text-stone-100 px-1.5"
+                    onClick={() => void remove(name)}
+                    title={`Stop serving ${name}`}
+                    aria-label={`Remove ${name}`}
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
 
         {extraFiles.length > 0 && (

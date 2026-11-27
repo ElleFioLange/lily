@@ -8,6 +8,13 @@ import { getSettingsManager } from './settings/manager'
 import type { Settings } from '../types/settings'
 import { getAudifyCapture } from './audio/audify-capture'
 import type { AudioDevice, AudioCaptureStatus } from '../types/audio'
+import {
+  fileServerUrl,
+  importedFiles,
+  importFiles,
+  removeImportedFile,
+  startFileServer
+} from './fileServer'
 
 // Initialize settings manager
 const settingsManager = getSettingsManager()
@@ -64,6 +71,10 @@ function createMenu(): void {
           label: 'Toggle File Browser',
           accelerator: 'CmdOrCtrl+O',
           click: () => mainWindowRef?.webContents.send('browser:toggle')
+        },
+        {
+          label: 'Import...',
+          click: () => void importFromDialog()
         },
         { type: 'separator' as const },
         {
@@ -364,6 +375,9 @@ app.whenReady().then(async () => {
   // Setup IPC handlers
   setupIPCHandlers()
 
+  // Serves imported and working-folder files to patches; the window asks for its address on load
+  await startFileServer(workingFolder)
+
   createWindow()
 
   app.on('activate', function () {
@@ -552,14 +566,15 @@ function setupIPCHandlers(): void {
   // ============================================================================
   // Working Directory (file browser)
   // ============================================================================
-  ipcMain.handle('workdir:get', async (): Promise<string | null> => {
-    const saved = settingsManager.get().workingDirectory
-    if (saved && (await isDirectory(saved))) return saved
-    // Launched from a terminal (e.g. pnpm dev): use where it was launched from. A packaged
-    // app starts in / or the home folder, which are too big to list, so wait for a pick.
-    const cwd = process.cwd()
-    return cwd === '/' || cwd === homedir() ? null : cwd
+  ipcMain.handle('workdir:get', workingFolder)
+
+  // File server: its address, and the files imported into it
+  ipcMain.on('fileServer:url', (event) => {
+    event.returnValue = fileServerUrl()
   })
+  ipcMain.handle('fileServer:list', () => importedFiles())
+  ipcMain.handle('fileServer:import', () => importFromDialog())
+  ipcMain.handle('fileServer:remove', (_, name: string) => removeImportedFile(name))
 
   ipcMain.handle('workdir:open', async (): Promise<string | null> => {
     const result = await dialog.showOpenDialog(mainWindowRef!, {
@@ -773,6 +788,30 @@ function setupIPCHandlers(): void {
 const WORKDIR_SKIP = new Set(['node_modules'])
 const WORKDIR_MAX_DEPTH = 6
 const WORKDIR_MAX_FILES = 1000
+
+/** The saved working directory, or where Lily was launched from, or null */
+async function workingFolder(): Promise<string | null> {
+  const saved = settingsManager.get().workingDirectory
+  if (saved && (await isDirectory(saved))) return saved
+  // Launched from a terminal (e.g. pnpm dev): use where it was launched from. A packaged
+  // app starts in / or the home folder, which are too big to list, so wait for a pick.
+  const cwd = process.cwd()
+  return cwd === '/' || cwd === homedir() ? null : cwd
+}
+
+/** File > Import: picks files and serves them by name; tells the window what's imported now */
+async function importFromDialog() {
+  if (!mainWindowRef) return importedFiles()
+  const result = await dialog.showOpenDialog(mainWindowRef, {
+    title: 'Import Files',
+    buttonLabel: 'Import',
+    properties: ['openFile', 'multiSelections']
+  })
+  if (result.canceled || result.filePaths.length === 0) return importedFiles()
+  const files = await importFiles(result.filePaths)
+  mainWindowRef.webContents.send('fileServer:imported', files)
+  return files
+}
 
 async function isDirectory(path: string): Promise<boolean> {
   try {
