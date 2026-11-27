@@ -101,22 +101,11 @@ const api = {
   },
 
   // ============================================================================
-  // File server: imported files, and the working folder's, served to patches by name
+  // File server: linked files and folders, and the working folder, served to patches by name
   // ============================================================================
   fileServer: {
     /** The server's address, ending in / */
-    url: ipcRenderer.sendSync('fileServer:url') as string,
-    list: (): Promise<{ name: string; path: string }[]> => ipcRenderer.invoke('fileServer:list'),
-    /** Asks for files to import; returns everything imported */
-    import: (): Promise<{ name: string; path: string }[]> =>
-      ipcRenderer.invoke('fileServer:import'),
-    remove: (name: string): Promise<{ name: string; path: string }[]> =>
-      ipcRenderer.invoke('fileServer:remove', name),
-    onImported: (callback: (files: { name: string; path: string }[]) => void) => {
-      const listener = (_: unknown, files: { name: string; path: string }[]) => callback(files)
-      ipcRenderer.on('fileServer:imported', listener)
-      return () => ipcRenderer.removeListener('fileServer:imported', listener)
-    }
+    url: ipcRenderer.sendSync('fileServer:url') as string
   },
 
   // ============================================================================

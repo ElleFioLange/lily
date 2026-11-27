@@ -8,13 +8,7 @@ import { getSettingsManager } from './settings/manager'
 import type { Settings } from '../types/settings'
 import { getAudifyCapture } from './audio/audify-capture'
 import type { AudioDevice, AudioCaptureStatus } from '../types/audio'
-import {
-  fileServerUrl,
-  importedFiles,
-  importFiles,
-  removeImportedFile,
-  startFileServer
-} from './fileServer'
+import { fileServerUrl, importPaths, startFileServer } from './fileServer'
 
 // Initialize settings manager
 const settingsManager = getSettingsManager()
@@ -572,9 +566,6 @@ function setupIPCHandlers(): void {
   ipcMain.on('fileServer:url', (event) => {
     event.returnValue = fileServerUrl()
   })
-  ipcMain.handle('fileServer:list', () => importedFiles())
-  ipcMain.handle('fileServer:import', () => importFromDialog())
-  ipcMain.handle('fileServer:remove', (_, name: string) => removeImportedFile(name))
 
   ipcMain.handle('workdir:open', async (): Promise<string | null> => {
     const result = await dialog.showOpenDialog(mainWindowRef!, {
@@ -799,18 +790,16 @@ async function workingFolder(): Promise<string | null> {
   return cwd === '/' || cwd === homedir() ? null : cwd
 }
 
-/** File > Import: picks files and serves them by name; tells the window what's imported now */
-async function importFromDialog() {
-  if (!mainWindowRef) return importedFiles()
+/** File > Import: links files or folders for good, so patches load their files by name */
+async function importFromDialog(): Promise<void> {
+  if (!mainWindowRef) return
   const result = await dialog.showOpenDialog(mainWindowRef, {
-    title: 'Import Files',
+    title: 'Import Files or Folders',
+    message: 'Patches can load these files by name from now on.',
     buttonLabel: 'Import',
-    properties: ['openFile', 'multiSelections']
+    properties: ['openFile', 'openDirectory', 'multiSelections']
   })
-  if (result.canceled || result.filePaths.length === 0) return importedFiles()
-  const files = await importFiles(result.filePaths)
-  mainWindowRef.webContents.send('fileServer:imported', files)
-  return files
+  if (!result.canceled && result.filePaths.length > 0) await importPaths(result.filePaths)
 }
 
 async function isDirectory(path: string): Promise<boolean> {

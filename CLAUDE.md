@@ -79,14 +79,15 @@ on `main` for it.
 3. **Renderer Process** (`src/renderer/`) - React UI with Zustand state management
 
 **File server** (`src/main/fileServer.ts`): an HTTP server on 127.0.0.1 (port 3000 when free, any
-free port otherwise) so patches load files by name. It serves files imported with **File > Import**
-(or the browser's **Import** button) by their file name, then any file inside the working folder by
-its path there (nothing outside it). Imports are paths, not copies, kept in
-`userData/imported-files.json`; importing a file with the same name replaces the old one. CORS is
-open and video range requests work. The renderer reads the address synchronously
-(`window.api.fileServer.url`); `utils/fileUrl.ts` sends any URL without a scheme or leading `/` to
-it, used by `loadScript` and by s0–s3's `initImage`/`initVideo` (Hydra's source class is patched
-once from `sources/hydra/init.ts`, so every Hydra in the window gets it).
+free port otherwise) so patches load files by name. **File > Import** (the only way in; nothing in
+the UI lists or adds them) links files or folders for good, kept as paths in
+`userData/imported-files.json`, never in a session. A request is served from, in order: a linked
+file with that name, the path inside each linked folder (newest link first), then the path inside
+the working folder; nothing outside those. Lily's own pages (file:// or localhost) get CORS; other
+web pages on the machine don't. Range requests work for video. The renderer reads the address
+synchronously (`window.api.fileServer.url`); `utils/fileUrl.ts` sends any URL without a scheme or
+leading `/` to it, used by `loadScript` and by s0–s3's `initImage`/`initVideo` (Hydra's source
+class is patched once from `sources/hydra/init.ts`, so every Hydra in the window gets it).
 
 ## Development Commands
 
@@ -310,8 +311,7 @@ area and the monitors everything under it.
   browser; opening a `.lly` session hides it so the restored patches show. Its **Open file** button
   opens a `.js` from any folder (`openPatchFromAnywhere`); a file from outside the working
   directory joins `extraFiles` ("from other folders") without changing the directory, and is saved
-  in the session file. **Open folder**, **Open session** and **Import** sit beside it; imported files
-(`useImportedFilesStore`) are listed under the patches with a × to stop serving each. Hovering a file runs it
+  in the session file. **Open folder** and **Open session** sit beside it. Hovering a file runs it
   from scratch in a small hidden Hydra instance (`sources/hydra/hoverPreview.ts`, created when the
   browser first opens, never in the compositor, rendering only while a card shows) and shows it in
   a card beside the list.
