@@ -121,6 +121,9 @@ Lifecycle: `loadSources()` returns the definitions, `App.tsx` registers them wit
 instance with a UUID `instanceId` and calls `init`, Run Patch (Cmd/Ctrl+Shift+Enter, or the header's
 run button) calls `process` on the focused instance, Run All Layers (Cmd/Ctrl+Alt+Enter) calls it on
 every active instance, and closing a layer calls `cleanup` and removes its compositor source.
+Hydra patches are formatted with Prettier (`sources/hydra/format.ts`, the repo's style at 80
+columns) before every preview and run, and by Format Patch (Cmd/Ctrl+F, Actions menu). Code that
+doesn't parse is left as is. The Hydra editor has no find and replace.
 
 Graphics sources register their canvas in `init`:
 

@@ -130,6 +130,11 @@ const api = {
       ipcRenderer.on('actions:run-all', handler)
       return () => ipcRenderer.removeListener('actions:run-all', handler)
     },
+    onFormat: (callback: () => void): (() => void) => {
+      const handler = (): void => callback()
+      ipcRenderer.on('actions:format', handler)
+      return () => ipcRenderer.removeListener('actions:format', handler)
+    },
     onRun: (callback: () => void): (() => void) => {
       const handler = (): void => callback()
       ipcRenderer.on('actions:run', handler)

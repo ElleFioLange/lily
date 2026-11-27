@@ -220,6 +220,14 @@ function createMenu(): void {
           click: () => {
             mainWindowRef?.webContents.send('actions:run-all')
           }
+        },
+        { type: 'separator' },
+        {
+          label: 'Format Patch',
+          accelerator: 'CmdOrCtrl+F',
+          click: () => {
+            mainWindowRef?.webContents.send('actions:format')
+          }
         }
       ]
     }

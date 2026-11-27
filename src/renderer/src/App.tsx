@@ -9,7 +9,7 @@ import { Compositor } from './graphics/Compositor'
 import { useSourcesStore } from './stores/useSourcesStore'
 import { setupPreviewSync, usePreviewStore } from './stores/usePreviewStore'
 import { loadSources } from './sources'
-import run, { previewPatch, runFocused } from './utils/actions/run'
+import run, { formatPatch, previewPatch, runFocused } from './utils/actions/run'
 import { useWorkingDirectoryStore } from './stores/useWorkingDirectoryStore'
 import { useSessionStore } from './stores/useSessionStore'
 
@@ -51,6 +51,8 @@ function App(): React.JSX.Element {
     const unsubPreview = window.api.actions.onPreview(previewPatch)
     const unsubActions = window.api.actions.onRun(runFocused)
     const unsubRunAll = window.api.actions.onRunAll(run)
+    // Cmd+F formats the focused patch (Hydra patches are also formatted whenever they're evaluated)
+    const unsubFormat = window.api.actions.onFormat(formatPatch)
 
     // File menu: .lly sessions
     const unsubSession = window.api.session.onMenu((action) => {
@@ -94,6 +96,7 @@ function App(): React.JSX.Element {
       unsubActions()
       unsubPreview()
       unsubRunAll()
+      unsubFormat()
       unsubSession()
       unsubTogglePreview()
       unsubTogglePoiesis()

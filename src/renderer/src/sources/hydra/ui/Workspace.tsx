@@ -4,14 +4,14 @@ import { EditorView, highlightActiveLine, keymap, lineNumbers } from '@codemirro
 import { defaultKeymap, history, indentWithTab } from '@codemirror/commands'
 import Panel from '@renderer/components/common/Panel'
 import { javascript } from '@codemirror/lang-javascript'
-import { search, searchKeymap } from '@codemirror/search'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
 import { useSourcesStore } from '@renderer/stores/useSourcesStore'
 import { ActiveSource } from '@renderer/sources/types'
 import { HydraState } from '../store'
 import { WorkspaceProps } from '@renderer/sources/types'
-import run, { previewPatch, runFocused } from '@renderer/utils/actions/run'
+import run, { formatPatch, previewPatch, runFocused } from '@renderer/utils/actions/run'
+import { registerEditorView } from '../editorViews'
 import { cursorKeymap, multipleCursors, vscodeOptionKeys } from '../editorKeys'
 
 // Ahead of CodeMirror's defaults, which bind Mod-Enter to "insert blank line"
@@ -36,11 +36,18 @@ const runKeymap = [
       run()
       return true
     }
+  },
+  // Format, in place of find and replace
+  {
+    key: 'Mod-f',
+    run: () => {
+      formatPatch()
+      return true
+    }
   }
 ]
 
 // TODO history cmd+z still not working right
-// TODO needs cursor navigation shortcuts, formatting, and search (? maybe search?)
 // TODO handle the extra HTMLDivProps from the
 
 const MAIN_FONT_SIZE = 14
@@ -121,7 +128,6 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
           ...(isPerformance ? [] : [lineNumbers()]),
           highlightActiveLine(),
           javascript(),
-          search(),
           hydraTheme,
           fontSizeCompartment.current.of(fontSizeTheme(fontSize)),
           syntaxHighlighting(highlightStyle),
@@ -129,13 +135,7 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
           history(),
           multipleCursors,
           vscodeOptionKeys,
-          keymap.of([
-            ...runKeymap,
-            ...cursorKeymap,
-            ...defaultKeymap,
-            ...searchKeymap,
-            indentWithTab
-          ]),
+          keymap.of([...runKeymap, ...cursorKeymap, ...defaultKeymap, indentWithTab]),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
               const newValue = update.state.doc.toString()
@@ -157,6 +157,7 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
       view.scrollDOM.classList.add('no-scrollbar')
 
       viewRef.current = view
+      const unregister = isPerformance ? undefined : registerEditorView(instanceId, view)
 
       // Main editor publishes the first visible character so performance views can follow it.
       // Synced by doc position rather than percentage since font size and wrapping differ.
@@ -170,6 +171,7 @@ export default function Workspace({ instanceId, environment }: WorkspaceProps) {
       // Cleanup
       return () => {
         view.scrollDOM.removeEventListener('scroll', handleScroll)
+        unregister?.()
         view.destroy()
         viewRef.current = null
       }
